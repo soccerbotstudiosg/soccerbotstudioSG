@@ -2293,8 +2293,8 @@ test("concurrent browser tabs reuse one hold and payment and reject revoked acce
 
 // Failure journeys use the real Worker/API/storage implementation. Only provider
 // replies or the delivery of an already-completed HTTP response are faulted.
-/** Choose the requested times through Calendar and open the actual Details route. */
-async function enterSessionDetails(
+/** Select the requested times and trainers through Calendar. */
+async function selectCalendarSlots(
   page: Page,
   mechanism: Awaited<ReturnType<typeof createBookingMechanism>>,
   starts: number[],
@@ -2322,14 +2322,23 @@ async function enterSessionDetails(
   await page.getByRole("button", { name: label, exact: true }).click();
   for (const startMs of starts) {
     const start = new Date(startMs + 28800000).toISOString().slice(11, 16);
-    await page
+    const slot = page
       .getByRole("group", { name: "Session times" })
-      .getByRole("button", { name: new RegExp(`${start}–`) })
-      .click();
+      .getByRole("button", { name: new RegExp(`${start}–`) });
+    await slot.click();
     await page
       .getByRole("combobox", { name: new RegExp(`Trainer for .* at ${start}`) })
       .selectOption({ index: 1 });
+    await expect(slot).toHaveAttribute("aria-pressed", "true");
   }
+}
+
+async function enterSessionDetails(
+  page: Page,
+  mechanism: Awaited<ReturnType<typeof createBookingMechanism>>,
+  starts: number[],
+) {
+  await selectCalendarSlots(page, mechanism, starts);
   await page
     .getByRole("link", {
       name: /^Enter contact details(?: \$[\d,.]+)?$/,
@@ -5253,50 +5262,20 @@ test("hidden enquiry proof preserves the shared action gap", async ({
   expect(gap).toBeLessThanOrEqual(33);
 });
 
-test("one browser recovers rejected email, unpaid expiry, overlapping tabs and the surviving cart", async ({
-  page,
-}) => {
-  // Includes a real hosted-link deadline and the Worker's spaced provider reads.
-  test.setTimeout(210000);
-  const bad = "rejected@example.test";
-  const mechanism = await createBookingSequence([1, 1, 2], {
-    checkoutBotProof: false,
-    firstLinkMs: 70000,
-    async respond(call) {
-      if (
-        call.body?.method === "book" &&
-        JSON.stringify(call.body.params).includes(bad)
-      )
-        return Response.json({
-          jsonrpc: "2.0",
-          id: call.body.id,
-          error: { code: -32062, message: "Rejected contact email" },
-        });
-    },
-  });
-  const [expired, winner, remaining] = mechanism.journeys;
-  const b = await page.context().newPage();
-  // Delay only delivery to the browser; the Worker always receives and completes the POST.
+/** Hold the browser response while allowing the submitted Worker request to finish. */
+function checkoutHistoryHarness(
+  mechanism: Awaited<ReturnType<typeof createBookingSequence>>,
+) {
   const gates = new Map<Page, ReturnType<typeof Promise.withResolvers<void>>>();
   const connect = (tab: Page) =>
     mechanismTransport(tab, mechanism, undefined, undefined, async (path) => {
       if (path.startsWith("/api/booking/checkout/"))
         await gates.get(tab)?.promise;
     });
-  const aTransport = await connect(page);
-  const bTransport = await connect(b);
-  const review = (tab: Page) =>
-    tab.getByRole("button", { name: /^Review Booking/ });
-  const pay = (tab: Page) =>
-    tab.getByRole("button", { name: /^Proceed to Payment/ });
-  const back = (tab: Page) =>
-    tab.getByRole("button", { name: "Back", exact: true });
-  const resumed = (tab: Page) =>
-    tab.getByRole("link", { name: "Continue payment", exact: true });
-  const alert = (tab: Page) => tab.getByRole("main").getByRole("alert");
   async function quickBack(tab: Page) {
     await tab.getByRole("checkbox").check();
-    await expect(pay(tab)).toBeEnabled();
+    const pay = tab.getByRole("button", { name: /^Proceed to Payment/ });
+    await expect(pay).toBeEnabled();
     const gate = Promise.withResolvers<void>();
     gates.set(tab, gate);
     try {
@@ -5305,7 +5284,7 @@ test("one browser recovers rejected email, unpaid expiry, overlapping tabs and t
           r.method() === "POST" &&
           new URL(r.url()).pathname.startsWith("/api/booking/checkout/"),
       );
-      await pay(tab).evaluate((button) => {
+      await pay.evaluate((button) => {
         performance.mark("master-payment-click");
         (button as HTMLButtonElement).click();
       });
@@ -5325,6 +5304,238 @@ test("one browser recovers rejected email, unpaid expiry, overlapping tabs and t
       gate.resolve();
       gates.delete(tab);
     }
+  }
+  return { connect, quickBack };
+}
+
+/** Read the submitted intent and its actual booking and payment associations together. */
+async function heldCheckout(
+  mechanism: Awaited<ReturnType<typeof createBookingSequence>>,
+  id: string,
+) {
+  const read = () =>
+    mechanism.db
+      .prepare(
+        "SELECT a.intent_json,h.association_json,p.request_id,p.checkout_url,p.expires_ms FROM attempts a JOIN hitpay_holds h ON h.attempt_id=a.id JOIN hitpay_payments p ON p.attempt_id=a.id WHERE a.id=? AND p.request_id IS NOT NULL",
+      )
+      .bind(id)
+      .first<{
+        intent_json: string;
+        association_json: string;
+        request_id: string;
+        checkout_url: string;
+        expires_ms: number;
+      }>();
+  await expect.poll(read).not.toBeNull();
+  return (await read())!;
+}
+
+/** Simulate a definitive provider rejection for the designated test address. */
+const rejectSyntheticEmail: NonNullable<
+  Parameters<typeof createIsolatedMechanism>[0]
+>["respond"] = async (call) => {
+  if (
+    call.body?.method === "book" &&
+    JSON.stringify(call.body.params).includes("rejected@example.test")
+  )
+    return Response.json({
+      jsonrpc: "2.0",
+      id: call.body.id,
+      error: { code: -32062, message: "Rejected contact email" },
+    });
+};
+
+test("editing contact details after Back preserves the submitted checkout", async ({
+  page,
+}) => {
+  const mechanism = await createBookingSequence([1, 1, 1], {
+    checkoutBotProof: false,
+    respond: rejectSyntheticEmail,
+  });
+  const { connect, quickBack } = checkoutHistoryHarness(mechanism);
+  const transport = await connect(page);
+  try {
+    await guestDetails(page, mechanism);
+    await reviewResponse(page);
+    const id = await quickBack(page);
+    const original = await heldCheckout(mechanism, id);
+    const intent = JSON.parse(original.intent_json);
+    expect(intent.contact.name).toBe("Synthetic Guest");
+    expect(intent.sessions.map((s: { startMs: number }) => s.startMs)).toEqual(
+      mechanism.journeys[0].starts,
+    );
+    const name = page.getByRole("textbox", { name: /^Full name/ });
+    await name.fill("Edited Guest");
+    await expect(name).toHaveValue("Edited Guest");
+    await page.getByRole("button", { name: "Back", exact: true }).click();
+    const resumed = page.getByRole("link", {
+      name: "Continue payment",
+      exact: true,
+    });
+    await expect(resumed).toHaveAttribute("href", original.checkout_url);
+    await expect(resumed).toHaveAttribute("data-payment-continuation", id);
+    expect(await heldCheckout(mechanism, id)).toEqual(original);
+    expect(
+      mechanism.calls.filter((c) => c.body?.method === "book"),
+    ).toHaveLength(1);
+    expect(
+      mechanism.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST"),
+    ).toHaveLength(1);
+  } finally {
+    await stopMechanism(page, mechanism, transport);
+  }
+});
+
+test("editing session selections after Back preserves the submitted checkout", async ({
+  page,
+}) => {
+  const mechanism = await createBookingSequence([1, 1, 1], {
+    checkoutBotProof: false,
+    respond: rejectSyntheticEmail,
+  });
+  const { connect, quickBack } = checkoutHistoryHarness(mechanism);
+  const transport = await connect(page);
+  try {
+    await guestDetails(page, mechanism);
+    await reviewResponse(page);
+    const id = await quickBack(page);
+    const original = await heldCheckout(mechanism, id);
+    const intent = JSON.parse(original.intent_json);
+    expect(intent.contact.name).toBe("Synthetic Guest");
+    expect(intent.sessions.map((s: { startMs: number }) => s.startMs)).toEqual(
+      mechanism.journeys[0].starts,
+    );
+    await page.goBack();
+    await expect(page).toHaveURL(/\/book\/time\/$/);
+    await selectCalendarSlots(page, mechanism, mechanism.journeys[1].starts);
+    await page
+      .getByRole("button", { name: "Continue payment", exact: true })
+      .click();
+    const resumed = page.getByRole("link", {
+      name: "Continue payment",
+      exact: true,
+    });
+    await expect(resumed).toHaveAttribute("href", original.checkout_url);
+    await expect(resumed).toHaveAttribute("data-payment-continuation", id);
+    expect(await heldCheckout(mechanism, id)).toEqual(original);
+    expect(
+      mechanism.calls.filter((c) => c.body?.method === "book"),
+    ).toHaveLength(1);
+    expect(
+      mechanism.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST"),
+    ).toHaveLength(1);
+  } finally {
+    await stopMechanism(page, mechanism, transport);
+  }
+});
+
+test("editing a rejected booking after Back creates a distinct corrected checkout", async ({
+  page,
+}) => {
+  const mechanism = await createBookingSequence([1, 1, 1], {
+    checkoutBotProof: false,
+    respond: rejectSyntheticEmail,
+  });
+  const { connect, quickBack } = checkoutHistoryHarness(mechanism);
+  const transport = await connect(page);
+  try {
+    await guestDetails(page, mechanism);
+    const email = page.getByRole("textbox", { name: /^Email address/ });
+    await email.fill("rejected@example.test");
+    await reviewResponse(page);
+    const id = await quickBack(page);
+    await expect(page.getByRole("main").getByRole("alert")).toContainText(
+      "rejected@example.test",
+    );
+    const readIntent = (key: string) =>
+      mechanism.db
+        .prepare("SELECT intent_json FROM attempts WHERE id=?")
+        .bind(key)
+        .first<string>("intent_json");
+    const original = await readIntent(id);
+    expect(JSON.parse(original!).contact.email).toBe("rejected@example.test");
+    expect(
+      await mechanism.db
+        .prepare("SELECT COUNT(*) FROM hitpay_holds")
+        .first("COUNT(*)"),
+    ).toBe(0);
+    await page.goBack();
+    await expect(page).toHaveURL(/\/book\/time\/$/);
+    await page.getByRole("button", { name: "Clear all", exact: true }).click();
+    await enterSessionDetails(page, mechanism, mechanism.journeys[1].starts);
+    await email.fill("synthetic@example.test");
+    await page
+      .getByRole("textbox", { name: /^Full name/ })
+      .fill("Corrected Guest");
+    const response = await checkoutHoldResponse(page);
+    await expect(page).toHaveURL(mechanism.journeys[1].checkoutUrl);
+    const next = transport.json(response).attemptId;
+    expect(next).toBeTruthy();
+    expect(next).not.toBe(id);
+    const corrected = JSON.parse(
+      (await heldCheckout(mechanism, next)).intent_json,
+    );
+    expect(corrected.contact).toMatchObject({
+      name: "Corrected Guest",
+      email: "synthetic@example.test",
+    });
+    expect(
+      corrected.sessions.map((s: { startMs: number }) => s.startMs),
+    ).toEqual(mechanism.journeys[1].starts);
+    expect(await readIntent(id)).toBe(original);
+    expect(
+      mechanism.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST"),
+    ).toHaveLength(1);
+  } finally {
+    await stopMechanism(page, mechanism, transport);
+  }
+});
+
+test("one browser recovers rejected email, unpaid expiry, overlapping tabs and the surviving cart", async ({
+  page,
+}) => {
+  // Includes two real hosted-link deadlines and the Worker's spaced provider reads.
+  const linkWindowMs = 70000;
+  test.setTimeout(210000 + linkWindowMs);
+  const bad = "rejected@example.test";
+  const mechanism = await createBookingSequence([1, 1, 2], {
+    checkoutBotProof: false,
+    linkWindowsMs: [linkWindowMs, undefined, linkWindowMs],
+    respond: rejectSyntheticEmail,
+  });
+  const [expired, winner, remaining] = mechanism.journeys;
+  const b = await page.context().newPage();
+  const { connect, quickBack } = checkoutHistoryHarness(mechanism);
+  const aTransport = await connect(page);
+  const bTransport = await connect(b);
+  const review = (tab: Page) =>
+    tab.getByRole("button", { name: /^Review Booking/ });
+  const back = (tab: Page) =>
+    tab.getByRole("button", { name: "Back", exact: true });
+  const resumed = (tab: Page) =>
+    tab.getByRole("link", { name: "Continue payment", exact: true });
+  const alert = (tab: Page) => tab.getByRole("main").getByRole("alert");
+  /** Render the provider's configured return destination on the isolated hosted page. */
+  async function hostUnpaidCheckout(url: string) {
+    const studioOrigin = new URL(page.url()).origin;
+    await page.route(url, async (route) => {
+      const create = mechanism.calls.findLast(
+        (call) => isHitPayApiCall(call) && call.method === "POST",
+      );
+      const target = new URL(String(create?.body?.redirect_url));
+      expect(target.origin).toBe(mechanism.origin);
+      expect(target.pathname).toBe("/confirmation/");
+      // The Worker's isolated origin and the loopback browser origin share the same API transport.
+      await route.fulfill({
+        contentType: "text/html",
+        body:
+          '<a href="' +
+          studioOrigin +
+          target.pathname +
+          target.search +
+          '">Return to studio</a>',
+      });
+    });
   }
   const countPayments = () =>
     mechanism.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST")
@@ -5348,10 +5559,15 @@ test("one browser recovers rejected email, unpaid expiry, overlapping tabs and t
       .fill("synthetic@example.test");
     await reviewResponse(page);
     const firstId = await quickBack(page);
+    const original = await heldCheckout(mechanism, firstId);
+    const name = page.getByRole("textbox", { name: /^Full name/ });
+    await name.fill("Edited after checkout");
+    await expect(name).toHaveValue("Edited after checkout");
     await back(page).click();
     await expect(resumed(page)).toHaveAttribute("href", expired.checkoutUrl);
     await page.goBack();
     await expect(page).toHaveURL(/\/book\/time\/$/);
+    await selectCalendarSlots(page, mechanism, winner.starts);
     await page
       .getByRole("button", { name: "Continue payment", exact: true })
       .click();
@@ -5360,6 +5576,8 @@ test("one browser recovers rejected email, unpaid expiry, overlapping tabs and t
       "data-payment-continuation",
       firstId,
     );
+    expect(await heldCheckout(mechanism, firstId)).toEqual(original);
+    expect(countPayments()).toBe(1);
     await page
       .getByRole("link", { name: "Privacy Policy", exact: true })
       .click();
@@ -5367,6 +5585,15 @@ test("one browser recovers rejected email, unpaid expiry, overlapping tabs and t
       .getByRole("dialog", { name: "Leave this booking?" })
       .getByRole("button", { name: "Stay" })
       .click();
+    // Return from the hosted origin through a fresh confirmation document.
+    await hostUnpaidCheckout(expired.checkoutUrl);
+    await resumed(page).click();
+    await expect(page).toHaveURL(expired.checkoutUrl);
+    await page.getByRole("link", { name: "Return to studio" }).click();
+    await expect(resumed(page)).toHaveAttribute(
+      "data-payment-continuation",
+      firstId,
+    );
     await expect(alert(page)).toContainText("Your payment window has ended", {
       timeout: 95000,
     });
@@ -5500,6 +5727,7 @@ test("one browser recovers rejected email, unpaid expiry, overlapping tabs and t
     await expect(confirmed).toBeVisible();
     await details.click();
     await reviewResponse(page);
+    await hostUnpaidCheckout(remaining.checkoutUrl);
     const lastResponse = await checkoutHoldResponse(page, undefined, true);
     expect(lastResponse.status()).toBe(200);
     const last = aTransport.json(lastResponse);
@@ -5507,8 +5735,42 @@ test("one browser recovers rejected email, unpaid expiry, overlapping tabs and t
     expect([firstId, winnerId, conflictKey]).not.toContain(last.attemptId);
     await expect(page).toHaveURL(remaining.checkoutUrl);
     expect(countPayments()).toBe(3);
+    // Stay on the hosted page until its own provider deadline has elapsed.
+    const deadline = remaining.expiresAtMs!;
+    expect(deadline).toBeGreaterThan(Date.now());
+    await expect
+      .poll(() => Date.now(), { timeout: linkWindowMs })
+      .toBeGreaterThanOrEqual(deadline);
+    await expect(page).toHaveURL(remaining.checkoutUrl);
+    await page.getByRole("link", { name: "Return to studio" }).click();
+    await expect(alert(page)).toContainText("Your payment window has ended", {
+      timeout: 45000,
+    });
+    await expect(page).toHaveURL(/\/book\/time\/$/);
+    await expect
+      .poll(() =>
+        mechanism.db
+          .prepare(
+            "SELECT COUNT(*) AS n FROM expired_native_checkout_grants WHERE attempt_id=?",
+          )
+          .bind(last.attemptId)
+          .first("n"),
+      )
+      .toBe(1);
+    for (const start of remaining.starts)
+      await expect(
+        page
+          .getByRole("group", { name: "Session times" })
+          .getByRole("button", { name: slotName(start) }),
+      ).toHaveCount(0);
+    await page.getByRole("link", { name: "Back", exact: true }).click();
+    await page
+      .getByRole("link", { name: "Choose sessions", exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/book\/time\/$/);
+    await expect(confirmed).toBeVisible();
+    expect(countPayments()).toBe(3);
   } finally {
-    for (const gate of gates.values()) gate.resolve();
     await Promise.all([page.close(), b.close()]);
     await Promise.all([aTransport.drain(), bTransport.drain()]);
     await mechanism.close();

@@ -999,7 +999,8 @@ function ProtectedConfirmationBody({
     if (returned) {
       calendarReturned.current = attemptId;
       router.replace("/book/time/");
-    } else if (confirmationRoute) {
+    } else if (confirmationRoute && !wantsExpiry) {
+      // A fresh document may lack the Calendar draft. Let an active release finish.
       calendarReturned.current = attemptId;
       setHomeFallback(attemptId);
     }

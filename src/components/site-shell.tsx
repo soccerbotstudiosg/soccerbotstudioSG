@@ -416,9 +416,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
             booking.action.status === "loading" ||
             confirmation) && (
             <p className="mb-5 text-muted">
-              Leaving does not cancel a reservation or payment. Any unpaid
-              reservation remains held until expiry; payment recovery is
-              retained.
+              Any time slots we’re holding for you stay reserved until the
+              payment timer ends. If you’ve already paid, leaving won’t cancel
+              your booking.
             </p>
           )}
           <div className="dialog-actions">

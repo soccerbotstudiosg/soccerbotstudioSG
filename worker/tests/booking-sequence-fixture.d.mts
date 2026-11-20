@@ -2,11 +2,16 @@ import { createBookingMechanism } from "./booking-mechanism-fixture.mjs";
 export function createBookingSequence(
   sizes: number[],
   options?: Parameters<typeof createBookingMechanism>[0] & {
-    firstLinkMs?: number;
+    linkWindowsMs?: (number | undefined)[];
   },
 ): Promise<
   Awaited<ReturnType<typeof createBookingMechanism>> & {
-    journeys: { starts: number[]; checkoutUrl: string; invoiceId: string }[];
+    journeys: {
+      readonly expiresAtMs?: number;
+      starts: number[];
+      checkoutUrl: string;
+      invoiceId: string;
+    }[];
     completeJourney(index: number): Promise<{ status: number }>;
   }
 >;

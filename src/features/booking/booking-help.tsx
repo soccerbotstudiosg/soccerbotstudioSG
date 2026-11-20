@@ -131,7 +131,7 @@ export function RejectedEmailHelp({
     >
       <div className="booking-help-content">
         <p>
-          <strong>The booking provider didn’t accept {email}.</strong> Nothing
+          <strong>We couldn’t book your session using {email}.</strong> Nothing
           was booked or charged.
         </p>
         {availability === "unavailable" && (
