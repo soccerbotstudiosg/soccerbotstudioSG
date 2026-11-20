@@ -1,6 +1,7 @@
 import { bookingSequenceRandom } from "./booking-sequence-random";
 import { sitePath } from "../src/content/site-path";
 import { createHash } from "node:crypto";
+import { setTimeout as wait } from "node:timers/promises";
 import { isHitPayApiCall } from "../worker/tests/provider-url-fixture.mjs";
 import { createBookingSequence } from "../worker/tests/booking-sequence-fixture.mjs";
 import { createBookingCollision } from "../worker/tests/booking-collision-fixture.mjs";
@@ -2293,11 +2294,10 @@ test("concurrent browser tabs reuse one hold and payment and reject revoked acce
 
 // Failure journeys use the real Worker/API/storage implementation. Only provider
 // replies or the delivery of an already-completed HTTP response are faulted.
-/** Select the requested times and trainers through Calendar. */
-async function selectCalendarSlots(
+/** Open the fixture date through the visible calendar controls. */
+async function openCalendarDate(
   page: Page,
   mechanism: Awaited<ReturnType<typeof createBookingMechanism>>,
-  starts: number[],
 ) {
   const today = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Singapore",
@@ -2320,6 +2320,15 @@ async function selectCalendarSlots(
     year: "numeric",
   }).format(new Date(`${mechanism.date}T04:00:00Z`));
   await page.getByRole("button", { name: label, exact: true }).click();
+}
+
+/** Select the requested times and trainers through Calendar. */
+async function selectCalendarSlots(
+  page: Page,
+  mechanism: Awaited<ReturnType<typeof createBookingMechanism>>,
+  starts: number[],
+) {
+  await openCalendarDate(page, mechanism);
   for (const startMs of starts) {
     const start = new Date(startMs + 28800000).toISOString().slice(11, 16);
     const slot = page
@@ -5461,7 +5470,13 @@ test("editing a rejected booking after Back creates a distinct corrected checkou
     ).toBe(0);
     await page.goBack();
     await expect(page).toHaveURL(/\/book\/time\/$/);
-    await page.getByRole("button", { name: "Clear all", exact: true }).click();
+    await openCalendarDate(page, mechanism);
+    const remove = page.getByRole("button", {
+      name: /^Remove selected session /,
+    });
+    await expect(remove).toHaveCount(1);
+    await remove.click();
+    await expect(remove).toHaveCount(0);
     await enterSessionDetails(page, mechanism, mechanism.journeys[1].starts);
     await email.fill("synthetic@example.test");
     await page
@@ -5738,9 +5753,8 @@ test("one browser recovers rejected email, unpaid expiry, overlapping tabs and t
     // Stay on the hosted page until its own provider deadline has elapsed.
     const deadline = remaining.expiresAtMs!;
     expect(deadline).toBeGreaterThan(Date.now());
-    await expect
-      .poll(() => Date.now(), { timeout: linkWindowMs })
-      .toBeGreaterThanOrEqual(deadline);
+    while (Date.now() < deadline) await wait(deadline - Date.now());
+    expect(Date.now()).toBeGreaterThanOrEqual(deadline);
     await expect(page).toHaveURL(remaining.checkoutUrl);
     await page.getByRole("link", { name: "Return to studio" }).click();
     await expect(alert(page)).toContainText("Your payment window has ended", {
