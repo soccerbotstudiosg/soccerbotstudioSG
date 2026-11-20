@@ -1125,6 +1125,10 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "a paid tab recovers its original receipt on reload and Home reentry while a disjoint checkout is active"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "access denial hides a previously loaded checkout context"
   },
   {
@@ -1858,6 +1862,10 @@
   {
     "file": "tests/live-email.spec.ts",
     "title": "native guest journey preserves players contact and one checkout across refresh"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "one browser recovers rejected email, unpaid expiry, overlapping tabs and the surviving cart"
   },
   {
     "file": "tests/live-email.spec.ts",

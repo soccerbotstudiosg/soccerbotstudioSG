@@ -7,6 +7,7 @@ import {
   retainPreparationRejection,
 } from "./checkout-preparation-rejection";
 import { authenticate, type Access } from "./access";
+import { completedCheckoutRollover } from "./completed-checkout";
 import {
   ApiError,
   liveCustomerAccess,
@@ -184,7 +185,7 @@ export async function authorizeCustomerCheckout(
   if (!Number.isSafeInteger(maximum))
     throw new ApiError(503, "provider_budget_invalid");
   const insert = env.STATE.prepare(
-    "INSERT INTO native_checkout_grants(capability_hash,source_revision,contract_json,not_before_ms,expires_ms,starting_used,maximum_used,cleanup_allowed,state,available_dates_json,availability_json,read_state,ongoing) SELECT ?,?,?,?,?,?,?,0,'granted',?,?,'available',1 WHERE NOT EXISTS(SELECT 1 FROM attempts a JOIN no_creation_resolutions n ON n.attempt_id=a.id WHERE a.owner_id=? AND a.idempotency_key=?) AND NOT EXISTS(SELECT 1 FROM checkout_preparation_rejections WHERE attempt_id=?) ON CONFLICT(capability_hash) DO NOTHING",
+    "INSERT INTO native_checkout_grants(capability_hash,source_revision,contract_json,not_before_ms,expires_ms,starting_used,maximum_used,cleanup_allowed,state,available_dates_json,availability_json,read_state,ongoing) SELECT ?,?,?,?,?,?,?,0,'granted',?,?,'available',1 WHERE NOT EXISTS(SELECT 1 FROM attempts WHERE id=? OR (owner_id=? AND idempotency_key=?)) AND NOT EXISTS(SELECT 1 FROM checkout_preparation_rejections WHERE attempt_id=?) ON CONFLICT(capability_hash) DO NOTHING",
   ).bind(
     access.capability_hash,
     p.SOURCE_REVISION,
@@ -195,44 +196,64 @@ export async function authorizeCustomerCheckout(
     maximum,
     JSON.stringify(dates),
     JSON.stringify(available),
+    input.key,
     access.owner_id,
     input.key,
     input.key,
   );
-  if (deferFresh && retainGrant && verifiedAccess?.fresh_checkout === 1) {
-    return {
-      capability_hash: access.capability_hash,
-      attempt_id: null,
-      intent_hash: null,
-      source_revision: p.SOURCE_REVISION,
-      contract_json: JSON.stringify(contract),
-      not_before_ms: now,
-      expires_ms: expires,
-      starting_used: used,
-      maximum_used: maximum,
-      cleanup_allowed: 0,
-      state: "granted",
-      result_json: null,
-      available_dates_json: JSON.stringify(dates),
-      availability_json: JSON.stringify(available),
-      read_state: "available",
-      ongoing: 1,
-      preparation: [insert],
-    } satisfies Grant;
-  }
   if (!retainGrant) {
     await insert.run();
     return;
   }
-  const db = env.STATE.withSession("first-primary");
-  const results = await db.batch([
-    ...rejectedGrantStatements(env, access.capability_hash),
-    insert,
-    db
-      .prepare("SELECT * FROM native_checkout_grants WHERE capability_hash=?")
-      .bind(access.capability_hash),
-  ]);
-  return results.at(-1)!.results[0] as Grant | undefined;
+  let preparation: D1PreparedStatement[] = [insert];
+  if (!(deferFresh && verifiedAccess?.fresh_checkout === 1)) {
+    const db = env.STATE.withSession("first-primary");
+    const results = await db.batch([
+      ...rejectedGrantStatements(env, access.capability_hash),
+      insert,
+      db
+        .prepare("SELECT * FROM native_checkout_grants WHERE capability_hash=?")
+        .bind(access.capability_hash),
+    ]);
+    const retained = results.at(-1)!.results[0] as Grant | undefined;
+    if (
+      !input.accepted ||
+      retained?.ongoing !== 1 ||
+      retained.state !== "complete" ||
+      !retained.attempt_id ||
+      retained.attempt_id === input.key
+    )
+      return retained;
+    const archive = await completedCheckoutRollover(
+      request,
+      env,
+      access,
+      retained.attempt_id,
+      input.key,
+      input.sessions,
+    );
+    if (!archive) return retained;
+    preparation = [...archive, insert];
+  }
+  return {
+    capability_hash: access.capability_hash,
+    attempt_id: null,
+    intent_hash: null,
+    source_revision: p.SOURCE_REVISION,
+    contract_json: JSON.stringify(contract),
+    not_before_ms: now,
+    expires_ms: expires,
+    starting_used: used,
+    maximum_used: maximum,
+    cleanup_allowed: 0,
+    state: "granted",
+    result_json: null,
+    available_dates_json: JSON.stringify(dates),
+    availability_json: JSON.stringify(available),
+    read_state: "available",
+    ongoing: 1,
+    preparation,
+  } satisfies Grant;
 }
 
 /** Prepare archival statements for explicitly rejected checkout grants. */

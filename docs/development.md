@@ -208,6 +208,8 @@ Use Node/npm pinned by `.nvmrc` and `package.json`, Python 3.11+ and Git. On ini
 
 The Worker test runtime is pinned to Miniflare `5.20261023.0-beta`, matching Wrangler `4.153.0` and its patched Sharp/Undici dependencies. Keep the package/lockfile and reviewed prerelease policy pin aligned; validate the full Worker suite before changing this runtime.
 
+The **Master booking regression** job exercises one continuous two-tab checkout journey on desktop Chromium, phone WebKit and tablet WebKit. Open its artifact for per-device results and failure traces. The regular shards exclude this case. The live-email gate verifies the master report against the same build and includes it in the complete browser inventory before staging.
+
 CI uses the official Playwright Noble image matching the locked Playwright version, with browsers/system libraries already installed. Node remains pinned by `.nvmrc`; the pinned setup-python action supplies Python 3.12 for installer checks. Update the image alongside Playwright when upgrading. This avoids repeated Ubuntu mirror downloads without changing test gates or job limits.
 
 `npm run dev` starts local development; `npm run build` creates `out/`; `npm run preview` serves that export locally. The default base path is `/SoccerBotStudioSG`; root hosting uses a separately verified empty-prefix build. Client provisioning and portability requirements live in [Business rules](business-rules.md#deployment-migration-and-acceptance).

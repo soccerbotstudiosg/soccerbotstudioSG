@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import {
   configureBrowserCoreDump,
   batchesForShard,
+  masterTitle,
   combineReports,
   validateShards,
 } from "./browser-shards.mjs";
@@ -35,6 +36,7 @@ function reportsFor(suite) {
   const cases = inventory
     .filter(
       (item) =>
+        item.title !== masterTitle &&
         item.file.endsWith(".spec.ts") &&
         (suite === "live-email"
           ? item.file === "tests/live-email.spec.ts"
@@ -69,10 +71,24 @@ test("browser shards preserve complete demo and live inventories and reject gaps
   assert.equal(batchCount, 57);
   for (const suite of ["demo", "live-email"]) {
     const reports = reportsFor(suite);
+    const master =
+      suite === "live-email" ? structuredClone(reports[0]) : undefined;
+    if (master) {
+      master.suites[0].specs = names.map((name) => {
+        const spec = structuredClone(reports[0].suites[0].specs[0]);
+        spec.title = masterTitle;
+        spec.tests[0].projectName = name;
+        return spec;
+      });
+      master.stats.expected = names.length;
+      const missing = structuredClone(master);
+      missing.suites[0].specs.pop();
+      assert.throws(() => combineReports(reports, missing));
+    }
     assert.deepEqual(
       validateResults(
         "browser",
-        combineReports(reports),
+        combineReports(reports, master),
         inventory,
         process.cwd(),
         suite,

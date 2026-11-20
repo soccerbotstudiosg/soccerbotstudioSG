@@ -1,12 +1,18 @@
 import type { CheckoutSelectionRejection } from "@/domain/native-checkout";
 import * as renderTrace from "./confirmation-render-trace";
 import ConfirmationPage from "@/app/confirmation/page";
+import {
+  BookingLink,
+  BookingNavigation,
+} from "@/components/booking-navigation";
+import { BookingPage } from "./booking-page";
 import { BookingProvider } from "./provider";
 import { BookingLoadingProvider } from "./booking-loading";
 import {
   saveLiveDraft,
   expiryReconciliationDeadline,
   markConfirmationSeen,
+  markSubmittedCheckout,
   submittedCheckoutId,
   completedPaymentReturn,
 } from "@/services/storage";
@@ -61,6 +67,7 @@ afterEach(() => {
   expect(document.querySelector(".payment-check-feedback")).toBeNull();
   cleanup();
   navigation.attempt = first;
+  navigation.path = "/";
   navigation.status = "canceled";
   navigation.reference = "";
   vi.useRealTimers();
@@ -371,12 +378,13 @@ it("verified live receipt shows provider invoice number without internal IDs or 
 const navigation = vi.hoisted(() => ({
   push: vi.fn(),
   replace: vi.fn(),
+  path: "/",
   attempt: "00000000-0000-4000-8000-000000000001",
   status: "canceled",
   reference: "",
 }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/",
+  usePathname: () => navigation.path,
   useRouter: () => navigation,
   useSearchParams: () =>
     new URLSearchParams(
@@ -423,6 +431,137 @@ it("a completed provider return stays with its own attempt across confirmation h
   expect(
     screen.queryByRole("heading", { name: "Booking Confirmed" }),
   ).toBeNull();
+});
+
+it("a paid tab recovers its original receipt on reload and Home reentry while a disjoint checkout is active", async () => {
+  const receipt = receiptFixture();
+  const contextPath = `/api/attempts/${first}/checkout`;
+  const receiptPath = `/api/attempts/${first}/receipt`;
+  const nextSession = {
+    ...receipt.sessions[0],
+    serviceName: "Other active session",
+    startMs: receipt.sessions[0].startMs + 86400000,
+  };
+  let activeId = first;
+  const restored: string[] = [];
+  const fetch = vi.fn<typeof globalThis.fetch>(async (input) => {
+    if (String(input) === receiptPath) return Response.json(receipt);
+    if (String(input) === "/api/booking/current") {
+      restored.push(activeId);
+      return Response.json({
+        attemptId: activeId,
+        state: activeId === first ? "checking" : "held",
+        contact: receipt.contact,
+        sessions: activeId === first ? receipt.sessions : [nextSession],
+      });
+    }
+    if (String(input) === contextPath)
+      return Response.json({
+        attemptId: first,
+        mode: "live",
+        confirmation: receipt,
+        payment: { status: "recorded", paidAtMs: receipt.verifiedAtMs },
+        checkout: { state: "unavailable" },
+        summary: {
+          players: 2,
+          totalMinor: receipt.totalMinor,
+          currency: "SGD",
+          sessions: [{ startMs: receipt.sessions[0].startMs, players: 2 }],
+        },
+        checking: {
+          deadlineMs: Date.now() + 60000,
+          nextCheckMs: 0,
+          pollAfterMs: 5000,
+        },
+      });
+    throw new Error(`Unexpected receipt recovery request: ${String(input)}`);
+  });
+  vi.stubGlobal("fetch", fetch);
+  saveLiveDraft(blankDraft(), true, first);
+  markSubmittedCheckout(first, true);
+  const service = {
+    ...liveBookingService,
+    publicCalendarSnapshot: undefined,
+    publicCalendar: undefined,
+    calendar: undefined,
+  };
+  const identity = { ...demoCustomerIdentity, mode: "live" as const };
+  const tree = (path: "/" | "/book/account/" | "/confirmation/") => {
+    navigation.path = path;
+    return (
+      <BookingProvider bookingService={service} identityService={identity}>
+        {path === "/confirmation/" ? (
+          <ConfirmationPage />
+        ) : path === "/book/account/" ? (
+          <BookingPage step="account" />
+        ) : (
+          <BookingNavigation>
+            <BookingLink href="/book/account/">Book now</BookingLink>
+          </BookingNavigation>
+        )}
+      </BookingProvider>
+    );
+  };
+  async function expectOriginalReceipt() {
+    expect(
+      await screen.findByRole("heading", { name: "Booking Confirmed" }),
+    ).toBeVisible();
+    expect(screen.getByText(receipt.contact.name)).toBeVisible();
+    expect(screen.queryByText(nextSession.serviceName)).toBeNull();
+    expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
+    expect(submittedCheckoutId()).toBe(first);
+  }
+  navigation.push.mockClear();
+  navigation.replace.mockClear();
+  let page = render(tree("/confirmation/"));
+  await expectOriginalReceipt();
+  expect(restored).toEqual([first]);
+  activeId = second;
+  // A history-cached receipt revalidates even when the other tab changed the current checkout.
+  const reads = () =>
+    fetch.mock.calls.filter(([path]) => String(path) === contextPath).length;
+  const beforeRestore = reads();
+  await act(async () => {
+    window.dispatchEvent(
+      new PageTransitionEvent("pageshow", { persisted: true }),
+    );
+  });
+  expect(reads()).toBeGreaterThan(beforeRestore);
+  await expectOriginalReceipt();
+  page.unmount();
+  page = render(tree("/confirmation/"));
+  await expectOriginalReceipt();
+  expect(restored).toEqual([first, second]);
+  act(() => window.dispatchEvent(new PopStateEvent("popstate")));
+  page.rerender(tree("/"));
+  await act(async () => {});
+  expect(navigation.replace).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("link", { name: "Book now" }));
+  expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/book/account/");
+  const beforeEntry = reads();
+  page.rerender(tree("/book/account/"));
+  await waitFor(() =>
+    expect(navigation.replace).toHaveBeenCalledWith(
+      `/confirmation/?attempt=${first}`,
+    ),
+  );
+  expect(reads()).toBeGreaterThan(beforeEntry);
+  page.rerender(tree("/confirmation/"));
+  await expectOriginalReceipt();
+  expect(navigation.replace.mock.calls).toEqual([
+    [`/confirmation/?attempt=${first}`],
+  ]);
+  expect(
+    fetch.mock.calls
+      .filter(
+        ([path, init]) =>
+          (init?.method ?? "GET") !== "GET" ||
+          !["/api/booking/current", contextPath, receiptPath].includes(
+            String(path),
+          ),
+      )
+      .map(([path, init]) => [init?.method ?? "GET", String(path)]),
+  ).toEqual([]);
 });
 
 it("booking restoration does not restart a protected confirmation read", async () => {

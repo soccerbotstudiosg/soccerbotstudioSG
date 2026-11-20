@@ -482,6 +482,8 @@ The IDs/time/price must come from the configured current selection and pass prov
 
 Prepared authority is not a booking, a held studio slot, payment or confirmation. For the combined checkout route, add `holding:true`, use the same key as the UUID path and require `accepted:true`; that path can create external effects and is not equivalent to a preview/read.
 
+On `POST /api/booking/checkout/:attemptId`, a fresh accepted checkout with a different key can archive the same authorized customer's previous grant once the server verifies its completed booking and payment. Every requested slot must be clear of the completed booking's sessions, including changeover time. Any overlap returns a selection rejection. A separate receipt dismissal is optional. A retry for the same key and intent uses the original attempt. A previous unresolved checkout still blocks a new one. Reading the protected receipt preserves the completed grant and its original access window.
+
 ### C. Definitive request rejection versus uncertain checkout
 
 `POST /api/booking/hitpay/:attemptId` with `{ "accepted": false }` fails before payment dispatch at that route, HTTP 400:

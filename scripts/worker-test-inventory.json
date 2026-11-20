@@ -496,6 +496,10 @@
     "title": "a second selection under the same checkout cookie preserves the original booking payment and deadline"
   },
   {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "a fresh disjoint checkout archives the same owner's verified booking while retired selections and stale dismissal remain fenced"
+  },
+  {
     "file": "worker/tests/enquiry.test.mjs",
     "title": "public enquiry sends fixed staff recipients and customer reply-to without creating booking access"
   },

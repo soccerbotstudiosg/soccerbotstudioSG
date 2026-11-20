@@ -253,6 +253,7 @@ Access lifetime: explicit access entry and checkout POST may renew an authentica
 - Confirmed/denied pages stay terminal.
 - Only authenticated server outcome permits release.
 - Completed dismissal is repeatable; lost acknowledgement must not create a second attempt or erase uncertain evidence.
+- A different-key checkout submitted from Review by the same authorized customer can archive the current grant once the server verifies the original payment and booking. Reject the selection if any requested slot overlaps an original session or its changeover time, across all trainers. The receipt keeps its original access window, and booking and payment journals stay immutable. A same-key retry uses the original attempt. An unresolved grant continues to block a new checkout.
 
 Calendar hides the original shared-studio windows while booking creation is unresolved, even when fresh availability lists the time. Other eligible times remain visible. Once the original attempt is resolved as not created, a fresh eligible offer restores the affected time for selection. Continue opens Details for a valid selection. Failures and provider cooldowns leave recovery pending; they never authorize a second write.
 

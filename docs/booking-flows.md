@@ -58,6 +58,7 @@ The [business rules](business-rules.md#br-008) own read limits and release autho
 
 - Review and Confirmation share the arrival note, followed by four bullets in two columns. The copy action labels each session’s date, time, type and trainer. A single session has no numbered-list prefix.
 - The original confirmation access window applies across reload. Leaving an old confirmation never dismisses a newer unresolved checkout.
+- After a confirmed booking, the customer can return to Calendar and submit a new selection from Review without first choosing an exit on the previous receipt. Browser Back, Home and opening a receipt never submit a checkout.
 - For the exact expiry and post-payment clocks, see [BR-011 to BR-013](business-rules.md#br-011). For physical acceptance sequences see the [customer worksheet](uat/simulated-user.md).
 
 ## Public pages and enquiry
@@ -94,8 +95,8 @@ The [business rules](business-rules.md#br-008) own read limits and release autho
 | Payment received but booking pending, invalid or late                                | Payment received. We are still confirming your booking. Please contact us and do not pay again. — Ask the studio to contact me | After the bounded post-payment wait, use normal confirmation details with amber Pending status without a duplicate supporting sentence. No false confirmation, standalone heading or additional payment. |
 | Expiry release remains unresolved                                                    | Retain the normal transition loader until the matching Calendar handoff; then the stable expiry notice.                        | Retry the same protected release operation automatically without a standalone release-error page. Financial uncertainty remains protected.                                                               |
 | Confirmed booking, receipt/details unavailable                                       | Booking confirmed. Try loading your details again.                                                                             | “Load booking details” reads receipt only; never repeats payment.                                                                                                                                        |
-| Confirmed-booking restart/dismissal fails                                            | Unable to start a new booking. Please try again. Your confirmed booking is unchanged.                                          | Preserve confirmation; explicit restart retry only.                                                                                                                                                      |
-| Checkout attempted before that dismissal succeeds                                    | Unable to start a new booking. Please try again.                                                                               | No new checkout.                                                                                                                                                                                         |
+| Confirmed-booking restart/dismissal fails                                            | Unable to start a new booking. Please try again. Your confirmed booking is unchanged.                                          | Keep the receipt available and offer to retry that exit.                                                                                                                                                 |
+| Checkout retries a previously requested receipt exit and the retry fails             | Unable to start a new booking. Please try again.                                                                               | Wait for acknowledgement of that exit before submitting.                                                                                                                                                 |
 | Confirmation exit action fails                                                       | Please try again to leave this booking.                                                                                        | Confirmation remains intact.                                                                                                                                                                             |
 
 ### Availability and general booking errors
@@ -166,3 +167,6 @@ The [business rules](business-rules.md#br-008) own read limits and release autho
 | Browser sign-out fails                                      | Could not sign out this browser. Please try again.                        |
 
 ### Successful and foreground progress states
+
+- During foreground checkout, the loader announces the operation and shows “Please do not close or refresh.” Background checks let visitors continue using Calendar.
+- For an unpaid link, a verified receipt or an expired payment window, see [Continue to pay, expiry and confirmation](#continue-to-pay-expiry-and-confirmation).

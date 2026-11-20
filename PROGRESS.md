@@ -4,6 +4,7 @@
 
 - The candidate combines the expired-payment, replacement Review, trainer card and rejected-email fixes with the documentation reconciliation.
 - The local isolated tests exercise contradictory payment evidence across claims, a later signed notification after incomplete paid evidence, inconclusive cancellation, blocked and released Review, and email correction with a replacement slot.
+- The master browser sequence follows one shared browser through expiry, competing carts, confirmation re-entry and a fresh checkout. The accepted conflict branch retains the two surviving sessions on Review; the Calendar notice lifecycle is checked when recovery returns there.
 - [Release and CI](docs/runbook.md#6-deployments-and-rollback) · [Customer acceptance](docs/uat/simulated-user.md)
 
 ## Next actions
