@@ -12,9 +12,7 @@
 | Partner for coordinated checks                                     |         |
 | Test service / instructor / dates / booking and invoice references |         |
 
-Use the organiser-confirmed deployed environment and designated test records. Before testing, confirm the deployed revision, environment, SimplyBook company/role, current service and schedule mappings, receiving inbox and payment mode with the organiser. Arrange controlled examples with support; unavailable fixtures remain Blocked. Write **Pass / Fail / Blocked / Not tested** in Result; leave it blank until checked. Record actual outcomes, evidence links, reference numbers and delays in Remarks. A previous CI pass does not prefill this worksheet. Mark missing permissions, integration or prepared examples **Blocked** and record why; do not switch to demo mode to obtain a pass.
-
-Owner/testers operate browsers and provider dashboards. Only authorised people perform the specifically agreed test bookings, payments, notifications or administrative changes. The assistant does not execute them. Use approved sandbox/test fixtures; any production transaction or disruptive change requires its own arranged owner procedure. Do not change device time, reset shared data or expose secrets/customer details in evidence.
+Follow the [shared acceptance and evidence procedure](simulated-user.md#test-setup-and-evidence).
 
 Staff scheduling and booking administration are tested in **SimplyBook**. Provider permission names/screens depend on the selected account plan. Confirm the actual role matrix first; this worksheet does not introduce a custom staff portal or an approval workflow.
 
@@ -29,8 +27,6 @@ Rules: [BR-002](../business-rules.md#br-002), [BR-005](../business-rules.md#br-0
 | TRA-003 | Sign out, refresh and press Back. Use the provider’s configured MFA/recovery process if included in your account setup.                    | Protected access requires valid sign-in; MFA/recovery behaves according to the agreed provider configuration.                                   |        |         |
 
 ## Enter and maintain your schedule
-
-Rules: [BR-001](../business-rules.md#br-001), [BR-002](../business-rules.md#br-002), [BR-006](../business-rules.md#br-006). See [code owners](../code-owners/index.md#11-business-rule-to-owner-index).
 
 | Case    | What to do                                                                                                                               | What should happen                                                                                                                                      | Result | Remarks |
 | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------- |
@@ -54,8 +50,6 @@ Rules: [BR-002](../business-rules.md#br-002), [BR-007](../business-rules.md#br-0
 | TRA-014 | Review a rescheduling/cancellation request with Admin using a prepared record.                                      | The request goes to the authorised operator; Trainer access does not imply refund permission or automatic customer-site synchronisation. |        |         |
 | TRA-015 | Use the permitted SimplyBook interface on your work phone; inspect a busy day and enter a test availability change. | Dates, save/cancel and record selection remain usable. Capture device and delays; no accidental change to adjacent records.              |        |         |
 
-Keep completed results in the agreed evidence location with the full revision and environment. Retain original failures when retesting; redact customer data and credentials. Coordinate test schedule restoration with Admin and retain booking/payment history.
-
 ## Session outcome
 
 | Decision                                         | Fill in |
@@ -67,8 +61,6 @@ Keep completed results in the agreed evidence location with the full revision an
 | Owner decision / accepted exceptions / follow-up |         |
 
 ## Per-slot trainer choice
-
-Rules: [BR-001](../business-rules.md#br-001), [BR-002](../business-rules.md#br-002). Use owner-approved test arrangements; do not enable overlapping schedules before shared-capacity acceptance.
 
 | Case    | What to do                                                                                                                                               | What should happen                                                                                                                                    | Result | Remarks |
 | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------- |

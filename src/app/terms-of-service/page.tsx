@@ -18,7 +18,7 @@ export default function Page() {
         SoccerBotStudio Singapore (&quot;we&quot;, &quot;us&quot;,
         &quot;our&quot;) is operated by PEAK Sportsventures Pte. Ltd. (UEN
         202502392Z), located at Apex@Henderson, 201 Henderson Road, #05-01,
-        Singapore 159545. You can reach us at contactus@soccerbotsg.com.
+        Singapore 159545. You can reach us at contact@soccerbotsg.com.
       </p>
       <h2>2. Bookings</h2>
       <ul>
@@ -78,8 +78,8 @@ export default function Page() {
           agree otherwise in writing.
         </li>
         <li>
-          Your package progress (for example, 3/5 sessions) is shown in your
-          booking account or available from our team on request.
+          To check your package progress (for example, 3/5 sessions), contact
+          our team at contact@soccerbotsg.com or ask at the studio.
         </li>
       </ul>
       <h2>5. Rescheduling and cancellations</h2>
@@ -199,7 +199,7 @@ export default function Page() {
       <h2>13. Contact us</h2>
       <p>
         PEAK Sportsventures Pte. Ltd. Apex@Henderson, 201 Henderson Road,
-        #05-01, Singapore 159545 Email: contactus@soccerbotsg.com
+        #05-01, Singapore 159545 Email: contact@soccerbotsg.com
       </p>
     </article>
   );

@@ -277,7 +277,7 @@ it("hides the native payment capability at its expiry without claiming payment c
       elapsed += 1;
       await vi.advanceTimersByTimeAsync(1);
     });
-    expect(awaiting).toHaveBeenCalledWith(id);
+    expect(awaiting).toHaveBeenCalledExactlyOnceWith(id, true);
     expect(screen.queryByRole("alert")).toBeNull();
     expect(
       screen.getByRole("status", { name: "Checking payment…" }),

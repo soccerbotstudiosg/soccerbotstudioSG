@@ -4364,22 +4364,45 @@ test("recovery publication rolls back on storage failure and resumes without dup
       },
     );
     assert.equal((await response.json()).paymentAvailable, true);
-    await m.completePayment();
     await m.db.exec(
       "CREATE TRIGGER reject_terminal BEFORE UPDATE OF state ON hitpay_payments WHEN NEW.state='complete' BEGIN SELECT RAISE(ABORT,'synthetic_publication_failure'); END",
     );
+    await m.completePayment();
     await m.recover();
     const read = () =>
       m.db
         .prepare(
-          "SELECT p.state,p.external_state,c.confirmation_json FROM hitpay_payments p JOIN checkout_progress c ON c.attempt_id=p.attempt_id WHERE p.attempt_id=?",
+          "SELECT p.state,p.paid_ms,p.external_state,c.confirmation_json FROM hitpay_payments p JOIN checkout_progress c ON c.attempt_id=p.attempt_id WHERE p.attempt_id=?",
         )
         .bind(c.input.key)
         .first();
     const failed = await read();
+    assert.ok(failed.paid_ms);
     assert.notEqual(failed.state, "complete");
     assert.equal(failed.external_state, "unknown");
     assert.equal(failed.confirmation_json, null);
+    const denied = await collisionCheckout(
+      m,
+      c,
+      crypto.randomUUID(),
+      [m.startMs + 3000000],
+      503,
+    );
+    assert.equal(denied.error, "checkout_already_active");
+    assert.deepEqual(
+      (
+        await m.db
+          .prepare("SELECT attempt_id FROM native_checkout_grants")
+          .all()
+      ).results,
+      [{ attempt_id: c.input.key }],
+    );
+    assert.equal(
+      await m.db
+        .prepare("SELECT 1 FROM completed_native_checkout_grants")
+        .first(),
+      null,
+    );
     await m.db.exec("DROP TRIGGER reject_terminal");
     await m.db
       .prepare("UPDATE hitpay_payments SET ready_ms=0 WHERE attempt_id=?")
@@ -6942,6 +6965,169 @@ test("a second selection under the same checkout cookie preserves the original b
       { startMs: m.heldStartMs, bookingId: "701" },
     ]);
     assert.equal(m.calls.length, callsBefore);
+    assert.deepEqual(m.unexpected, []);
+  } finally {
+    await m.close();
+  }
+});
+
+test("a fresh disjoint checkout archives the same owner's verified booking while retired selections and stale dismissal remain fenced", async () => {
+  const { createBookingSequence } =
+    await import("./booking-sequence-fixture.mjs");
+  let completed = Promise.withResolvers();
+  const m = await createBookingSequence([1, 2, 1], {
+    checkoutBotProof: false,
+    onLog(message) {
+      if (!message.startsWith("{")) return;
+      const event = JSON.parse(message);
+      if (
+        event.event === "confirmation_trace" &&
+        event.boundary === "recovery" &&
+        event.result === "complete"
+      )
+        completed.resolve(event.outcome);
+    },
+  });
+  try {
+    const owner = await customer(m);
+    const [first, next, last] = m.journeys;
+    const firstId = owner.input.key;
+    const nextId = crypto.randomUUID();
+    const oldOverlap = crypto.randomUUID();
+    const oldDisjoint = crypto.randomUUID();
+    const overlapping = [...first.starts, next.starts[0]];
+    const submit = (id, starts, status = 200) =>
+      collisionCheckout(m, owner, id, starts, status);
+    const current = () =>
+      checkoutResult(
+        m.mf.dispatchFetch(m.origin + "/api/booking/current", {
+          headers: owner.headers,
+        }),
+        200,
+      );
+    const active = () =>
+      m.db.prepare("SELECT * FROM native_checkout_grants").first();
+    const archived = (id) =>
+      m.db
+        .prepare(
+          "SELECT * FROM completed_native_checkout_grants WHERE attempt_id=?",
+        )
+        .bind(id)
+        .first();
+    const receipt = () =>
+      checkoutResult(
+        m.mf.dispatchFetch(m.origin + `/api/attempts/${firstId}/receipt`, {
+          headers: owner.headers,
+        }),
+        200,
+      );
+    assert.equal((await submit(firstId, first.starts)).paymentAvailable, true);
+    const originalGrant = await active();
+    assert.equal(originalGrant.attempt_id, firstId);
+    assert.equal(
+      (await submit(oldOverlap, overlapping, 503)).error,
+      "checkout_selection_unavailable",
+    );
+    assert.equal(
+      (await submit(oldDisjoint, next.starts, 503)).error,
+      "checkout_already_active",
+    );
+    assert.equal((await m.completeJourney(0)).status, 202);
+    assert.equal(await completed.promise, "ok");
+    const paid = await collisionContext(m, owner, firstId);
+    assert.equal(paid.confirmation.attemptId, firstId);
+    const originalReceipt = await receipt();
+    assert.equal(originalReceipt.attemptId, firstId);
+    assert.equal((await current()).attemptId, firstId);
+    assert.equal(await archived(firstId), null);
+    const paidOverlap = crypto.randomUUID();
+    assert.deepEqual(await submit(paidOverlap, overlapping, 503), {
+      error: "checkout_selection_unavailable",
+      selectionRejection: {
+        state: "selection_unavailable",
+        rejectedSessionIndices: [0],
+      },
+    });
+
+    // A new proof cannot resurrect a retired key, even once the first checkout is paid.
+    for (const [id, starts, error] of [
+      [oldOverlap, overlapping, "checkout_selection_unavailable"],
+      [oldDisjoint, next.starts, "checkout_window_unresolved"],
+      [paidOverlap, overlapping, "checkout_selection_unavailable"],
+    ]) {
+      assert.equal((await submit(id, starts, 503)).error, error);
+      assert.equal(
+        await m.db
+          .prepare("SELECT 1 FROM attempts WHERE id=?")
+          .bind(id)
+          .first(),
+        null,
+      );
+    }
+    assert.deepEqual(await active(), originalGrant);
+    assert.equal(await archived(firstId), null);
+    const nextResult = await submit(nextId, next.starts);
+    assert.equal(nextResult.attemptId, nextId);
+    assert.equal(nextResult.paymentAvailable, true);
+    assert.equal(
+      (await collisionContext(m, owner, nextId)).checkout.url,
+      next.checkoutUrl,
+    );
+    assert.equal((await current()).attemptId, nextId);
+    assert.deepEqual(await archived(firstId), originalGrant);
+    assert.deepEqual(
+      (await collisionContext(m, owner, firstId)).confirmation,
+      paid.confirmation,
+    );
+    const rereadReceipt = await receipt();
+    assert.ok(rereadReceipt.verifiedAtMs >= originalReceipt.verifiedAtMs);
+    assert.deepEqual(rereadReceipt, {
+      ...originalReceipt,
+      verifiedAtMs: rereadReceipt.verifiedAtMs,
+    });
+    const nextGrant = await active();
+    assert.equal(nextGrant.attempt_id, nextId);
+    await checkoutResult(
+      m.mf.dispatchFetch(m.origin + `/api/attempts/${firstId}/dismiss`, {
+        method: "POST",
+        headers: owner.headers,
+      }),
+      200,
+    );
+    assert.deepEqual(await active(), nextGrant);
+    assert.equal((await current()).attemptId, nextId);
+
+    completed = Promise.withResolvers();
+    assert.equal((await m.completeJourney(1)).status, 202);
+    assert.equal(await completed.promise, "ok");
+    assert.equal(
+      (await collisionContext(m, owner, nextId)).confirmation.attemptId,
+      nextId,
+    );
+    await m.db
+      .prepare("UPDATE guest_access SET revoked_ms=? WHERE capability_hash=?")
+      .bind(Date.now(), nextGrant.capability_hash)
+      .run();
+    await submit(crypto.randomUUID(), last.starts, 401);
+    assert.deepEqual(await active(), nextGrant);
+    assert.equal(await archived(nextId), null);
+    assert.equal(
+      (await m.db.prepare("SELECT COUNT(*) AS n FROM attempts").first()).n,
+      2,
+    );
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      3,
+    );
+    assert.equal(
+      m.calls.filter((call) => isHitPayApiCall(call) && call.method === "POST")
+        .length,
+      2,
+    );
+    assert.equal(
+      m.calls.filter((call) => call.url.endsWith("/accept-payment")).length,
+      2,
+    );
     assert.deepEqual(m.unexpected, []);
   } finally {
     await m.close();

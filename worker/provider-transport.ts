@@ -1064,6 +1064,7 @@ export async function hitpayRequest(
     | { kind: "read"; id: string }
     | { kind: "search"; reference: string; page: 1 | 2 },
   reserve: () => Promise<void>,
+  deadlineMs?: number,
 ): Promise<unknown> {
   const base = "https://api.sandbox.hit-pay.com/v1/payment-requests";
   const url =
@@ -1080,7 +1081,11 @@ export async function hitpayRequest(
     throw new ApiError(503, "hitpay_credentials_unavailable");
   await reserve();
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20000);
+  const timeLeft =
+    deadlineMs === undefined ? 20000 : Math.min(20000, deadlineMs - Date.now());
+  if (timeLeft <= 0)
+    throw new DOMException("Payment read deadline elapsed", "AbortError");
+  const timer = setTimeout(() => controller.abort(), timeLeft);
   const finishCheckoutProvider =
     operation.kind === "create" ? checkoutProvider("hitpay") : undefined;
   const finishConfirmationProvider = confirmationTransport(

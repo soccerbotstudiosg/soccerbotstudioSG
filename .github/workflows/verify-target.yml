@@ -224,6 +224,47 @@ jobs:
           path: test-results/
           retention-days: 14
           if-no-files-found: error
+  master-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --ipc=host --tmpfs /tmp:rw,size=2g
+    needs: browser-build
+    name: Master booking regression
+    env:
+      NEXT_PUBLIC_BASE_PATH: ""
+      WRANGLER_SEND_METRICS: "false"
+      WRANGLER_LOG_PATH: test-results/wrangler-logs
+      RELEASE_TARGET: ${{ github.event_name == 'pull_request' && 'staging' || github.event_name == 'push' && 'production' || inputs.target }}
+      RELEASE_PROFILE: live-email
+      NEXT_PUBLIC_BOOKING_MODE: live
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - run: node scripts/deployment-target.mjs
+      - name: Check isolated runtime storage
+        run: test "$(stat -f -c %T /tmp)" = tmpfs
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: browser-build-live-email-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .
+      - run: node scripts/browser-shards.mjs master
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: master-booking-regression-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: error
   backend:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -294,6 +335,7 @@ jobs:
       - worker
       - browser-build
       - browser-shards
+      - master-regression
     env:
       NEXT_PUBLIC_BASE_PATH: ""
       WRANGLER_SEND_METRICS: "false"
@@ -325,6 +367,10 @@ jobs:
         with:
           pattern: browser-shard-live-email-*-${{ github.run_id }}-${{ github.run_attempt }}
           path: test-results/shard-inputs
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: master-booking-regression-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/master-input
       - run: node scripts/browser-shards.mjs merge
       - *a2
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

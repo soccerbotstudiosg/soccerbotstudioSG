@@ -16,6 +16,8 @@ import { siteBasePath } from "../src/content/site-path.ts";
 import { validateResults, validateEngines } from "./verify-test-results.mjs";
 import { batchCount, shardCount } from "./browser-batch-path.mjs";
 import { runtimeResources } from "./browser-evidence.mjs";
+export const masterTitle =
+  "one browser recovers rejected email, unpaid expiry, overlapping tabs and the surviving cart";
 const read = (file) => JSON.parse(readFileSync(file, "utf8"));
 const write = (file, value) =>
   writeFileSync(file, JSON.stringify(value, null, 2) + "\n");
@@ -45,7 +47,8 @@ export function batchesForShard(index) {
   );
 }
 /** Join original reports, retaining every duplicate/error for strict inventory validation. */
-export function combineReports(reports) {
+export function combineReports(batches, master) {
+  const reports = [...batches];
   assert.equal(reports.length, batchCount);
   const first = reports[0];
   const projectConfiguration = (report) =>
@@ -72,6 +75,10 @@ export function combineReports(reports) {
     );
     assert.deepEqual(projectConfiguration(report), projectConfiguration(first));
     assert.ok(Array.isArray(report.suites) && Array.isArray(report.errors));
+  }
+  if (master) {
+    validateMaster(master);
+    reports.push(master);
   }
   return {
     config: first.config,
@@ -158,6 +165,8 @@ function executeBatches(batches) {
           "node_modules/@playwright/test/cli.js",
           "test",
           `--shard=${batch}/${batchCount}`,
+          "--grep-invert",
+          masterTitle,
         ],
         { ...process.env, SOCCERBOT_BROWSER_BATCH: String(batch) },
       );
@@ -173,8 +182,38 @@ function executeBatches(batches) {
     "One or more browser batches failed; preserve all original evidence",
   );
 }
+/** Require a single passing master run for every reviewed browser project. */
+function validateMaster(report) {
+  assert.deepEqual(
+    validateResults(
+      "browser",
+      report,
+      [{ file: "tests/live-email.spec.ts", title: masterTitle }],
+      process.cwd(),
+      "live-email",
+    ),
+    [],
+  );
+}
+/** Exercise the continuous booking journey once per browser project. */
+function runMaster() {
+  configureBrowserCoreDump();
+  run(process.execPath, [
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "--grep",
+    masterTitle,
+  ]);
+  const report = read("test-results/browser.json");
+  assert.deepEqual(
+    validateEngines(read("test-results/browser-engines.json")),
+    [],
+  );
+  validateMaster(report);
+  write("test-results/master-browser.json", report);
+}
 /** Validate the complete device inventory before emitting a releasable receipt. */
-function mergeBatches(profile) {
+function mergeBatches(profile, master) {
   const reports = [];
   let engines;
   for (let batch = 1; batch <= batchCount; batch++) {
@@ -184,7 +223,7 @@ function mergeBatches(profile) {
     engines = current;
     reports.push(read(`${directory}/browser.json`));
   }
-  const report = combineReports(reports);
+  const report = combineReports(reports, master);
   assert.deepEqual(
     validateResults(
       "browser",
@@ -205,10 +244,16 @@ async function main() {
   mkdirSync("test-results", { recursive: true });
   if (mode === "local") {
     executeBatches(Array.from({ length: batchCount }, (_, i) => i + 1));
-    mergeBatches(releaseProfile());
+    const profile = releaseProfile();
+    if (profile.browserSuite === "live-email") runMaster();
+    mergeBatches(
+      profile,
+      profile.browserSuite === "live-email" &&
+        read("test-results/master-browser.json"),
+    );
     return;
   }
-  assert.ok(["build", "run", "merge"].includes(mode));
+  assert.ok(["build", "run", "master", "merge"].includes(mode));
   assert.ok(process.env.GITHUB_RUN_ID && process.env.GITHUB_RUN_ATTEMPT);
   const buildPath = "test-results/browser-build.json";
   if (mode === "build") {
@@ -223,6 +268,13 @@ async function main() {
   }
   const build = read(buildPath);
   checkBuild(build);
+  if (mode === "master") {
+    assert.equal(build.identity.browserSuite, "live-email");
+    runMaster();
+    checkBuild(build);
+    write("test-results/master-build.json", { buildDigest: digest(build) });
+    return;
+  }
   if (mode === "run") {
     const index = Number(process.argv[3]);
     const batches = batchesForShard(index);
@@ -261,7 +313,15 @@ async function main() {
         { recursive: true, errorOnExist: true, force: false },
       );
   }
-  mergeBatches(build.identity);
+  let master;
+  if (build.identity.browserSuite === "live-email") {
+    assert.equal(
+      read("test-results/master-input/master-build.json").buildDigest,
+      digest(build),
+    );
+    master = read("test-results/master-input/master-browser.json");
+  }
+  mergeBatches(build.identity, master);
   checkBuild(build);
   write("test-results/export.json", build.export);
   write("test-results/verification-browser.json", {

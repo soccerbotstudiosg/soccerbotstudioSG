@@ -199,6 +199,12 @@ export function ReviewStep({
           )}
         </div>
       )}
+      {action.calendarRecovery && (
+        <p className="notice" role="status">
+          Checking your previous payment. You can proceed once we confirm the
+          previous booking was released.
+        </p>
+      )}
       {needsProof && !busy && (
         <CheckoutBotProof
           key={botGeneration}

@@ -4806,8 +4806,11 @@
   }
   .time-choice {
     position: relative;
-    display: flex;
-    flex-direction: column;
+    --slot-inline: 15px;
+    --slot-block: 13px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 6px;
     min-width: 0;
     border: 1px solid var(--color-control-border);
     border-radius: 10px;
@@ -4823,9 +4826,28 @@
     outline-offset: 2px;
   }
   .time-choice > .time {
+    grid-area: 1 / 1 / 3 / 3;
+    display: grid;
+    grid-template: subgrid / subgrid;
+    gap: normal;
+    padding: var(--slot-block) var(--slot-inline);
     width: 100%;
     border: 0;
     border-radius: 0;
+  }
+  .time-choice .time-details {
+    grid-area: 1 / 1 / 3 / 3;
+    grid-template: subgrid / subgrid;
+    gap: normal;
+  }
+  .time-choice .time-instructor {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .time-choice:has(.trainer-choice) .time-instructor {
+    visibility: hidden;
   }
   .time-choice > .time.selected .time-range {
     padding-right: 36px;
@@ -4857,24 +4879,33 @@
     height: 14px;
   }
   .trainer-choice {
-    font-size: var(--text-body);
-    display: grid;
-    gap: 0.5rem;
-    padding: 12px;
-    border-top: 1px solid var(--color-control-border);
-  }
-  .trainer-choice > span {
-    font-weight: 700;
+    grid-area: 2 / 1;
+    position: relative;
+    align-self: center;
+    min-width: 0;
+    height: 26px;
+    margin: 0 6px var(--slot-block) var(--slot-inline);
   }
   .trainer-choice select {
+    /* Use the card's surrounding padding for the native picker hit area. */
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: block;
     width: 100%;
     min-width: 0;
-    min-height: 44px;
-    padding: 0.625rem;
+    height: 44px;
+    padding: 0 4px;
     border: 1px solid var(--color-control-border);
     border-radius: 6px;
     background: var(--color-surface);
     color: var(--color-ink);
+    font-size: var(--text-body);
+  }
+  .time-choice .time-rate {
+    min-height: 26px;
+    align-items: center;
   }
   .times {
     --time-rows: 1;
@@ -6425,6 +6456,10 @@
     .time-slot-cue {
       left: 10px;
       bottom: -8px;
+    }
+    .time-choice {
+      --slot-inline: 10px;
+      --slot-block: 12px;
     }
     .time {
       padding: 12px 10px;

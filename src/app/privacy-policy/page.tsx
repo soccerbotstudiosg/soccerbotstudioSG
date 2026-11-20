@@ -15,39 +15,67 @@ export default function Page() {
         Data Protection Act 2012 of Singapore (PDPA).
       </p>
       <h2>1. Personal data we collect</h2>
-      <dl>
-        <dt>Contact details</dt>
-        <dd>Name, email address, mobile number</dd>
-        <dt>Player details</dt>
-        <dd>
-          Player name, age or date of birth, parent or guardian details for
-          players under 18
-        </dd>
-        <dt>Booking details</dt>
-        <dd>Sessions booked, package progress, attendance, trainer assigned</dd>
-        <dt>Payment details</dt>
-        <dd>
-          Transaction records. Card details are processed by our payment
-          provider and are not stored by us
-        </dd>
-        <dt>Health information</dt>
-        <dd>
-          Injuries or medical conditions you choose to tell us, so we can run
-          sessions safely
-        </dd>
-        <dt>Performance data</dt>
-        <dd>Scores, drills and results recorded by the SoccerBot360 system</dd>
-        <dt>Photos and video</dt>
-        <dd>
-          Images and footage taken at the studio, including by the SoccerBot360
-          system
-        </dd>
-        <dt>Website data</dt>
-        <dd>
-          IP address, device and browser type, cookies and pages visited on our
-          booking site
-        </dd>
-      </dl>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Type</th>
+            <th scope="col">Examples</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Contact details</th>
+            <td>Name, email address, mobile number</td>
+          </tr>
+          <tr>
+            <th scope="row">Player details</th>
+            <td>
+              Player name, age or date of birth, parent or guardian details for
+              players under 18
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Booking details</th>
+            <td>
+              Sessions booked, package progress, attendance, trainer assigned
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Payment details</th>
+            <td>
+              Transaction records. Card details are processed by our payment
+              provider and are not stored by us
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Health information</th>
+            <td>
+              Injuries or medical conditions you choose to tell us, so we can
+              run sessions safely
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Performance data</th>
+            <td>
+              Scores, drills and results recorded by the SoccerBot360 system
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Photos and video</th>
+            <td>
+              Images and footage taken at the studio, including by the
+              SoccerBot360 system
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Website data</th>
+            <td>
+              IP address, device and browser type, cookies and pages visited on
+              our booking site
+            </td>
+          </tr>
+        </tbody>
+      </table>
       <h2>2. How we use your personal data</h2>
       <ul>
         <li>
@@ -154,10 +182,10 @@ export default function Page() {
       </p>
       <h2>9. Cookies</h2>
       <p>
-        Our booking site uses cookies to keep you signed in, remember your
-        preferences and understand how the site is used. You can block or delete
-        cookies in your browser settings, though some parts of the booking site
-        may stop working.
+        Our booking site uses cookies to remember your preferences and
+        understand how the site is used. You can block or delete cookies in your
+        browser settings, though some parts of the booking site may stop
+        working.
       </p>
       <h2>10. Changes to this Privacy Policy</h2>
       <p>
@@ -172,7 +200,7 @@ export default function Page() {
       <p>
         Data Protection Officer PEAK Sportsventures Pte. Ltd. Apex@Henderson,
         201 Henderson Road, #05-01, Singapore 159545 Email:
-        contactus@soccerbotsg.com
+        contact@soccerbotsg.com
       </p>
     </article>
   );

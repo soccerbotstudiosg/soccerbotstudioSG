@@ -3585,7 +3585,9 @@ test("calendar and contact retain typography and continuous sticky geometry", as
     "font-size",
     "16px",
   );
-  await expect(crossing.locator(".time-instructor")).toBeVisible();
+  await expect(
+    page.getByRole("combobox", { name: /Trainer for .* at 14:30/ }),
+  ).toBeVisible();
   await expect(crossing.locator(".rotation-notice")).toHaveCount(0);
   await openBookingPanel(page, "trainers");
   await expect(page.locator(".trainer-toggle")).toHaveAttribute(
@@ -4206,6 +4208,10 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
       .click();
     await expect(returnCue).toBeVisible();
   }
+  const initialCard = page
+    .locator(".time-choice")
+    .filter({ has: page.getByRole("button", { name: /^12:00–12:40/ }) });
+  const initialHeight = (await initialCard.boundingBox())!.height;
   await page.getByRole("button", { name: /12:00–12:40/ }).click();
   await expect(
     page
@@ -4221,16 +4227,13 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   const choice = page.locator(".time-choice").filter({ has: noon });
   await expect(choice).toHaveCount(1);
   await expect(choice).toHaveCSS("border-top-width", "1px");
-  await expect(choice).toHaveCSS("row-gap", "normal");
+  await expect(choice).toHaveCSS("row-gap", "6px");
   await expect(choice.locator(".time")).toHaveCSS("border-top-width", "0px");
   await expect(choice.locator(".trainer-choice")).toHaveCSS(
     "border-bottom-width",
     "0px",
   );
-  await expect(choice.locator(".trainer-choice")).toHaveCSS(
-    "border-top-width",
-    "1px",
-  );
+  expect((await choice.boundingBox())!.height).toBeCloseTo(initialHeight, 0);
   await choice.locator(".time").focus();
   await page.keyboard.press("Tab");
   await expect(noon).toBeFocused();
@@ -4239,18 +4242,30 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await noon.selectOption(`${date}|12:00|demo|daniel`);
   await expect(noon).toBeVisible();
   await expect(noon).toHaveValue(`${date}|12:00|demo|daniel`);
+  const selected = page.getByRole("button", { name: /^12:00–12:40/ });
+  const selectedCard = (await choice.boundingBox())!;
+  const trainer = (await noon.boundingBox())!;
+  const price = (await selected.locator(".time-rate").boundingBox())!;
+  expect(selectedCard.height).toBeCloseTo(initialHeight, 0);
+  expect(trainer.height).toBeGreaterThanOrEqual(44);
+  expect(trainer.width).toBeGreaterThanOrEqual(44);
+  expect(trainer.x).toBeGreaterThanOrEqual(selectedCard.x);
+  expect(trainer.y).toBeGreaterThanOrEqual(selectedCard.y);
+  expect(trainer.y + trainer.height).toBeLessThanOrEqual(
+    selectedCard.y + selectedCard.height,
+  );
+  expect(trainer.x + trainer.width).toBeLessThanOrEqual(price.x);
+  expect(trainer.y + trainer.height / 2).toBeCloseTo(
+    price.y + price.height / 2,
+    0,
+  );
   if (mobile) {
-    const selected = page.getByRole("button", { name: /^12:00–12:40/ });
     const next = page.getByRole("button", { name: /^12:50–13:30/ });
     const selectedBox = await selected.boundingBox();
     const nextBox = await next.boundingBox();
     expect(selectedBox!.height).toBeCloseTo(nextBox!.height, 0);
     expect(selectedBox!.x).toBeCloseTo(nextBox!.x, 0);
     expect(nextBox!.y).toBeGreaterThan(selectedBox!.y + selectedBox!.height);
-    const trainer = await selected.locator(".time-instructor").boundingBox();
-    const price = await selected.locator(".time-rate").boundingBox();
-    expect(trainer!.x + trainer!.width).toBeLessThanOrEqual(price!.x);
-    expect(trainer!.y).toBeCloseTo(price!.y, 0);
     await expect(selected.locator(".time-instructor")).toHaveCSS(
       "font-size",
       "16px",

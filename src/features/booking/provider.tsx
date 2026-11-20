@@ -1769,15 +1769,19 @@ export function BookingProvider({
         (latest.current.attempt?.id === id
           ? latest.current.attempt.draft.slots
           : latest.current.draft.slots);
+      const editable = latest.current.draft;
+      const slots = editable.slots.filter(
+        (slot) =>
+          !previousSlots.some((expired) => slotKey(expired) === slotKey(slot)),
+      );
       const nextDraft = {
-        ...latest.current.draft,
-        accepted: false,
-        slots: latest.current.draft.slots.filter(
-          (slot) =>
-            !previousSlots.some(
-              (expired) => slotKey(expired) === slotKey(slot),
-            ),
-        ),
+        ...editable,
+        accepted:
+          action.calendarRecovery === true &&
+          slots.length > 0 &&
+          slots.length === editable.slots.length &&
+          editable.accepted,
+        slots,
       };
       setSuppressedSlots([
         ...suppressedSlots.filter(
@@ -2430,6 +2434,18 @@ export function BookingProvider({
           const errors = selectionErrors(current.draft.slots, Date.now());
           if (errors.length)
             throw new BookingServiceError("conflict", errors[0]);
+          // Back can leave the customer on Details while checkout removes a
+          // rejected session. Show the affected times on their next Review.
+          if (
+            service.mode === "live" &&
+            !current.attempt &&
+            noticeCurrent.current.message === CONFLICT_NOTICE &&
+            noticeCurrent.current.slots.length > 0 &&
+            !noticeShownOnCalendar.current
+          ) {
+            setAction({ status: "idle", returnToCalendar: true });
+            return false;
+          }
           setAction({ status: "success", operation });
           return true;
         }
@@ -3201,7 +3217,16 @@ export function BookingProvider({
             commit(
               {
                 ...current,
-                draft: { ...current.draft, ...change, accepted: false },
+                draft: {
+                  ...current.draft,
+                  ...change,
+                  accepted:
+                    action.calendarRecovery === true &&
+                    !action.unresolvedCheckout &&
+                    !isUnresolvedCheckout(current.attempt.id) &&
+                    Object.keys(change).length === 1 &&
+                    change.accepted === true,
+                },
               },
               true,
             );

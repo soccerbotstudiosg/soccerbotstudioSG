@@ -9,10 +9,12 @@ export function BookingHelp({
   attemptId,
   children,
   className = "",
+  replacingSession = false,
 }: {
   attemptId: string;
   children: ReactNode;
   className?: string;
+  replacingSession?: boolean;
 }) {
   const pathname = usePathname();
   const [state, setState] = useState<
@@ -24,12 +26,12 @@ export function BookingHelp({
   const activeRequest = useRef<AbortController | null>(null);
   useEffect(() => {
     if (!bookingHelpNotice(attemptId, pathname))
-      bookingHelpNotice(attemptId, pathname, "open");
+      bookingHelpNotice(attemptId, pathname, "open", replacingSession);
     return () => {
       activeRequest.current?.abort();
       activeRequest.current = null;
     };
-  }, [attemptId, pathname]);
+  }, [attemptId, pathname, replacingSession]);
   /** Submit one support request and acknowledge only an accepted response. */
   async function send() {
     if (state === "sending" || state === "sent") return;
@@ -59,7 +61,7 @@ export function BookingHelp({
         throw new Error("report_unavailable");
       if (activeRequest.current !== controller || controller.signal.aborted)
         return;
-      bookingHelpNotice(attemptId, pathname, "sent");
+      bookingHelpNotice(attemptId, pathname, "sent", replacingSession);
       setState("sent");
     } catch {
       if (activeRequest.current === controller) setState("failed");
@@ -119,10 +121,14 @@ export function RejectedEmailHelp({
 }: {
   attemptId: string;
   email: string;
-  availability?: "unavailable" | "checking" | "unknown" | "details";
+  availability?: "unavailable" | "unknown";
 }) {
   return (
-    <BookingHelp key={attemptId} attemptId={attemptId}>
+    <BookingHelp
+      key={attemptId}
+      attemptId={attemptId}
+      replacingSession={availability !== undefined}
+    >
       <div className="booking-help-content">
         <p>
           <strong>The booking provider didn’t accept {email}.</strong> Nothing
@@ -133,9 +139,6 @@ export function RejectedEmailHelp({
             Your selected session is no longer available. Choose another
             session, then check your email in Contact details.
           </p>
-        )}
-        {availability === "checking" && (
-          <p>Checking whether your selected session is still available.</p>
         )}
         {availability === "unknown" && (
           <p>

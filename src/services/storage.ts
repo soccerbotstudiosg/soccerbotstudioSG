@@ -311,6 +311,7 @@ export function saveCalendarRecovery(attemptId: string, unresolved = false) {
       unresolvedCheckout: unresolved,
       calendarNoticeDismissed:
         stored.calendarRecovery === true &&
+        stored.unresolvedCheckout === unresolved &&
         stored.calendarNoticeDismissed === true,
     });
 }
@@ -389,14 +390,22 @@ const helpNoticeSchema = z.object({
   attemptId: z.uuid(),
   pathname: z.string(),
   state: z.enum(["open", "sent", "dismissed"]),
+  replacingSession: z.literal(true).optional(),
 });
 /** Retain only same-page notice presentation, never payment or booking authority. */
 export function bookingHelpNotice(
   attemptId: string,
   pathname: string,
   state?: "open" | "sent",
+  replacingSession = false,
 ) {
-  if (state) safeWrite("soccerbot-help-notice", { attemptId, pathname, state });
+  if (state)
+    safeWrite("soccerbot-help-notice", {
+      attemptId,
+      pathname,
+      state,
+      ...(replacingSession ? { replacingSession: true } : {}),
+    });
   const saved = helpNoticeSchema.safeParse(safeRead("soccerbot-help-notice"));
   return saved.success &&
     saved.data.attemptId === attemptId &&
@@ -408,7 +417,13 @@ export function bookingHelpNotice(
 export function clearDepartedBookingHelpNotice(pathname: string) {
   const saved = helpNoticeSchema.safeParse(safeRead("soccerbot-help-notice"));
   if (!saved.success) safeRemove("soccerbot-help-notice");
-  else if (saved.data.pathname !== pathname && saved.data.state !== "dismissed")
+  // Calendar owns the help action while the customer corrects their contact
+  // on Details for a replacement session. Back must preserve its disposition.
+  else if (
+    saved.data.pathname !== pathname &&
+    saved.data.state !== "dismissed" &&
+    !(saved.data.replacingSession && /\/book\/details\/?$/.test(pathname))
+  )
     safeWrite("soccerbot-help-notice", { ...saved.data, state: "dismissed" });
 }
 

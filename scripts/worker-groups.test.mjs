@@ -40,16 +40,16 @@ function evidence() {
   });
 }
 
-test("Worker groups cover each whole suite and retain the complete 536-case inventory", () => {
+test("Worker groups cover each whole suite and retain the complete 542-case inventory", () => {
   const files = workerGroups.flatMap(({ id }) => groupFiles(id));
   assert.equal(files.length, 15);
   assert.equal(new Set(files).size, files.length);
   assert.deepEqual(files.sort(), groupFiles());
   assert.deepEqual(
     workerGroups.map(({ id }) => expectedTitles(id).length),
-    [129, 220, 187],
+    [134, 221, 187],
   );
-  assert.equal(expectedTitles().length, 536);
+  assert.equal(expectedTitles().length, 542);
   assert.throws(() => groupFiles("unknown"));
   validateGroupEvidence(evidence(), identity);
 });

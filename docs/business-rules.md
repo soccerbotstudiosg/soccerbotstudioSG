@@ -4,15 +4,7 @@ This document owns the current numbered system invariants. [Domain operations an
 
 ## Status and evidence boundaries
 
-Status reconciled on 28 October 2026 against this working revision, committed target/workflow files and the retained owner/provisioning records. This is not a fresh live-account audit. Requirements below remain authoritative regardless of a deployment checkpoint; [Progress](../PROGRESS.md) owns the latest PR/CI/handover status.
-
-| Area                | Established evidence                                                                                                                                                                                                          | Still requires acceptance                                                                                                               |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Portable hosting    | Target validation, manual deployment workflows and SaaS Worker entry exist in source; production target selects Worker Static Assets, not Pages                                                                               | Client exact-artifact installation, safe rerun/interruption/rollback and activation                                                     |
-| Client placement    | D1 creation/KIX probe is recorded in [Journey](journey.md#27-october-2026--client-d1-created-and-primary-placement-verified); production target selects `apac-ne`; shared `coordinatorStub` applies/validates hints in source | First-use actual DO execution location and owner checkout evidence; do not create a second D1 or unhinted object merely to repeat setup |
-| Dependency security | Weekly Dependabot and blocking npm audit are implemented; owner confirmed developer-repository graph/alerts/security updates                                                                                                  | Fresh advisory status, client repository settings and supported optional code/secret scanning; copied YAML does not enable settings     |
-| Monitoring          | Sanitized diagnostics and exporter/dashboard source exist; committed exporter configuration is disabled                                                                                                                       | Actual stack/service mapping, exporter activation, alert receivers and ingestion/alert delivery                                         |
-| Client integrations | Guarded developer integration exists; production configuration remains closed/incomplete in committed targets                                                                                                                 | Client sender/Turnstile/merchant/provider mappings, billing/MFA, DNS apex/renewal proof and UAT                                         |
+Current site behavior is in [booking scenarios](booking-flows.md). [Progress](../PROGRESS.md) tracks acceptance and delivery.
 
 ## Current system rules
 
@@ -22,7 +14,18 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 <a id="br-001"></a>
 
-**BR-001** — Customer booking website for one Singapore venue and one shared studio across instructors. Sessions are 40 minutes on 50-minute starts, 1–4 players, with up to five selected sessions per new checkout. Historical booking/receipt reads retain their existing capacity. After choosing a time, the customer explicitly chooses an eligible trainer from that slot’s dropdown; each session has its own independent choice. Changing trainer replaces that slot’s selection, never adds another simultaneous session. Below the booking summary, show one compact trainer panel with one avatar/name row per stable instructor ID and a unique-trainer count. Biographies start collapsed; opening one closes the previous profile. Session dates/times remain in the cart. Singapore time and SGD apply. Booking closes four hours before start: exactly 240 minutes is eligible; less is rejected in calendar filtering and server preparation/pre-write validation. Staff portals, memberships/packages, recurring charges, payroll and historical data migration are outside the commissioned website scope unless separately agreed.
+**BR-001** — Customer booking website for one Singapore venue and one shared studio across instructors.
+
+- Sessions are 40 minutes on 50-minute starts, 1–4 players, with up to five selected sessions per new checkout.
+- Historical booking/receipt reads retain their existing capacity.
+- After choosing a time, the customer explicitly chooses an eligible trainer from that slot’s dropdown; each session has its own independent choice.
+- Changing trainer replaces that slot’s selection, never adds another simultaneous session.
+- Below the booking summary, show one compact trainer panel with one avatar/name row per stable instructor ID and a unique-trainer count.
+- Biographies start collapsed; opening one closes the previous profile.
+- Session dates/times remain in the cart.
+- Singapore time and SGD apply.
+- Booking closes four hours before start: exactly 240 minutes is eligible; less is rejected in calendar filtering and server preparation/pre-write validation.
+- Staff portals, memberships/packages, recurring charges, payroll and historical data migration are outside the commissioned website scope unless separately agreed.
 
 The following capacity and recovery invariants are mandatory under BR-001:
 
@@ -48,7 +51,14 @@ The shared studio grid is anchored at12:00 Singapore time for the12:00–20:00 o
 | 17:50 | 17:50–18:30     | 18:40           |
 | 18:40 | 18:40–19:20     | 19:30           |
 
-There is no19:30 start: its playing session would end20:10, beyond closing. The remaining19:30–20:00 interval cannot fit a complete session. This grid is distinct from the account-wide limit of one simultaneous booking including changeover. Public normalization and new-checkout validation enforce this grid. Admins may enter off-grid manual package/event bookings; these records retain their actual times and block overlapping public sessions rather than moving the grid. A trainer is offered only when the provider reports a continuous free interval covering the entire40-minute session and10-minute changeover. For example,14:00–16:00 free permits14:30, but not15:20; a manual13:00–13:50 booking blocks public12:50 and13:40. Provider interval semantics and shared-capacity enforcement require owner acceptance; see Progress for local/deployed evidence.
+- There is no19:30 start: its playing session would end20:10, beyond closing.
+- The remaining19:30–20:00 interval cannot fit a complete session.
+- This grid is distinct from the account-wide limit of one simultaneous booking including changeover.
+- Public normalization and new-checkout validation enforce this grid.
+- Admins may enter off-grid manual package/event bookings; these records retain their actual times and block overlapping public sessions rather than moving the grid.
+- A trainer is offered only when the provider reports a continuous free interval covering the entire40-minute session and10-minute changeover.
+- For example,14:00–16:00 free permits14:30, but not15:20; a manual13:00–13:50 booking blocks public12:50 and13:40.
+- Provider interval semantics and shared-capacity enforcement require owner acceptance; see Progress for local/deployed evidence.
 
 <a id="br-002"></a>
 
@@ -56,23 +66,60 @@ There is no19:30 start: its playing session would end20:10, beyond closing. The 
 
 Owner-confirmed rule (31 October 2026): both staging and client production allow only one simultaneous booking across the SimplyBook account, across all trainers/services, including the changeover buffer. Admins have no exemption. Trainer weekly availability remains off; approved date-specific entries define working availability. Provider settings confirmation and controlled enforcement acceptance are separate evidence.
 
-Owner-confirmed client prices are S$108 on weekdays and S$128 on weekends and gazetted Singapore public holidays, including substitute holidays. Developer staging/demo retains S$88/S$108. The shared pricing owner selects the trusted environment; native browser display retains server quotes. Production service IDs 3/4 and company `soccerbotadmin` still require reviewed runtime integration before activation; a pricing helper does not establish provider/payment readiness. Owner confirmed four-hour advance notice. The latest requested policy is a10-minute unpaid provider hold with an eight-minute customer payment window and one-minute checking buffer. The owner screenshot shows the provider supports10 minutes; the saved live setting still needs owner verification.
+- Owner-confirmed client prices are S$108 on weekdays and S$128 on weekends and gazetted Singapore public holidays, including substitute holidays.
+- Developer staging/demo retains S$88/S$108.
+- The shared pricing owner selects the trusted environment; native browser display retains server quotes.
+- Production service IDs 3/4 and company `soccerbotadmin` still require reviewed runtime integration before activation; a pricing helper does not establish provider/payment readiness.
+- Owner confirmed four-hour advance notice.
+- The latest requested policy is a10-minute unpaid provider hold with an eight-minute customer payment window and one-minute checking buffer.
+- The owner screenshot shows the provider supports10 minutes; the saved live setting still needs owner verification.
 
 ### Identity, privacy and environment isolation
 
 <a id="br-003"></a>
 
-**BR-003** — Email proof precedes protected existing-customer lookup/prefill. Missing, duplicate or shared-email identities must not leak another customer's details. Guests use server-issued protected capabilities; browser storage/URLs are not credentials or ownership evidence. Turnstile, email challenge limits, expiry, signed/session authority and revocation remain enforced. Resend delivers verification codes; SimplyBook handles booking notifications on final payment in the accepted account configuration. These are separate email flows. Email verification permits saved-contact identity; it does not create a customer reservation-management account. Customer notifications must not offer self-service editing, cancellation or rescheduling.
+**BR-003** — Email proof precedes protected existing-customer lookup/prefill.
 
-Email-code policy (consolidated local candidate; deployment evidence belongs in Progress): each newly issued code expires120 seconds after issuance, capped by the authenticated access expiry. A further code may be requested while an earlier code remains valid; issuance does not supersede or extend earlier codes. Verification accepts an unconsumed valid code for the same authenticated capability and normalized email, using its own expiry and attempt budget. The third admitted request in a session, normalized-email or trusted source-IP cycle starts a fixed600-second block from that request. Successful issuance does not show a red block notice; a later denied request reports the actual remaining deadline. Denied requests neither send mail nor extend the block. An observed shared-subject block remains attached to the session owner across network/email changes. Aliases are separate normalized addresses. The cycle resets after ten minutes without an admitted request; independent service-wide safeguards retain their own deadlines. Codes already issued before this candidate retain their stored expiry; migration0047 changes admission without rewriting historical challenges or counters. Verification stays available during request blocking; consumption, wrong-guess limits, revocation and access checks remain enforced.
+- Missing, duplicate or shared-email identities must not leak another customer's details.
+- Guests use server-issued protected capabilities; browser storage/URLs are not credentials or ownership evidence.
+- Turnstile, email challenge limits, expiry, signed/session authority and revocation remain enforced.
+- Resend delivers verification codes; SimplyBook handles booking notifications on final payment in the accepted account configuration.
+- These are separate email flows.
+- Email verification permits saved-contact identity; it does not create a customer reservation-management account.
+- Customer notifications must not offer self-service editing, cancellation or rescheduling.
 
-New customer reservation creation requires server-validated Turnstile proof for action `create-checkout` and the configured hostname, prepared on Review Booking. Proof is bound to the authenticated capability, exact checkout intent and attempt key; a retained receipt permits safe same-intent retries after lost responses. Existing owned idempotency keys (including permanently rejected preparation keys), payment continuation, callbacks and recovery do not require another interactive challenge, and all existing authentication/signature/state checks remain mandatory. Proof cannot replace availability, payment or booking authority.
+- Email-code policy: each newly issued code expires120 seconds after issuance, capped by the authenticated access expiry.
+- A further code may be requested while an earlier code remains valid; issuance does not supersede or extend earlier codes.
+- Verification accepts an unconsumed valid code for the same authenticated capability and normalized email, using its own expiry and attempt budget.
+- The third admitted request in a session, normalized-email or trusted source-IP cycle starts a fixed600-second block from that request.
+- Successful issuance does not show a red block notice; a later denied request reports the actual remaining deadline.
+- Denied requests neither send mail nor extend the block.
+- An observed shared-subject block remains attached to the session owner across network/email changes.
+- Aliases are separate normalized addresses.
+- The cycle resets after ten minutes without an admitted request; independent service-wide safeguards retain their own deadlines.
+- Codes already issued before this candidate retain their stored expiry; migration0047 changes admission without rewriting historical challenges or counters.
+- Verification stays available during request blocking; consumption, wrong-guess limits, revocation and access checks remain enforced.
+
+- New customer reservation creation requires server-validated Turnstile proof for action `create-checkout` and the configured hostname, prepared on Review Booking.
+- Proof is bound to the authenticated capability, exact checkout intent and attempt key; a retained receipt permits safe same-intent retries after lost responses.
+- Existing owned idempotency keys (including permanently rejected preparation keys), payment continuation, callbacks and recovery do not require another interactive challenge, and all existing authentication/signature/state checks remain mandatory.
+- Proof cannot replace availability, payment or booking authority.
 
 Access lifetime: explicit access entry and checkout POST may renew an authenticated unexpired guest capability for the configured duration, preserving its owner. Expired/revoked capabilities never regain their grants. Checkout, hold, checking and verified-email lifetimes remain separately bounded. A browser return marked completed suppresses payment links but is never payment evidence.
 
 <a id="br-004"></a>
 
-**BR-004** — D1 foundation identity must match the configured account, environment, database and coordinator. Protected operations fail closed on missing/mismatched bindings; no automatic claim of an unknown database. The read-only health endpoint may report `foundationRegistration: pending` for a fully disabled production installation with an existing empty foundation table; this never grants customer authority or performs registration. Foreign registration and unreadable/missing schema remain failures. Provider credentials remain Worker secrets. Returning contact profiles require explicit remember consent and current verified identity; sign-out revokes saved-profile access without deleting retained contact evidence. All-device email sign-out preserves other devices’ guest booking capabilities so already-entered contact details can complete checkout; local logout and token replay retain booking-capability revocation. All-device sign-out accepts any current server-verified email session, including remembered restoration, without a five-minute re-verification requirement; guest, expired and revoked authority cannot revoke identities. Identity proof remains memory-only for at most 30 seconds, bounded by token validity. Revalidate authorization for receipts/downloads and legacy recovery.
+**BR-004** — D1 foundation identity must match the configured account, environment, database and coordinator.
+
+- Protected operations fail closed on missing/mismatched bindings; no automatic claim of an unknown database.
+- The read-only health endpoint may report `foundationRegistration: pending` for a fully disabled production installation with an existing empty foundation table; this never grants customer authority or performs registration.
+- Foreign registration and unreadable/missing schema remain failures.
+- Provider credentials remain Worker secrets.
+- Returning contact profiles require explicit remember consent and current verified identity; sign-out revokes saved-profile access without deleting retained contact evidence.
+- All-device email sign-out preserves other devices’ guest booking capabilities so already-entered contact details can complete checkout; local logout and token replay retain booking-capability revocation.
+- All-device sign-out accepts any current server-verified email session, including remembered restoration, without a five-minute re-verification requirement; guest, expired and revoked authority cannot revoke identities.
+- Identity proof remains memory-only for at most 30 seconds, bounded by token validity.
+- Revalidate authorization for receipts/downloads and legacy recovery.
 
 <a id="br-005"></a>
 
@@ -108,25 +155,83 @@ Access lifetime: explicit access entry and checkout POST may renew an authentica
 
 <a id="br-007"></a>
 
-**BR-007** — Flow: calendar → Details → Review/consent → reserve attempt authority → create/validate all sessions → retain complete booking association → reserve payment effect → create/save HitPay request and URL → handoff. Single uses book; batch uses createBatch, sequential book calls and closeBatch. Each provider write requires durable claim/evidence first. Retain raw booking evidence and provider references before strict validation. Validate batch closure, membership, invoice/account, currency and total before any payment. No payment for an incomplete batch. Editable Review consent is cleared whenever Review is left or reopened, including reload; an already dispatched attempt retains its immutable accepted snapshot.
+**BR-007** — Flow: calendar → Details → Review/consent → reserve attempt authority → create/validate all sessions → retain complete booking association → reserve payment effect → create/save HitPay request and URL → handoff.
+
+- Single uses book; batch uses createBatch, sequential book calls and closeBatch.
+- Each provider write requires durable claim/evidence first.
+- Retain raw booking evidence and provider references before strict validation.
+- Validate batch closure, membership, invoice/account, currency and total before any payment.
+- No payment for an incomplete batch.
+- Editable Review consent is cleared whenever Review is left or reopened, including reload; an already dispatched attempt retains its immutable accepted snapshot.
 
 <a id="br-008"></a>
 
-**BR-008** — Unknown write outcomes retain original attempt identity and evidence. Never blindly replay creation, invent success, delete uncertainty, renew grants/deadlines or automatically cancel unknown bookings. Repeated requests return protected saved results according to grant state; they do not create duplicate effects. A claimed grant does not alone prove a provider session exists. A separate immutable no-creation resolution may retire the exact active grant after a documented, authenticated single-book input rejection, a correlated completed book error followed by repeated complete provider readback under the original dispatch, or restricted operator verification that original processing finished without creating an intended booking. Bind that proof to the original intent/version/dispatch and exclude booking/payment evidence; preserve the journal and fence further effects on the resolved attempt. Empty searches, free slots, missing references, elapsed time and generic errors are insufficient. A customer may then return to Calendar and start a new explicit booking; resolution never replays the old write. [The contract](api-contracts.md#verified-no-creation-resolution) owns the precise guards and provider sources.
+**BR-008** — Unknown write outcomes retain original attempt identity and evidence.
+
+- Never blindly replay creation, invent success, delete uncertainty, renew grants/deadlines or automatically cancel unknown bookings.
+- Repeated requests return protected saved results according to grant state; they do not create duplicate effects.
+- A claimed grant does not alone prove a provider session exists.
+- A separate immutable no-creation resolution may retire the exact active grant after a documented, authenticated single-book input rejection, a correlated completed book error followed by repeated complete provider readback under the original dispatch, or restricted operator verification that original processing finished without creating an intended booking.
+- Bind that proof to the original intent/version/dispatch and exclude booking/payment evidence; preserve the journal and fence further effects on the resolved attempt.
+- Empty searches, free slots, missing references, elapsed time and generic errors are insufficient.
+- Eligible SimplyBook creation recovery admits up to five readback checks.
+- HitPay link creation has a separate budget of one create request and up to four read-only searches by original reference.
+- The 30-second pre-link wait bounds the customer’s loader.
+- Exhausting any of these limits preserves the original financial block.
+- A verified original booking proceeds toward its payment link, a recovered eligible link restores Continue to pay, and verified payment starts confirmation checks.
+- After verified no-creation, a customer may return to Calendar and start a new explicit booking; resolution never replays the old write. [The contract](api-contracts.md#verified-no-creation-resolution) owns the precise guards and provider sources.
 
 <a id="br-009"></a>
 
-**BR-009** — Explicit preparation rejection must retain immutable owner/key/input-bound no-dispatch proof before reporting a safe rejected start when no attempt exists. Its protected context remains readable across reload, and database fences prevent that key later becoming an attempt. An existing original attempt, failed proof persistence or unknown read remains recovery-required; an arbitrary404 is never no-effects proof. When authenticated evidence identifies protected overlapping studio windows, return the complete known affected-index list without a provider identity/availability dependency. The browser returns to Calendar with one conflict notice and bullets, removes only those known selections, and preserves other selections subject to fresh eligibility checks. Generic rejection with no affected indexes still requires complete successful fresh classification; failed/partial reads do not invent unavailability. Restore accepts only matching protected evidence and never another tab's checkout. Empty all-available classification preserves the cart. No-creation resolution remains distinct from selection conflict and expiry.
+**BR-009** — Explicit preparation rejection must retain immutable owner/key/input-bound no-dispatch proof before reporting a safe rejected start when no attempt exists.
+
+- Its protected context remains readable across reload, and database fences prevent that key later becoming an attempt.
+- An existing original attempt, failed proof persistence or unknown read remains recovery-required; an arbitrary404 is never no-effects proof.
+- When authenticated evidence identifies protected overlapping studio windows, return the complete known affected-index list without a provider identity/availability dependency.
+- The browser returns to Calendar with one conflict notice and bullets, removes only those known selections, and preserves other selections subject to fresh eligibility checks.
+- Generic rejection with no affected indexes still requires complete successful fresh classification; failed/partial reads do not invent unavailability.
+- Restore accepts only matching protected evidence and never another tab's checkout.
+- Empty all-available classification preserves the cart.
+- No-creation resolution remains distinct from selection conflict and expiry.
 
 ### Payment, reconciliation and expiry
 
 <a id="br-010"></a>
 
-**BR-010** — An eligible unpaid return offers Continue payment with the same retained HitPay link and an original-expiry countdown. Reopening never creates a payment or extends its deadline; paid, expired, denied or unresolved states offer no continuation. Polling remains active and browser expiry alone never claims cancellation. HitPay hosts payment; secrets and payment verification stay server-side. Bind merchant, account, attempt, invoice, amount/currency and request identity before accepting evidence. Browser return and webhook payload alone never confirm a booking. Authenticate webhooks, retain/deduplicate receipts, and read authoritative provider state. Recovery preserves original financial claims and handles delayed/duplicate/out-of-order delivery without duplicate accounting.
+**BR-010** — An eligible unpaid return offers Continue payment with the same retained HitPay link and an original-expiry countdown.
+
+- Reopening never creates a payment or extends its deadline; paid, expired, denied or unresolved states offer no continuation.
+- Polling remains active and browser expiry alone never claims cancellation.
+- HitPay hosts payment; secrets and payment verification stay server-side.
+- Bind merchant, account, attempt, invoice, amount/currency and request identity before accepting evidence.
+- Browser return and webhook payload alone never confirm a booking.
+- Authenticate webhooks, retain/deduplicate receipts, and read authoritative provider state.
+- Recovery preserves original financial claims and handles delayed/duplicate/out-of-order delivery without duplicate accounting.
 
 <a id="br-011"></a>
 
-**BR-011** — Original booking creation anchors new attempts' eight-minute payment window, nine-minute checking deadline, twelve-minute conservative recovery boundary and ten-minute configured provider hold deadline. SimplyBook cancellation may lag this deadline; elapsed time alone never restores capacity. Migration0037 preserves older attempts' recorded windows and five-minute buffer; new attempts record a one-minute checking buffer. Migration0038 adds a separate immutable three-minute recovery buffer to new attempts; historical rows retain zero. An earlier provider deadline remains authoritative. These are different clocks. Browser expiry, deleted/expired payment links or exhausted polling do not prove settlement impossible. Protect unknown in-flight outcomes. At or after the actual payment deadline, authenticated matching expired/canceled HitPay evidence with an explicit empty payment list or only matching, zero-refund `requires_payment_method` entries may release the active customer grant without waiting the checking/recovery buffers. A missing payment-request row retains the original conservative recovery and provider-hold deadlines. Governed recovery wakes at the actual payment-link expiry to seek proof; a pending/failed provider read does not unlock checkout. Known money, unknown accounting and unprocessed webhook receipts prevent release. Payment journals and archived grants remain immutable; a later paid receipt reconciles the original attempt and cannot recreate an expired booking. After verified payment, reconcile SimplyBook accounting and require current valid-booking/paid-invoice evidence before final confirmation. A complete validated payment-recording response may supply that evidence after the original booking check; an incomplete or inconsistent response requires authoritative readback. HTTP success alone is insufficient. Preserve the first valid confirmation timestamp on later visits. Refunds are owner/provider operations; cancellation is not a refund.
+**BR-011** — Original booking creation anchors new attempts' eight-minute payment window, nine-minute checking deadline, twelve-minute conservative recovery boundary and ten-minute configured provider hold deadline.
+
+- SimplyBook cancellation may lag this deadline; elapsed time alone never restores capacity.
+- Migration0037 preserves older attempts' recorded windows and five-minute buffer; new attempts record a one-minute checking buffer.
+- Migration0038 adds a separate immutable three-minute recovery buffer to new attempts; historical rows retain zero.
+- An earlier provider deadline remains authoritative.
+- These are different clocks.
+- Browser expiry, deleted/expired payment links or exhausted polling do not prove settlement impossible.
+- Protect unknown in-flight outcomes.
+- At or after the actual payment deadline, two authenticated expired reads of the same HitPay request at least five seconds apart with no contradictory payment evidence, or a canceled request with explicit empty or verified unstarted payment details, may release the active customer grant without waiting the checking/recovery buffers.
+- A missing payment-request row retains the original conservative recovery and provider-hold deadlines.
+- Governed recovery wakes at the actual payment-link expiry to seek proof; a pending/failed provider read does not unlock checkout.
+- A credible indication of payment stays attached to the attempt across reads and claims.
+- Later empty results cannot authorize release.
+- A signed notification can reopen an incomplete paid result for verification against the original request.
+- Unknown accounting and unprocessed receipts also prevent release.
+- Payment journals and archived grants remain immutable; a later paid receipt reconciles the original attempt and cannot recreate an expired booking.
+- After verified payment, reconcile SimplyBook accounting and require current valid-booking/paid-invoice evidence before final confirmation.
+- A complete validated payment-recording response may supply that evidence after the original booking check; an incomplete or inconsistent response requires authoritative readback.
+- HTTP success alone is insufficient.
+- Preserve the first valid confirmation timestamp on later visits.
+- Refunds are owner/provider operations; cancellation is not a refund.
 
 - New ongoing customer checkouts allow at most5 sessions; a single unpaid checkout expiry counts once regardless of session count.
 - Customer strikes: first expiry permits another reservation; second and every later expiry blocks new reservations for1 hour. A verified successful payment resets customer strikes.
@@ -138,17 +243,57 @@ Access lifetime: explicit access entry and checkout POST may renew an authentica
 
 <a id="br-012"></a>
 
-**BR-012** — Polling: at most one check per two seconds for the first 20 checks, then at least ten seconds, with allowance 120 and the original checking deadline. An unresolved page rechecks automatically on focus/foreground (coalesced, minimum30 seconds) and once at the original server hold expiry; no customer-facing status-check button is exposed; hidden pages catch up when visible. This does not restart polling or authorize expiry. At payment-window expiry, unresolved unpaid customers return to Calendar with an empty cart while the original attempt remains protected. Availability reads and replacement Calendar/Details/Review navigation remain usable; only dispatching a new checkout stays blocked pending safe resolution. The expiry notice persists across refresh on Calendar, clears on its first departure and cannot be revived by late recovery. Confirmed/denied pages stay terminal. Only authenticated server outcome permits release. Completed dismissal is repeatable; lost acknowledgement must not create a second attempt or erase uncertain evidence.
+**BR-012** — Polling: at most one check per two seconds for the first 20 checks, then at least ten seconds, with allowance 120 and the original checking deadline.
+
+- An unresolved page rechecks automatically on focus/foreground (coalesced, minimum30 seconds) and once at the original server hold expiry; no customer-facing status-check button is exposed; hidden pages catch up when visible.
+- This does not restart polling or authorize expiry.
+- At payment-window expiry, unresolved unpaid customers return to Calendar with an empty cart while the original attempt remains protected.
+- Availability reads and replacement Calendar/Details/Review navigation remain usable; only dispatching a new checkout stays blocked pending safe resolution.
+- The expiry notice persists across refresh on Calendar, clears on its first departure and cannot be revived by late recovery.
+- Confirmed/denied pages stay terminal.
+- Only authenticated server outcome permits release.
+- Completed dismissal is repeatable; lost acknowledgement must not create a second attempt or erase uncertain evidence.
+- A different-key checkout submitted from Review by the same authorized customer can archive the current grant once the server verifies the original payment and booking. Reject the selection if any requested slot overlaps an original session or its changeover time, across all trainers. The receipt keeps its original access window, and booking and payment journals stay immutable. A same-key retry uses the original attempt. An unresolved grant continues to block a new checkout.
 
 Calendar hides the original shared-studio windows while booking creation is unresolved, even when fresh availability lists the time. Other eligible times remain visible. Once the original attempt is resolved as not created, a fresh eligible offer restores the affected time for selection. Continue opens Details for a valid selection. Failures and provider cooldowns leave recovery pending; they never authorize a second write.
 
-Calendar presentation may retain last-known date indicators and session cards during a background refresh or retry, but expired offers remain unusable as current selection/checkout evidence. Retained session presentation is scoped to the same service owner, service, requested dates, players, booking scope and authentication; minute ticks alone do not discard it. Unknown or failed reads are not unavailable-day proof and must retain explicit failure feedback. The month picker trims only trailing months proved empty by complete, fresh cached coverage; missing, expired or partial coverage remains unknown. This display restriction does not reduce the three-month warming or booking-policy horizon.
+- Calendar presentation may retain last-known date indicators and session cards during a background refresh or retry, but expired offers remain unusable as current selection/checkout evidence.
+- Retained session presentation is scoped to the same service owner, service, requested dates, players, booking scope and authentication; minute ticks alone do not discard it.
+- Unknown or failed reads are not unavailable-day proof and must retain explicit failure feedback.
+- The month picker trims only trailing months proved empty by complete, fresh cached coverage; missing, expired or partial coverage remains unknown.
+- This display restriction does not reduce the three-month warming or booking-policy horizon.
 
 ### Confirmation and presentation
 
 <a id="br-013"></a>
 
-**BR-013** — Customer-facing errors and notifications use brief plain-language outcomes and a safe next step. Never render raw server/provider errors, internal identifiers, diagnostic codes or recovery machinery. Do not claim payment or confirmation without evidence, or invite another payment while its outcome is uncertain. Page-level errors share the `alert` style/role; informational and successful notices share `notice` with a polite status role; field errors remain beside their associated input. Loading uses the shared branded indicator and concise status text. Feedback headings and body text have explicit spacing; the confirmed icon has a brief entrance animation only when reduced motion is not requested. Paid-evidence recovery messages must not say payment is unconfirmed. Show checking/preparation/payment-received states according to actual evidence. Payment received can remain booking pending until reconciliation is complete. Preserve customer details/reference during errors; expose confirmed actions only with authoritative confirmation. Initial protected payment verification without an eligible continuation uses the shared full checkout loader; subsequent automatic reads retain the displayed view without spinner flashes. At first observed payment expiry, allow20 seconds of full-animation reconciliation for that attempt and original deadline, with at most10 additional seconds only if no successful status read started after expiry has returned; refresh preserves the remaining display window. Known payment follows confirmation, proven releasable unpaid expiry exits early, and unresolved expiry returns to usable Calendar with silent recovery afterward. This presentation window never extends payment, changes server polling limits or unlocks financial authority; conflict handling is unchanged. Eligible unpaid continuation on the original payment page or a non-completed hosted-provider return shows the booking summary, then Continue payment followed by the countdown and “Your selected sessions are held until the timer ends.” and opens the retained link in the same tab. It requires the original server-authorized unpaid handoff within its payment deadline; authenticated payment evidence or a completed-return display hint suppresses continuation. Neither arrival on that route nor its query parameters prove payment. Sessions/instructors and total appear once in the summary; confirmed expanded details use stacked, left-aligned sections and the same label/value layout as Review, followed by concise disclaimers. Review and confirmation use shared 20px section headings and 16px body typography. Receipt tax data is independent of summary presentation. Customer PDF/calendar actions and local generation are retired by owner decision. Protected receipt APIs retain their existing authorization, freshness and original-window rules; removing the buttons does not authorize stale reads or change payment recovery. Confirmed live bookings display the optional provider-supplied invoice number unchanged for owner flow testing; its match to the final SimplyBook Pay document remains unverified. Omit the label when absent or pending; never invent an SI prefix or expose internal IDs as a replacement. Optional retained metadata cannot weaken or delay confirmation. Changes/cancellations are requested from Glenna on WhatsApp (+65 9014 3819); the booking stays unchanged until the studio confirms the request.
+**BR-013** — Customer-facing errors and notifications use brief plain-language outcomes and a safe next step.
+
+- Never render raw server/provider errors, internal identifiers, diagnostic codes or recovery machinery.
+- Do not claim payment or confirmation without evidence, or invite another payment while its outcome is uncertain.
+- Page-level errors share the `alert` style/role; informational and successful notices share `notice` with a polite status role; field errors remain beside their associated input.
+- Loading uses the shared branded indicator and concise status text.
+- Feedback headings and body text have explicit spacing; the confirmed icon has a brief entrance animation only when reduced motion is not requested.
+- Paid-evidence recovery messages must not say payment is unconfirmed.
+- Show checking/preparation/payment-received states according to actual evidence.
+- Payment received can remain booking pending until reconciliation is complete.
+- Preserve customer details/reference during errors; expose confirmed actions only with authoritative confirmation.
+- Initial protected payment verification without an eligible continuation uses the shared full checkout loader; subsequent automatic reads retain the displayed view without spinner flashes.
+- At first observed payment expiry, allow20 seconds of full-animation reconciliation for that attempt and original deadline, with at most10 additional seconds only if no successful status read started after expiry has returned; refresh preserves the remaining display window.
+- Known payment follows confirmation, proven releasable unpaid expiry exits early, and unresolved expiry returns to usable Calendar with silent recovery afterward.
+- This presentation window never extends payment, changes server polling limits or unlocks financial authority; conflict handling is unchanged.
+- Eligible unpaid continuation on the original payment page or a non-completed hosted-provider return shows the booking summary, then Continue payment followed by the countdown and “Your selected sessions are held until the timer ends.” and opens the retained link in the same tab.
+- It requires the original server-authorized unpaid handoff within its payment deadline; authenticated payment evidence or a completed-return display hint suppresses continuation.
+- Neither arrival on that route nor its query parameters prove payment.
+- Sessions/instructors and total appear once in the summary; confirmed expanded details use stacked, left-aligned sections and the same label/value layout as Review, followed by concise disclaimers.
+- Review and confirmation use shared 20px section headings and 16px body typography.
+- Receipt tax data is independent of summary presentation.
+- Customer PDF/calendar actions and local generation are retired by owner decision.
+- Protected receipt APIs retain their existing authorization, freshness and original-window rules; removing the buttons does not authorize stale reads or change payment recovery.
+- Confirmed live bookings display the optional provider-supplied invoice number unchanged for owner flow testing; its match to the final SimplyBook Pay document remains unverified.
+- Omit the label when absent or pending; never invent an SI prefix or expose internal IDs as a replacement.
+- Optional retained metadata cannot weaken or delay confirmation.
+- Changes/cancellations are requested from Glenna on WhatsApp (+65 9014 3819); the booking stays unchanged until the studio confirms the request.
 
 ### Storage, queue and tokens
 
@@ -158,11 +303,37 @@ Calendar presentation may retain last-known date indicators and session cards du
 
 <a id="br-015"></a>
 
-**BR-015** — One active workflow; at most 24 waiting jobs with the last four reserved for recovery. Waiting jobs expire after 15 seconds before execution with 503 provider_queue_busy. Recovery gets the next turn, at most two consecutively while customer work waits; display gets a turn after four foreground jobs. FIFO within each priority. Cached display reads can bypass the queue. Physical provider concurrency is separately bounded to two; identified ended/expired transports may release capacity with audit evidence, but unknown financial effects remain fenced. Do not interpret slot release as authorization to replay a write.
+**BR-015** — One active workflow; at most 24 waiting jobs with the last four reserved for recovery.
+
+- Waiting jobs expire after 15 seconds before execution with 503 provider_queue_busy.
+- Recovery gets the next turn, at most two consecutively while customer work waits; display gets a turn after four foreground jobs.
+- FIFO within each priority.
+- Cached display reads can bypass the queue.
+- Physical provider concurrency is separately bounded to two; identified ended/expired transports may release capacity with audit evidence, but unknown financial effects remain fenced.
+- Do not interpret slot release as authorization to replay a write.
 
 <a id="br-016"></a>
 
-**BR-016** — Two AES-GCM-encrypted account/environment/credential-scoped tokens persist in Durable Object SQLite, not D1. Public and admin access retention is 50 minutes, based on the normal one-hour provider lifetime, with original absolute expiry unchanged by hits/restoration. Earlier provider expiry remains authoritative. Admin refresh tokens persist inside the encrypted family payload; a conditional durable delete consumes each single-use refresh token before transport. Lost refresh responses cannot replay that token. A401/419 rejection retires access but retains a valid refresh token for the next operation;403 invalidates the family. Neither path replays the rejected protected operation. Late401/419 expiry of retired access cannot invalidate its in-flight or published replacement;403 and rejection of the refresh request itself still invalidate the family. The rejected request still fails and retains its account cooldown. Token publication checks invalidation both before the durable write and after its awaited completion, before restoring the in-memory token. Restoration never substitutes for current identity/booking/payment verification. Logs distinguish restoration, expiry, rejection and invalid records without token values. With `PUBLIC_TOKEN_REFRESH_AHEAD=enabled`, the existing serialized display-warming workflow replaces a still-valid public token when at most 20 minutes remain. It retires the old generation before authentication; replacement gets its own fixed 50-minute lifetime. A failed replacement leaves the old token retired, with no immediate retry. Empty/expired caches use normal demand authentication. Public refresh-ahead is independent of admin refresh-token rotation. The closed configuration defaults off; the verified developer live-release profile enables it. This reduces miss frequency, not the duration of a genuine cold miss or a guarantee of uninterrupted availability.
+**BR-016** — Two AES-GCM-encrypted account/environment/credential-scoped tokens persist in Durable Object SQLite, not D1.
+
+- Public and admin access retention is 50 minutes, based on the normal one-hour provider lifetime, with original absolute expiry unchanged by hits/restoration.
+- Earlier provider expiry remains authoritative.
+- Admin refresh tokens persist inside the encrypted family payload; a conditional durable delete consumes each single-use refresh token before transport.
+- Lost refresh responses cannot replay that token.
+- A401/419 rejection retires access but retains a valid refresh token for the next operation;403 invalidates the family.
+- Neither path replays the rejected protected operation.
+- Late401/419 expiry of retired access cannot invalidate its in-flight or published replacement;403 and rejection of the refresh request itself still invalidate the family.
+- The rejected request still fails and retains its account cooldown.
+- Token publication checks invalidation both before the durable write and after its awaited completion, before restoring the in-memory token.
+- Restoration never substitutes for current identity/booking/payment verification.
+- Logs distinguish restoration, expiry, rejection and invalid records without token values.
+- With `PUBLIC_TOKEN_REFRESH_AHEAD=enabled`, the existing serialized display-warming workflow replaces a still-valid public token when at most 20 minutes remain.
+- It retires the old generation before authentication; replacement gets its own fixed 50-minute lifetime.
+- A failed replacement leaves the old token retired, with no immediate retry.
+- Empty/expired caches use normal demand authentication.
+- Public refresh-ahead is independent of admin refresh-token rotation.
+- The closed configuration defaults off; the verified developer live-release profile enables it.
+- This reduces miss frequency, not the duration of a genuine cold miss or a guarantee of uninterrupted availability.
 
 <a id="br-017"></a>
 
@@ -172,25 +343,51 @@ Calendar presentation may retain last-known date indicators and session cards du
 
 <a id="br-018"></a>
 
-**BR-018** — Existing sanitized Worker diagnostics and Server-Timing cover checkout, confirmation, provider queues/tokens and reconciliation. `provider_transport_timing` separates authentication/booking/HitPay creation into time to headers and subsequent body/parse time; these include network and provider processing, not isolated network RTT. `foundation_trace.d1Execution` reports available per-statement SQL timings and bounded serving-colo metadata, separate from total D1 call duration/count; missing metadata is not proof of zero execution time. Correlate HTTP/coordinator work by correlation ID and protected confirmation/recovery by hashed recovery key. Never export credentials, customer fields, raw URLs, SQL, arbitrary exceptions or booking/payment authority.
+**BR-018** — Existing sanitized Worker diagnostics and Server-Timing cover checkout, confirmation, provider queues/tokens and reconciliation. `provider_transport_timing` separates authentication/booking/HitPay creation into time to headers and subsequent body/parse time; these include network and provider processing, not isolated network RTT. `foundation_trace.d1Execution` reports available per-statement SQL timings and bounded serving-colo metadata, separate from total D1 call duration/count; missing metadata is not proof of zero execution time.
+
+- Correlate HTTP/coordinator work by correlation ID and protected confirmation/recovery by hashed recovery key.
+- Never export credentials, customer fields, raw URLs, SQL, arbitrary exceptions or booking/payment authority.
 
 <a id="br-019"></a>
 
-**BR-019** — Tail Worker `worker/telemetry.ts` implements conversion of allowlisted diagnostic summaries to OTLP/HTTP JSON for Grafana Cloud Tempo. Its committed configuration defaults to disabled. Require explicit attachment/configuration and ingestion acceptance for each environment; source availability is not evidence of activation. It runs after producer execution, outside customer request handling, with no provider/D1 calls. It does not fabricate parent-child continuity across RPC/alarms or represent aggregate durations as exact individual spans. Dashboard owner: `observability/grafana-dashboard.json`; configuration owner: `wrangler.telemetry.jsonc`.
+**BR-019** — Tail Worker `worker/telemetry.ts` implements conversion of allowlisted diagnostic summaries to OTLP/HTTP JSON for Grafana Cloud Tempo.
+
+- Its committed configuration defaults to disabled.
+- Require explicit attachment/configuration and ingestion acceptance for each environment; source availability is not evidence of activation.
+- It runs after producer execution, outside customer request handling, with no provider/D1 calls.
+- It does not fabricate parent-child continuity across RPC/alarms or represent aggregate durations as exact individual spans.
+- Dashboard owner: `observability/grafana-dashboard.json`; configuration owner: `wrangler.telemetry.jsonc`.
 
 <a id="br-020"></a>
 
-**BR-020** — Defaults: 10% deterministic successful-correlation sampling; recognized failures bypass sampling within bounded limits. Maximum 32 Tail events, 256 log messages/event, 32 KiB accepted input strings, 128 spans and 512 KB outbound; five-second export timeout, 50 ms CPU, no redirects, persistent spool or retries. Failure retention is best effort. Activate only with secure endpoint/auth configuration and validate receiver ingestion, dashboard queries, correlation, redaction and overhead. Export HTTP success alone is not ingestion proof.
+**BR-020** — Defaults: 10% deterministic successful-correlation sampling; recognized failures bypass sampling within bounded limits.
+
+- Maximum 32 Tail events, 256 log messages/event, 32 KiB accepted input strings, 128 spans and 512 KB outbound; five-second export timeout, 50 ms CPU, no redirects, persistent spool or retries.
+- Failure retention is best effort.
+- Activate only with secure endpoint/auth configuration and validate receiver ingestion, dashboard queries, correlation, redaction and overhead.
+- Export HTTP success alone is not ingestion proof.
 
 ### Deployment, migration and acceptance
 
 <a id="br-021"></a>
 
-**BR-021** — Client PRs verify the exact head for staging; trusted-main controllers deploy only after all frontend/backend/live-email gates pass and current same-repository human-author permission and PR state are checked. Merge triggers independent production verification and exact-current-main deployment. Verification never receives deployment credentials; fork/bot and superseded candidates cannot deploy. Manual exact-revision dispatch remains supported. Existing D1, coordinator identity and first-use placement are preserved. Client bootstrap may create the configured Worker on its exact Workers.dev origin while customer/provider access stays closed; Pages/SaaS resources are required only for those explicitly selected targets. Pending migrations use the database ledger. Foundation registration, client activation and provider/device acceptance remain separate. Disable the former repository deployer before enabling client deployment; [Development](development.md) owns configuration and [Runbook](runbook.md) owns operator steps.
+**BR-021** — Client PRs verify the exact head for staging; trusted-main controllers deploy only after all frontend/backend/live-email gates pass and current same-repository human-author permission and PR state are checked.
+
+- Merge triggers independent production verification and exact-current-main deployment.
+- Verification never receives deployment credentials; fork/bot and superseded candidates cannot deploy.
+- Manual exact-revision dispatch remains supported.
+- Existing D1, coordinator identity and first-use placement are preserved.
+- Client bootstrap may create the configured Worker on its exact Workers.dev origin while customer/provider access stays closed; Pages/SaaS resources are required only for those explicitly selected targets.
+- Pending migrations use the database ledger.
+- Foundation registration, client activation and provider/device acceptance remain separate.
+- Disable the former repository deployer before enabling client deployment; [Development](development.md) owns configuration and [Runbook](runbook.md) owns operator steps.
 
 <a id="br-022"></a>
 
-**BR-022** — Provision client resources only with applicable owner authorization, then validate/reuse the confirmed resources and portable configuration, test first install/rerun/interruption/account mismatch in isolation, report results and integrate before pushing to client GitHub. Keep access disabled through preparation; validate client provider entitlements, service/instructor mappings, shared capacity, schedules, notification configuration, merchant/payment destination, domain/email verification and legacy receipt/recovery continuity before UAT/cutover. A credential swap or green CI alone is not production acceptance.
+**BR-022** — Provision client resources only with applicable owner authorization, then validate/reuse the confirmed resources and portable configuration, test first install/rerun/interruption/account mismatch in isolation, report results and integrate before pushing to client GitHub.
+
+- Keep access disabled through preparation; validate client provider entitlements, service/instructor mappings, shared capacity, schedules, notification configuration, merchant/payment destination, domain/email verification and legacy receipt/recovery continuity before UAT/cutover.
+- A credential swap or green CI alone is not production acceptance.
 
 <a id="br-023"></a>
 
@@ -198,27 +395,32 @@ Calendar presentation may retain last-known date indicators and session cards du
 
 <a id="br-024"></a>
 
-**BR-024** — Owner accepts normal payment/recovery/dismissal, 15-minute timeout and the observed long-open confirmation remaining confirmed. Deployed logs prove public-token SQLite restoration outside memory; HAR08 measured one 4.87-second checkout including a 0.992-second token miss. HAR09 is identical and proves no fresh network read. Batch later-item rollback/failed closure and in-flight late settlement remain unproven owner-accepted risks. That historical acceptance does not accept the new8/9/10 timing or verified unpaid-release behavior. Remaining: client rollout/UAT, Grafana validation, and regression checks after UI/UX/email refinements; further warm/batch performance and sustained-capacity work are optional follow-ups, not blanket milestone closure.
+**BR-024** — Acceptance applies to the revision, environment and provider mode exercised. New timing, recovery, configuration or UI changes require fresh evidence for the affected behavior. Record dated results in [Journey](journey.md), open verification in [Progress](../PROGRESS.md), and physical outcomes in the role worksheets.
 
 ### Client hosting and domain acceptance
 
 <a id="br-025"></a>
 
-**BR-025** — Current owner decision: bring up the closed client Worker on Workers.dev first; connect `soccerbotsg.com` later. Cloudflare Registrar transfer follows destination-zone activation; delegation and registrar transfer remain separate owner/vendor actions. Serve `https://soccerbotsg.com` directly with managed, automatically renewed HTTPS. Registrar ownership and DNS delegation are separate operations; neither is recorded complete. Confirm exact registrar, account IDs, hostname ownership, preserved email/DNS records and DNSSEC transition before any owner-executed change. Reassess supported Worker routing/custom-domain configuration after ownership verification; same-account DNS may remove the need for SaaS, but this documentation does not change deployment manifests or establish that configuration. The earlier SaaS proof used client zone `soccerbotsg.win` and Primary-owned `standardsoftwares.com`; these are retained test resources, not the current production ownership decision. If reused, prove subdomain and apex separately. `app404.ai` remains excluded.
+**BR-025** — Serve the client apex directly over managed HTTPS. Preserve mail records during DNS changes. Verify registrar ownership, DNSSEC and redirects separately from successful Worker routing. The [production target](../deployment/production.json) owns the active hostname and release profile.
 
 <a id="br-026"></a>
 
-**BR-026** — **Prepared SaaS implementation, pending reassessment under BR-025:** the fallback `fallback.soccerbotsg.win` was recorded active during setup; recheck it before deployment. Deploying this existing SaaS target requires the declared zone in the selected account, active/unpaused status, an active matching fallback, its proxied originless `AAAA 100::` record, and no competing routes. The target/release configuration declares the zone-scoped `*/*` route; verify it in the exact tested artifact before deployment. All client requests run through the Worker before assets, so alternate origins are rejected. Worker previews and Workers.dev are disabled. The optional Pages entry remains available for separately configured targets; this client target does not create or require a Pages project. This retained SaaS configuration is not the selected Workers.dev bootstrap target. The current target remains closed and has its client public Turnstile sitekey; secret installation and provider acceptance remain pending.
+**BR-026** — Apply SaaS fallback and custom-hostname checks only to targets configured for SaaS. A SaaS deployment requires a verified zone, fallback, proxied originless record and the correct Worker route. The client production target uses its native custom domain.
 
 <a id="br-027"></a>
 
-**BR-027** — D1 resource identity and placement evidence are in the 27 October provisioning entry. Do not self-register its immutable foundation or initialize the coordinator without the selected placement hint. Deploy the verified application artifact, preserve developer staging identity/data, and record first-install, interrupted-install, safe-rerun and rollback acceptance. Provider secrets are unnecessary for closed domain proof; install client provider credentials only for separately accepted integration/UAT. Production origin changes require appropriate target re-verification, including build-time settings.
+**BR-027** — D1 resource identity and placement evidence are in the 27 October provisioning entry.
+
+- Do not self-register its immutable foundation or initialize the coordinator without the selected placement hint.
+- Deploy the verified application artifact, preserve developer staging identity/data, and record first-install, interrupted-install, safe-rerun and rollback acceptance.
+- Provider secrets are unnecessary for closed domain proof; install client provider credentials only for separately accepted integration/UAT.
+- Production origin changes require appropriate target re-verification, including build-time settings.
 
 <a id="br-028"></a>
 
-**BR-028** — The client repository will own both environments: trusted PR staging continues to the existing developer Cloudflare/SimplyBook/Resend/Turnstile and payment sandbox configuration, while production uses client resources. The candidate workflows implement automatic trusted-PR staging and verified-main production deployment; adoption by default-branch main and successful client-owned deployment remain pending. Deny forks and Dependabot deployment credentials and prevent competing repository deployment ownership. Grafana uses the owner company’s central account, with separately scoped ingestion credentials and environment/service labels; activation remains pending. Maintain weekly Dependabot version updates and blocking dependency audit. Alerts/security updates were owner-confirmed for the developer repository; verify client settings independently. Optional licensed scanning capabilities require separate inspection. Do not treat an old clean advisory report as current security clearance.
+**BR-028** — Verify PR staging and merged-main production independently in the client repository. Staging uses developer resources. Production uses the client target. Preserve separate bindings, secrets, identities and acceptance evidence.
 
-### Client initial placement strategy (planned)
+### Client initial placement strategy
 
 <a id="br-029"></a>
 
@@ -238,10 +440,10 @@ Calendar presentation may retain last-known date indicators and session cards du
 
 <a id="br-031"></a>
 
-**BR-031** — Owner waived the separate real-checkout placement comparison on 22 October 2026. Do not prepare/deploy its two variants, cold-token reset control or quiet-window procedure as outstanding work. No resources were created for that comparison. Retain the completed bounded read-only screening and actual location evidence in Part 2; waiver is not a measured speedup or a latency acceptance pass.
+**BR-031** — The owner waived the separate live checkout placement comparison. Current UAT uses the registered client resources.
 
 <a id="br-032"></a>
 
-**BR-032** — Follow the client initial placement strategy above: verify the new D1 primary location, prefer `apac-ne` when it is in Japan, then verify actual DO execution and checkout during normal client UAT. Reduced database network time is an engineering expectation; end-to-end savings and a 2–3-second cold checkout remain unproven. Existing developer coordinator placement is unchanged. The earlier preparation protocol is retained in Git history, not an active execution instruction.
+**BR-032** — Use actual coordinator execution, D1 timings and full checkout timings for performance claims. A placement hint or successful database probe does not establish end-to-end latency.
 
 Foundation management implements the separate registration step through a trusted named service binding only. Closed-production inspection must not instantiate the coordinator. Registration must validate the real namespace-derived identity, retain a matching singleton across repeats/restarts, and reject mismatches without update/delete. First initialization is a separate diagnostic using the reviewed placement hint; its success does not establish location or provider/customer readiness. See the [runbook procedure](runbook.md#closed-production-foundation-registration).

@@ -287,6 +287,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
       attemptId={attempt.id}
       checkoutMode="live"
       calendarRecovery
+      onAwaitingExpiry={unresolvedCreation ? undefined : browseAfterChecking}
       silent
       sessionRevision={confirmationRevision}
       onExpired={restartAfterExpiry}

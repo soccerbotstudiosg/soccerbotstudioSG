@@ -316,6 +316,7 @@ test("target workflows isolate PR credentials and deploy through trusted main af
     "browser-shards",
     "frontend",
     "live-email",
+    "master-regression",
     "worker",
     "worker-groups",
   ]);
@@ -336,6 +337,26 @@ test("target workflows isolate PR credentials and deploy through trusted main af
       job.steps.some((s) => s.run === "node scripts/deployment-target.mjs"),
     );
   }
+  const master = verify.jobs["master-regression"];
+  assert.equal(master.name, "Master booking regression");
+  assert.equal(master.needs, "browser-build");
+  assert.ok(
+    master.steps.some(
+      (s) => !s.if && s.run === "node scripts/browser-shards.mjs master",
+    ),
+  );
+  assert.equal(master.if, undefined);
+  const masterDownload = verify.jobs["live-email"].steps.find(
+    (step) =>
+      step.with?.name ===
+      "master-booking-regression-${{ github.run_id }}-${{ github.run_attempt }}",
+  );
+  assert.match(
+    masterDownload.uses,
+    /^actions\/download-artifact@[a-f0-9]{40}$/,
+  );
+  assert.equal(masterDownload.if, undefined);
+  assert.equal(masterDownload.with.path, "test-results/master-input");
   const shards = verify.jobs["browser-shards"];
   assert.deepEqual(shards.strategy.matrix, {
     profile: ["backend", "live-email"],
@@ -415,7 +436,12 @@ test("target workflows isolate PR credentials and deploy through trusted main af
   );
   for (const name of ["backend", "live-email"]) {
     const gate = verify.jobs[name];
-    assert.deepEqual(gate.needs, ["worker", "browser-build", "browser-shards"]);
+    assert.deepEqual(gate.needs, [
+      "worker",
+      "browser-build",
+      "browser-shards",
+      ...(name === "live-email" ? ["master-regression"] : []),
+    ]);
     assert.equal(gate.if, undefined);
     const download = gate.steps.find(
       (step) =>

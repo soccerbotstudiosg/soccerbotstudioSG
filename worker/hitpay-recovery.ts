@@ -9,6 +9,7 @@ import { receiptData } from "./receipt-data";
 import { providerCredentialName, ApiError, digest, policy } from "./policy";
 import {
   HITPAY_LINK_ATTEMPTS,
+  HitpayPaymentEvidenceError,
   hitpayRecoveryEnabled,
   hitpayFailureReason,
   hitpaySetting,
@@ -124,6 +125,7 @@ export async function recoverHitpay(
   let linkRecovered = !!row.checkout_url;
   let terminalCommitted = false;
   let accountingTransportEnded = false;
+  let paymentUnverified = row.reason === "hitpay_payment_unverified";
   try {
     const scope = paymentScopeSchema.parse(JSON.parse(row.scope_json));
     await assertPaymentScope(env, scope);
@@ -169,7 +171,108 @@ export async function recoverHitpay(
     )
       throw new ApiError(409, "hitpay_scope_mismatch");
     confirmationStage("hitpay");
-    const verified = await findHitpayRequest(env, row, reserve);
+    let verified: Awaited<ReturnType<typeof findHitpayRequest>> | undefined;
+    let request = row;
+    let previousExpired = false;
+    let expiryConfirmed = false;
+    let canceledConfirmed = false;
+    let checkingExpiry = false;
+    const expiryReadDeadline = Math.min(end, Date.now() + 20000);
+    const canCheckExpiry =
+      attempt.hold_expires_ms !== null &&
+      row.external_state === "none" &&
+      row.paid_ms === null &&
+      row.payment_id === null;
+    const retainUnverifiedPayment = async (requestId: string) => {
+      if (row.paid_ms !== null || row.payment_id !== null) return;
+      // Persist the uncertainty before another read or wait. A restarted claim or
+      // signed receipt may verify payment, but can never turn it into unpaid proof.
+      if (!paymentUnverified || request.request_id !== requestId) {
+        const retained = await env.STATE.prepare(
+          "UPDATE hitpay_payments SET reason='hitpay_payment_unverified',request_id=COALESCE(request_id,?) WHERE attempt_id=? AND state='claimed' AND generation=? AND ready_ms>? AND (request_id IS NULL OR request_id=?)",
+        )
+          .bind(requestId, id, row.generation, Date.now(), requestId)
+          .run();
+        if (retained.meta.changes !== 1)
+          throw new ApiError(409, "hitpay_claim_stale");
+      }
+      paymentUnverified = true;
+      request = { ...row, request_id: requestId };
+    };
+    for (let read = 1; read <= 3; read++) {
+      if (read > 1) {
+        if (Date.now() + 5000 >= expiryReadDeadline) {
+          reason = "payment_expiry_checks_inconclusive";
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await diagnoseClaim();
+        if (Date.now() >= expiryReadDeadline) {
+          reason = "payment_expiry_checks_inconclusive";
+          return;
+        }
+      }
+      try {
+        verified = await findHitpayRequest(
+          env,
+          request,
+          reserve,
+          canCheckExpiry && (read > 1 || Date.now() >= paymentDeadline)
+            ? expiryReadDeadline
+            : undefined,
+        );
+      } catch (error) {
+        if (error instanceof HitpayPaymentEvidenceError) {
+          await retainUnverifiedPayment(error.requestId);
+        }
+        // Retry incomplete evidence and transient reads only within the original expiry check.
+        if (
+          !canCheckExpiry ||
+          !request.request_id ||
+          Date.now() < paymentDeadline ||
+          !(
+            error instanceof HitpayPaymentEvidenceError ||
+            (error instanceof ApiError &&
+              /^hitpay_http_5\d\d_/.test(error.code)) ||
+            error instanceof TypeError ||
+            (error instanceof DOMException && error.name === "AbortError")
+          )
+        )
+          throw error;
+        previousExpired = false;
+        verified = undefined;
+        if (read === 3) {
+          reason = "payment_expiry_checks_inconclusive";
+          return;
+        }
+        continue;
+      }
+      checkingExpiry =
+        canCheckExpiry &&
+        Date.now() >= (verified.expiresAtMs ?? paymentDeadline);
+      if (verified.conflictingPayment)
+        await retainUnverifiedPayment(verified.id);
+      if (verified.paymentId || !checkingExpiry) break;
+      if (Date.now() >= expiryReadDeadline) {
+        reason = "payment_expiry_checks_inconclusive";
+        return;
+      }
+      canceledConfirmed =
+        !paymentUnverified &&
+        verified.status === "canceled" &&
+        verified.unpaidTerminal &&
+        verified.expiresAtMs !== null;
+      if (canceledConfirmed) break;
+      const expired =
+        !paymentUnverified &&
+        verified.status === "expired" &&
+        verified.unpaidTerminal;
+      expiryConfirmed = expired && previousExpired;
+      if (expiryConfirmed) break;
+      previousExpired = expired;
+      request = { ...row, request_id: verified.id };
+    }
+    if (!verified) return;
     paymentDeadline = Math.min(
       paymentDeadline,
       verified.expiresAtMs ?? paymentDeadline,
@@ -199,6 +302,7 @@ export async function recoverHitpay(
       .run();
     if (evidence.meta.changes !== 1)
       throw new ApiError(409, "hitpay_claim_stale");
+    if (verified.paymentId) paymentUnverified = false;
     linkRecovered = true;
     if (!verified.paymentId) {
       if (row.paid_ms !== null)
@@ -210,15 +314,11 @@ export async function recoverHitpay(
         result = Date.now() >= releaseDeadline ? "manual_review" : "due";
         reason = "hitpay_payment_" + verified.status;
       }
-      if (
-        verified.unpaidTerminal &&
-        row.external_state === "none" &&
-        attempt.hold_expires_ms !== null &&
-        verified.expiresAtMs !== null &&
-        verified.expiresAtMs <= Date.now()
-      ) {
+      if (canceledConfirmed || expiryConfirmed) {
         result = "manual_review";
         reason = "hitpay_unpaid_verified";
+      } else if (checkingExpiry) {
+        reason = "payment_expiry_checks_inconclusive";
       }
       return;
     }
@@ -490,7 +590,8 @@ export async function recoverHitpay(
       (row.tries >= row.retry_limit || Date.now() >= row.recovery_end_ms)
     ) {
       result = "manual_review";
-      reason = "recovery_exhausted";
+      if (reason !== "payment_expiry_checks_inconclusive")
+        reason = "recovery_exhausted";
     }
     if (
       result === "due" &&
@@ -501,6 +602,10 @@ export async function recoverHitpay(
     ) {
       result = "manual_review";
       reason = "payment_link_unavailable";
+    }
+    if (paymentUnverified) {
+      result = "manual_review";
+      reason = "hitpay_payment_unverified";
     }
     // Commit the terminal decision and the pending-receipt wake-up together.
     // If storage fails, the retained claim lease remains reclaimable by cron.

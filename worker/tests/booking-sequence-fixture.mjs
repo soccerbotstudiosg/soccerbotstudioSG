@@ -16,6 +16,8 @@ export async function createBookingSequence(sizes, options = {}) {
     ...options,
     async respond(call) {
       assert.ok(journeys, "provider calls must follow sequence initialization");
+      const override = await options.respond?.(call);
+      if (override) return override;
       const { body, method } = call;
       const url = new URL(call.url);
       const rpc = (result) =>
@@ -35,18 +37,25 @@ export async function createBookingSequence(sizes, options = {}) {
             !journeys.some((item) => item.reference === body.reference_number),
           );
           j.reference = body.reference_number;
+          j.deadline =
+            Date.now() +
+            (j === journeys[0] ? (options.firstLinkMs ?? 180000) : 180000);
         }
         return Response.json({
           id: j.requestId,
           reference_number: j.reference,
           amount: j.total,
           currency: "SGD",
-          status: j.paid ? "completed" : "pending",
+          status: j.paid
+            ? "completed"
+            : Date.now() >= j.deadline
+              ? "expired"
+              : "pending",
           allow_repeated_payments: false,
           is_currency_editable: false,
           business_id: "00000000-0000-4000-8000-000000000003",
           url: j.checkoutUrl,
-          expiry_date: wall(Date.now() + 180000),
+          expiry_date: wall(j.deadline),
           payments: j.paid
             ? [
                 {

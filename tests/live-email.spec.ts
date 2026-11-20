@@ -5252,3 +5252,265 @@ test("hidden enquiry proof preserves the shared action gap", async ({
   expect(gap).toBeGreaterThanOrEqual(32);
   expect(gap).toBeLessThanOrEqual(33);
 });
+
+test("one browser recovers rejected email, unpaid expiry, overlapping tabs and the surviving cart", async ({
+  page,
+}) => {
+  // Includes a real hosted-link deadline and the Worker's spaced provider reads.
+  test.setTimeout(210000);
+  const bad = "rejected@example.test";
+  const mechanism = await createBookingSequence([1, 1, 2], {
+    checkoutBotProof: false,
+    firstLinkMs: 70000,
+    async respond(call) {
+      if (
+        call.body?.method === "book" &&
+        JSON.stringify(call.body.params).includes(bad)
+      )
+        return Response.json({
+          jsonrpc: "2.0",
+          id: call.body.id,
+          error: { code: -32062, message: "Rejected contact email" },
+        });
+    },
+  });
+  const [expired, winner, remaining] = mechanism.journeys;
+  const b = await page.context().newPage();
+  // Delay only delivery to the browser; the Worker always receives and completes the POST.
+  const gates = new Map<Page, ReturnType<typeof Promise.withResolvers<void>>>();
+  const connect = (tab: Page) =>
+    mechanismTransport(tab, mechanism, undefined, undefined, async (path) => {
+      if (path.startsWith("/api/booking/checkout/"))
+        await gates.get(tab)?.promise;
+    });
+  const aTransport = await connect(page);
+  const bTransport = await connect(b);
+  const review = (tab: Page) =>
+    tab.getByRole("button", { name: /^Review Booking/ });
+  const pay = (tab: Page) =>
+    tab.getByRole("button", { name: /^Proceed to Payment/ });
+  const back = (tab: Page) =>
+    tab.getByRole("button", { name: "Back", exact: true });
+  const resumed = (tab: Page) =>
+    tab.getByRole("link", { name: "Continue payment", exact: true });
+  const alert = (tab: Page) => tab.getByRole("main").getByRole("alert");
+  async function quickBack(tab: Page) {
+    await tab.getByRole("checkbox").check();
+    await expect(pay(tab)).toBeEnabled();
+    const gate = Promise.withResolvers<void>();
+    gates.set(tab, gate);
+    try {
+      const request = tab.waitForRequest(
+        (r) =>
+          r.method() === "POST" &&
+          new URL(r.url()).pathname.startsWith("/api/booking/checkout/"),
+      );
+      await pay(tab).evaluate((button) => {
+        performance.mark("master-payment-click");
+        (button as HTMLButtonElement).click();
+      });
+      const dispatched = await request;
+      const elapsed = await tab.evaluate(() => {
+        const start = performance
+          .getEntriesByName("master-payment-click")
+          .at(-1)!.startTime;
+        const ms = performance.now() - start;
+        history.back();
+        return ms;
+      });
+      expect(elapsed).toBeLessThanOrEqual(800);
+      await expect(tab).toHaveURL(/\/book\/details\/$/);
+      return new URL(dispatched.url()).pathname.split("/").at(-1)!;
+    } finally {
+      gate.resolve();
+      gates.delete(tab);
+    }
+  }
+  const countPayments = () =>
+    mechanism.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST")
+      .length;
+  try {
+    await guestDetails(page, mechanism);
+    await page.getByRole("textbox", { name: /^Email address/ }).fill(bad);
+    await reviewResponse(page);
+    await quickBack(page);
+    // The completed rejection recovers on Details after the first native Back.
+    await expect(alert(page)).toContainText(bad);
+    await expect(alert(page)).toHaveCount(1);
+    expect(countPayments()).toBe(0);
+    expect(
+      await mechanism.db
+        .prepare("SELECT count(*) AS n FROM hitpay_holds")
+        .first("n"),
+    ).toBe(0);
+    await page
+      .getByRole("textbox", { name: /^Email address/ })
+      .fill("synthetic@example.test");
+    await reviewResponse(page);
+    const firstId = await quickBack(page);
+    await back(page).click();
+    await expect(resumed(page)).toHaveAttribute("href", expired.checkoutUrl);
+    await page.goBack();
+    await expect(page).toHaveURL(/\/book\/time\/$/);
+    await page
+      .getByRole("button", { name: "Continue payment", exact: true })
+      .click();
+    await expect(resumed(page)).toHaveAttribute("href", expired.checkoutUrl);
+    await expect(resumed(page)).toHaveAttribute(
+      "data-payment-continuation",
+      firstId,
+    );
+    await page
+      .getByRole("link", { name: "Privacy Policy", exact: true })
+      .click();
+    await page
+      .getByRole("dialog", { name: "Leave this booking?" })
+      .getByRole("button", { name: "Stay" })
+      .click();
+    await expect(alert(page)).toContainText("Your payment window has ended", {
+      timeout: 95000,
+    });
+    await expect(page).toHaveURL(/\/book\/time\/$/);
+    await expect
+      .poll(
+        () =>
+          mechanism.db
+            .prepare(
+              "SELECT count(*) AS n FROM expired_native_checkout_grants WHERE attempt_id=?",
+            )
+            .bind(firstId)
+            .first("n"),
+        { timeout: 30000 },
+      )
+      .toBe(1);
+    const slotName = (ms: number) =>
+      new RegExp(new Date(ms + 28800000).toISOString().slice(11, 16) + "–");
+    const originalSlot = page
+      .getByRole("group", { name: "Session times" })
+      .getByRole("button", { name: slotName(expired.starts[0]) });
+    await expect(originalSlot).toHaveCount(0);
+    await enterSessionDetails(page, mechanism, [
+      ...winner.starts,
+      ...remaining.starts,
+    ]);
+    await expect(
+      page.getByRole("textbox", { name: /^Email address/ }),
+    ).toHaveValue("synthetic@example.test");
+    await reviewResponse(page);
+    await b.goto("/");
+    await b
+      .getByRole("banner")
+      .getByRole("link", { name: "Book now", exact: true })
+      .click();
+    await guestDetails(b, mechanism, false, {
+      starts: winner.starts,
+      enter: false,
+    });
+    await reviewResponse(b);
+    const winnerId = await quickBack(b);
+    await expect
+      .poll(() =>
+        mechanism.db
+          .prepare(
+            "SELECT count(*) AS n FROM hitpay_payments WHERE attempt_id=? AND request_id IS NOT NULL",
+          )
+          .bind(winnerId)
+          .first("n"),
+      )
+      .toBe(1);
+    const conflictKey = await quickBack(page);
+    await page
+      .getByRole("button", { name: "Confirm email address is correct" })
+      .click();
+    await review(page).click();
+    const details = page.getByRole("link", { name: /^Enter contact details/ });
+    await expect(page).toHaveURL(/\/book\/time\/$/, { timeout: 45000 });
+    async function expectConflictNotice() {
+      await expect(alert(page)).toHaveCount(1);
+      await expect(alert(page)).toContainText(
+        "Some sessions may no longer be available",
+      );
+      const affected = alert(page).getByRole("listitem");
+      await expect(affected).toHaveCount(1);
+      await expect(affected).toContainText(slotName(winner.starts[0]));
+    }
+    await expectConflictNotice();
+    await page.reload();
+    await expectConflictNotice();
+    await page.getByRole("link", { name: "Back", exact: true }).click();
+    await page
+      .getByRole("link", { name: "Choose sessions", exact: true })
+      .click();
+    await expect(
+      page.getByRole("group", { name: "Session times" }),
+    ).toBeVisible();
+    await expect(alert(page)).toHaveCount(0);
+    await details.click();
+    await reviewResponse(page);
+    const rows = page
+      .getByRole("list", { name: "Selected sessions" })
+      .getByRole("listitem");
+    await expect(rows).toHaveCount(remaining.starts.length);
+    for (const start of remaining.starts)
+      await expect(rows.filter({ hasText: slotName(start) })).toHaveCount(1);
+    await checkoutHoldResponse(page, undefined, true);
+    await expect(alert(page)).toHaveCount(1);
+    await expect(alert(page)).toContainText("active checkout");
+    expect(countPayments()).toBe(2);
+    await back(b).click();
+    await expect(resumed(b)).toHaveAttribute("href", winner.checkoutUrl);
+    const finishUrl = winner.checkoutUrl + "/complete";
+    await b.route(winner.checkoutUrl, (route) =>
+      route.fulfill({
+        contentType: "text/html",
+        body: '<a href="' + finishUrl + '">Pay for the selected session</a>',
+      }),
+    );
+    await b.route(finishUrl, async (route) => {
+      expect((await mechanism.completeJourney(1)).status).toBe(202);
+      const url = "http://127.0.0.1:4173/confirmation/?attempt=" + winnerId;
+      await route.fulfill({
+        contentType: "text/html",
+        body: "<script>location.replace(" + JSON.stringify(url) + ")</script>",
+      });
+    });
+    await resumed(b).click();
+    await expect(b).toHaveURL(winner.checkoutUrl);
+    await b.getByRole("link", { name: "Pay for the selected session" }).click();
+    const confirmed = b.getByRole("heading", {
+      name: "Booking Confirmed",
+      exact: true,
+    });
+    await expect(confirmed).toBeVisible({ timeout: 20000 });
+    await b.goBack();
+    // The simulated provider keeps its hosted page in history. Traverse that
+    // external entry and check the first app-owned page restores the paid receipt.
+    if (b.url() === winner.checkoutUrl) await b.goBack();
+    await expect(confirmed).toBeVisible();
+    await expect(b).toHaveURL(
+      new RegExp("/confirmation/\\?attempt=" + winnerId),
+    );
+    for (let step = 0; step < 12 && new URL(b.url()).pathname !== "/"; step++)
+      await b.goBack();
+    await expect(b).toHaveURL("http://127.0.0.1:4173/");
+    await b
+      .getByRole("banner")
+      .getByRole("link", { name: "Book now", exact: true })
+      .click();
+    await expect(confirmed).toBeVisible();
+    await details.click();
+    await reviewResponse(page);
+    const lastResponse = await checkoutHoldResponse(page, undefined, true);
+    expect(lastResponse.status()).toBe(200);
+    const last = aTransport.json(lastResponse);
+    expect(last.attemptId).toBeTruthy();
+    expect([firstId, winnerId, conflictKey]).not.toContain(last.attemptId);
+    await expect(page).toHaveURL(remaining.checkoutUrl);
+    expect(countPayments()).toBe(3);
+  } finally {
+    for (const gate of gates.values()) gate.resolve();
+    await Promise.all([page.close(), b.close()]);
+    await Promise.all([aTransport.drain(), bTransport.drain()]);
+    await mechanism.close();
+  }
+});

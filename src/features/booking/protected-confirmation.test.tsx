@@ -1,12 +1,18 @@
 import type { CheckoutSelectionRejection } from "@/domain/native-checkout";
 import * as renderTrace from "./confirmation-render-trace";
 import ConfirmationPage from "@/app/confirmation/page";
+import {
+  BookingLink,
+  BookingNavigation,
+} from "@/components/booking-navigation";
+import { BookingPage } from "./booking-page";
 import { BookingProvider } from "./provider";
 import { BookingLoadingProvider } from "./booking-loading";
 import {
   saveLiveDraft,
   expiryReconciliationDeadline,
   markConfirmationSeen,
+  markSubmittedCheckout,
   submittedCheckoutId,
   completedPaymentReturn,
 } from "@/services/storage";
@@ -61,6 +67,7 @@ afterEach(() => {
   expect(document.querySelector(".payment-check-feedback")).toBeNull();
   cleanup();
   navigation.attempt = first;
+  navigation.path = "/";
   navigation.status = "canceled";
   navigation.reference = "";
   vi.useRealTimers();
@@ -371,12 +378,13 @@ it("verified live receipt shows provider invoice number without internal IDs or 
 const navigation = vi.hoisted(() => ({
   push: vi.fn(),
   replace: vi.fn(),
+  path: "/",
   attempt: "00000000-0000-4000-8000-000000000001",
   status: "canceled",
   reference: "",
 }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/",
+  usePathname: () => navigation.path,
   useRouter: () => navigation,
   useSearchParams: () =>
     new URLSearchParams(
@@ -423,6 +431,137 @@ it("a completed provider return stays with its own attempt across confirmation h
   expect(
     screen.queryByRole("heading", { name: "Booking Confirmed" }),
   ).toBeNull();
+});
+
+it("a paid tab recovers its original receipt on reload and Home reentry while a disjoint checkout is active", async () => {
+  const receipt = receiptFixture();
+  const contextPath = `/api/attempts/${first}/checkout`;
+  const receiptPath = `/api/attempts/${first}/receipt`;
+  const nextSession = {
+    ...receipt.sessions[0],
+    serviceName: "Other active session",
+    startMs: receipt.sessions[0].startMs + 86400000,
+  };
+  let activeId = first;
+  const restored: string[] = [];
+  const fetch = vi.fn<typeof globalThis.fetch>(async (input) => {
+    if (String(input) === receiptPath) return Response.json(receipt);
+    if (String(input) === "/api/booking/current") {
+      restored.push(activeId);
+      return Response.json({
+        attemptId: activeId,
+        state: activeId === first ? "checking" : "held",
+        contact: receipt.contact,
+        sessions: activeId === first ? receipt.sessions : [nextSession],
+      });
+    }
+    if (String(input) === contextPath)
+      return Response.json({
+        attemptId: first,
+        mode: "live",
+        confirmation: receipt,
+        payment: { status: "recorded", paidAtMs: receipt.verifiedAtMs },
+        checkout: { state: "unavailable" },
+        summary: {
+          players: 2,
+          totalMinor: receipt.totalMinor,
+          currency: "SGD",
+          sessions: [{ startMs: receipt.sessions[0].startMs, players: 2 }],
+        },
+        checking: {
+          deadlineMs: Date.now() + 60000,
+          nextCheckMs: 0,
+          pollAfterMs: 5000,
+        },
+      });
+    throw new Error(`Unexpected receipt recovery request: ${String(input)}`);
+  });
+  vi.stubGlobal("fetch", fetch);
+  saveLiveDraft(blankDraft(), true, first);
+  markSubmittedCheckout(first, true);
+  const service = {
+    ...liveBookingService,
+    publicCalendarSnapshot: undefined,
+    publicCalendar: undefined,
+    calendar: undefined,
+  };
+  const identity = { ...demoCustomerIdentity, mode: "live" as const };
+  const tree = (path: "/" | "/book/account/" | "/confirmation/") => {
+    navigation.path = path;
+    return (
+      <BookingProvider bookingService={service} identityService={identity}>
+        {path === "/confirmation/" ? (
+          <ConfirmationPage />
+        ) : path === "/book/account/" ? (
+          <BookingPage step="account" />
+        ) : (
+          <BookingNavigation>
+            <BookingLink href="/book/account/">Book now</BookingLink>
+          </BookingNavigation>
+        )}
+      </BookingProvider>
+    );
+  };
+  async function expectOriginalReceipt() {
+    expect(
+      await screen.findByRole("heading", { name: "Booking Confirmed" }),
+    ).toBeVisible();
+    expect(screen.getByText(receipt.contact.name)).toBeVisible();
+    expect(screen.queryByText(nextSession.serviceName)).toBeNull();
+    expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
+    expect(submittedCheckoutId()).toBe(first);
+  }
+  navigation.push.mockClear();
+  navigation.replace.mockClear();
+  let page = render(tree("/confirmation/"));
+  await expectOriginalReceipt();
+  expect(restored).toEqual([first]);
+  activeId = second;
+  // A history-cached receipt revalidates even when the other tab changed the current checkout.
+  const reads = () =>
+    fetch.mock.calls.filter(([path]) => String(path) === contextPath).length;
+  const beforeRestore = reads();
+  await act(async () => {
+    window.dispatchEvent(
+      new PageTransitionEvent("pageshow", { persisted: true }),
+    );
+  });
+  expect(reads()).toBeGreaterThan(beforeRestore);
+  await expectOriginalReceipt();
+  page.unmount();
+  page = render(tree("/confirmation/"));
+  await expectOriginalReceipt();
+  expect(restored).toEqual([first, second]);
+  act(() => window.dispatchEvent(new PopStateEvent("popstate")));
+  page.rerender(tree("/"));
+  await act(async () => {});
+  expect(navigation.replace).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("link", { name: "Book now" }));
+  expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/book/account/");
+  const beforeEntry = reads();
+  page.rerender(tree("/book/account/"));
+  await waitFor(() =>
+    expect(navigation.replace).toHaveBeenCalledWith(
+      `/confirmation/?attempt=${first}`,
+    ),
+  );
+  expect(reads()).toBeGreaterThan(beforeEntry);
+  page.rerender(tree("/confirmation/"));
+  await expectOriginalReceipt();
+  expect(navigation.replace.mock.calls).toEqual([
+    [`/confirmation/?attempt=${first}`],
+  ]);
+  expect(
+    fetch.mock.calls
+      .filter(
+        ([path, init]) =>
+          (init?.method ?? "GET") !== "GET" ||
+          !["/api/booking/current", contextPath, receiptPath].includes(
+            String(path),
+          ),
+      )
+      .map(([path, init]) => [init?.method ?? "GET", String(path)]),
+  ).toEqual([]);
 });
 
 it("booking restoration does not restart a protected confirmation read", async () => {
@@ -2308,7 +2447,7 @@ it("retries unavailable checkout context silently and returns expired checkout t
     monotonic = 24001;
     await vi.advanceTimersByTimeAsync(20000);
   });
-  expect(onAwaitingExpiry).toHaveBeenCalledExactlyOnceWith(first);
+  expect(onAwaitingExpiry).toHaveBeenCalledExactlyOnceWith(first, true);
   expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
   expect(
     JSON.parse(localStorage.getItem(`soccerbot-checking:${first}`)!).deadline,
@@ -2401,7 +2540,7 @@ it("retries unavailable checkout context silently and returns expired checkout t
         monotonic += 20000;
         await vi.advanceTimersByTimeAsync(20000);
       });
-      expect(onAwaitingExpiry).toHaveBeenCalledExactlyOnceWith(first);
+      expect(onAwaitingExpiry).toHaveBeenCalledExactlyOnceWith(first, true);
       expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
       expect(
         document.querySelector(
@@ -2566,7 +2705,7 @@ it("expiry reconciliation keeps one twenty-second foreground budget across refre
   await act(async () => {
     await vi.advanceTimersByTimeAsync(1);
   });
-  expect(awaiting).toHaveBeenCalledExactlyOnceWith(first);
+  expect(awaiting).toHaveBeenCalledExactlyOnceWith(first, true);
   expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
   view.rerender(tree(true));
   expect(
@@ -2778,7 +2917,7 @@ it("late unpaid-release acknowledgement cannot override newer payment evidence a
   for (let refresh = 0; refresh < 2; refresh++) {
     const remount = render(tree());
     await act(async () => {});
-    expect(awaiting).toHaveBeenCalledWith(first);
+    expect(awaiting).toHaveBeenCalledWith(first, true);
     if (vi.isFakeTimers())
       await act(async () => vi.advanceTimersByTimeAsync(1000));
     expect(document.querySelector(".booking-flow-overlay")).toBeNull();
@@ -2850,7 +2989,12 @@ it("repeat provider returns and direct revisits retain verified confirmation wit
 });
 
 it("expiry waits for the first paced post-expiry status response without extending recovery indefinitely", async () => {
-  for (const outcome of ["paid", "pending", "stalled"] as const) {
+  for (const outcome of [
+    "paid",
+    "pending",
+    "stalled",
+    "inconclusive",
+  ] as const) {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-11-09T00:00:00Z"));
     const started = Date.now();
@@ -2887,7 +3031,13 @@ it("expiry waits for the first paced post-expiry status response without extendi
           if (reads.length === 1)
             return Response.json(
               { status: "pending", reason: "payment_verification_pending" },
-              { headers: { "X-Next-Check": String(started + 21500) } },
+              {
+                headers: {
+                  "X-Next-Check": String(
+                    started + (outcome === "inconclusive" ? 10500 : 21500),
+                  ),
+                },
+              },
             );
           if (outcome === "stalled") return new Promise<Response>(() => {});
           await new Promise((resolve) => setTimeout(resolve, 500));
@@ -2896,7 +3046,9 @@ it("expiry waits for the first paced post-expiry status response without extendi
             reason:
               outcome === "paid"
                 ? "payment_received_booking_pending"
-                : "payment_verification_pending",
+                : outcome === "inconclusive"
+                  ? "payment_expiry_checks_inconclusive"
+                  : "payment_verification_pending",
           });
         }
         throw new Error(`Unexpected expiry request ${path}`);
@@ -2915,6 +3067,17 @@ it("expiry waits for the first paced post-expiry status response without extendi
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
+    if (outcome === "inconclusive") {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(10500);
+      });
+      expect(awaiting).toHaveBeenCalledExactlyOnceWith(first, true);
+      expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
+      cleanup();
+      localStorage.clear();
+      sessionStorage.clear();
+      continue;
+    }
     await act(async () => {
       await vi.advanceTimersByTimeAsync(20000);
     });
@@ -2928,13 +3091,13 @@ it("expiry waits for the first paced post-expiry status response without extendi
     });
     expect(reads).toEqual([started, started + 21500]);
     if (outcome === "pending")
-      expect(awaiting).toHaveBeenCalledExactlyOnceWith(first);
+      expect(awaiting).toHaveBeenCalledExactlyOnceWith(first, true);
     else expect(awaiting).not.toHaveBeenCalled();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(9000);
     });
     if (outcome === "stalled")
-      expect(awaiting).toHaveBeenCalledExactlyOnceWith(first);
+      expect(awaiting).toHaveBeenCalledExactlyOnceWith(first, true);
     if (outcome === "paid")
       expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
     cleanup();

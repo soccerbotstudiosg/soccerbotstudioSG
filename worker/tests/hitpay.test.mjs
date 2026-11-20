@@ -448,8 +448,17 @@ test("HitPay authoritative contract rejects identity money currency refund and s
     "2026-02-30T18:00:00",
     "2026-10-15T18:00:00Z",
     "invalid",
-  ])
-    assert.throws(() => verify({ ...valid, expiry_date }));
+  ]) {
+    for (const status of ["completed", "expired"])
+      assert.throws(() => verify({ ...valid, status, expiry_date }), {
+        code: "hitpay_payment_unverified",
+        requestId,
+      });
+    assert.throws(
+      () => verify({ ...valid, expiry_date, status: "pending", payments: [] }),
+      { code: "hitpay_expiry_unverified" },
+    );
+  }
   for (const patch of [
     { id: businessId },
     { reference_number: "other" },
@@ -2588,7 +2597,7 @@ test("verified empty expired payment releases checkout but retains late payment 
   );
 });
 
-test("terminal payment requests require explicit empty or unstarted evidence for release", async () => {
+test("verified expiry accepts omitted payment details and rejects conflicting evidence", async () => {
   for (const status of [
     "pending",
     "failed",
@@ -2654,10 +2663,12 @@ test("terminal payment requests require explicit empty or unstarted evidence for
         assert.equal(
           value.unpaidTerminal,
           ["expired", "canceled"].includes(status) &&
-            payments !== undefined &&
-            (payments.length === 0 ||
+            (payments !== undefined || status === "expired") &&
+            (!payments?.length ||
               (payments[0].status === "requires_payment_method" &&
-                payments[0].refunded_amount === "0.00" &&
+                (payments[0].refunded_amount === "0.00" ||
+                  (status === "expired" &&
+                    payments[0].refunded_amount === undefined)) &&
                 payments[0].currency.toUpperCase() === "SGD")),
         );
       }
@@ -2868,6 +2879,260 @@ test("verified nonpayment releases checkout before the original hold ends", asyn
       .bind(attemptId)
       .first(),
     null,
+  );
+});
+
+test("authenticated expiry with omitted optional details releases the customer checkout", async () => {
+  const options = await seedHold(Date.now() + 60000);
+  await seedCustomerProgress(Date.now() - 540001, true);
+  await seedPayment({ expired: true });
+  const reads = [];
+  handler = async (request) => {
+    assert.equal(request.method, "GET");
+    reads.push({ url: request.url, time: performance.now() });
+
+    return Response.json({
+      ...paymentResponse(),
+      status: reads.length === 2 || reads.length === 4 ? "pending" : "expired",
+      payments: undefined,
+      expiry_date: undefined,
+    });
+  };
+  await recover();
+  assert.equal((await row()).reason, "payment_expiry_checks_inconclusive");
+  assert.equal(reads.length, 3);
+  const status = await mf.dispatchFetch(
+    origin + `/api/attempts/${attemptId}/confirmation`,
+    {
+      headers: options.headers,
+    },
+  );
+  assert.equal(
+    (await status.json()).reason,
+    "payment_expiry_checks_inconclusive",
+  );
+  const early = await mf.dispatchFetch(
+    origin + `/api/attempts/${attemptId}/expire`,
+    {
+      method: "POST",
+      headers: options.headers,
+    },
+  );
+  assert.equal(early.status, 409);
+  await recover();
+  assert.equal(reads.length, 6);
+  assert.equal(reads[4].url, reads[5].url);
+  assert.ok(reads[5].time - reads[4].time >= 5000);
+  assert.equal(reads[0].url, reads[1].url);
+  assert.ok(reads[1].time - reads[0].time >= 5000);
+  assert.equal((await row()).reason, "hitpay_unpaid_verified");
+  const response = await mf.dispatchFetch(
+    origin + `/api/attempts/${attemptId}/expire`,
+    { method: "POST", headers: options.headers },
+  );
+  assert.equal(response.status, 200);
+  assert.equal(
+    await db
+      .prepare("SELECT 1 FROM native_checkout_grants WHERE attempt_id=?")
+      .bind(attemptId)
+      .first(),
+    null,
+  );
+});
+
+test("contradictory payment evidence remains locked across signed receipt rechecks until verified payment", async () => {
+  const { headers } = await seedHold();
+  await seedCustomerProgress(Date.now() - 540001, true);
+  await seedPayment({ expired: true });
+  const expire = () =>
+    mf.dispatchFetch(origin + `/api/attempts/${attemptId}/expire`, {
+      method: "POST",
+      headers,
+    });
+  let reads = 0;
+  handler = async (request) => {
+    assert.equal(request.method, "GET");
+    assert.equal(
+      new URL(request.url).pathname,
+      `/v1/payment-requests/${requestId}`,
+    );
+    return Response.json({
+      ...paymentResponse(),
+      status: "expired",
+      payments: ++reads === 1 ? paymentResponse().payments : [],
+    });
+  };
+  await recover();
+  assert.equal((await row()).reason, "hitpay_payment_unverified");
+  const unresolved = await mf.dispatchFetch(
+    origin + `/api/attempts/${attemptId}/confirmation`,
+    { headers },
+  );
+  assert.equal(unresolved.status, 200);
+  assert.equal(
+    (await unresolved.json()).reason,
+    "payment_expiry_checks_inconclusive",
+  );
+  assert.equal((await expire()).status, 409);
+  const previousReads = reads;
+  const firstReceipt = raw();
+  assert.equal((await send(firstReceipt)).status, 202);
+  await mf.dispatchFetch(origin + "/test/alarm");
+  assert.ok(
+    reads > previousReads,
+    "a distinct receipt requests current evidence",
+  );
+  const afterEmpty = await row();
+  assert.equal(afterEmpty.reason, "hitpay_payment_unverified");
+  assert.equal(afterEmpty.payment_id, null);
+  assert.equal((await expire()).status, 409);
+
+  const provider = providerFixture();
+  const nextReceipt = JSON.stringify({
+    ...JSON.parse(firstReceipt),
+    updated_at: "2026-11-19T11:00:00Z",
+  });
+  assert.equal((await send(nextReceipt)).status, 202);
+  await mf.dispatchFetch(origin + "/test/alarm");
+  const paid = await row();
+  assert.equal(paid.request_id, requestId);
+  assert.equal(paid.payment_id, paymentId);
+  assert.equal(paid.reason, "hitpay_late_payment_review");
+  assert.equal(provider.writes(), 0, "late money cannot recreate a booking");
+  assert.equal((await expire()).status, 409);
+});
+
+test("completed payment missing its transaction reconciles after a signed receipt without duplicate accounting", async () => {
+  const { headers } = await seedHold();
+  await seedCustomerProgress();
+  await seedPayment();
+  handler = async (request) => {
+    assert.equal(request.method, "GET");
+    assert.equal(
+      new URL(request.url).pathname,
+      `/v1/payment-requests/${requestId}`,
+    );
+    return Response.json({ ...paymentResponse(), payments: undefined });
+  };
+  await recover();
+  const incomplete = await row();
+  assert.equal(incomplete.reason, "hitpay_payment_unverified");
+  assert.equal(incomplete.payment_id, null);
+  assert.equal(incomplete.external_state, "none");
+  const pending = await mf.dispatchFetch(
+    origin + `/api/attempts/${attemptId}/confirmation`,
+    { headers },
+  );
+  assert.equal(pending.status, 200);
+  assert.equal((await pending.json()).reason, "payment_verification_pending");
+  assert.equal(
+    (
+      await mf.dispatchFetch(origin + `/api/attempts/${attemptId}/expire`, {
+        method: "POST",
+        headers,
+      })
+    ).status,
+    409,
+  );
+  const provider = providerFixture();
+  for (const delivery of [1, 2]) {
+    assert.equal((await send()).status, 202);
+    await mf.dispatchFetch(origin + "/test/alarm");
+    const paid = await row();
+    assert.equal(paid.payment_id, paymentId, `delivery ${delivery}`);
+    assert.equal(paid.reason, "verified");
+    assert.equal(paid.external_state, "observed");
+    assert.equal(provider.writes(), 1);
+    assert.equal(provider.reads(), 1);
+  }
+});
+
+test("incomplete cancellation keeps sampling the original request and prioritizes verified payment", async () => {
+  const { headers } = await seedHold();
+  await seedCustomerProgress(Date.now() - 540001, true);
+  await seedPayment({ expired: true });
+  const expire = () =>
+    mf.dispatchFetch(origin + `/api/attempts/${attemptId}/expire`, {
+      method: "POST",
+      headers,
+    });
+  const provider = providerFixture();
+  const normal = handler;
+  const readings = [];
+  handler = async (request) => {
+    if (new URL(request.url).hostname !== "api.sandbox.hit-pay.com")
+      return normal(request);
+    assert.equal(request.method, "GET");
+    assert.equal(
+      new URL(request.url).pathname,
+      `/v1/payment-requests/${requestId}`,
+    );
+    readings.push(performance.now());
+    if (readings.length === 6) return normal(request);
+    const canceled = readings.length === 2 || readings.length === 5;
+    return Response.json({
+      ...paymentResponse(),
+      status: canceled ? "canceled" : "expired",
+      payments:
+        readings.length === 2
+          ? undefined
+          : canceled
+            ? [
+                {
+                  ...paymentResponse().payments[0],
+                  status: "requires_payment_method",
+                  refunded_amount: undefined,
+                },
+              ]
+            : [],
+    });
+  };
+  await recover();
+  assert.equal(readings.length, 3);
+  assert.equal((await row()).reason, "payment_expiry_checks_inconclusive");
+  assert.equal((await expire()).status, 409);
+  await recover();
+  assert.equal(readings.length, 6);
+  for (const index of [1, 2, 4, 5])
+    assert.ok(readings[index] - readings[index - 1] >= 5000);
+  assert.equal((await row()).payment_id, paymentId);
+  assert.equal((await row()).reason, "hitpay_late_payment_review");
+  assert.equal(provider.writes(), 0);
+  assert.equal((await expire()).status, 409);
+});
+
+test("expired provider evidence returned after the reconciliation deadline cannot release checkout", async () => {
+  const { headers } = await seedHold();
+  await seedCustomerProgress(Date.now() - 540001, true);
+  await seedPayment({ expired: true });
+  let reads = 0;
+  handler = async (request) => {
+    assert.equal(request.method, "GET");
+    assert.equal(
+      new URL(request.url).pathname,
+      `/v1/payment-requests/${requestId}`,
+    );
+    // With the five-second gap, this reply crosses the twenty-second round
+    // deadline while remaining inside the transport's ordinary per-call limit.
+    if (++reads === 2)
+      await new Promise((resolve) => setTimeout(resolve, 16000));
+    return Response.json({
+      ...paymentResponse(),
+      status: "expired",
+      payments: [],
+    });
+  };
+  await recover();
+  assert.equal(reads, 2);
+  assert.equal((await row()).reason, "payment_expiry_checks_inconclusive");
+  assert.equal(
+    (
+      await mf.dispatchFetch(origin + `/api/attempts/${attemptId}/expire`, {
+        method: "POST",
+        headers,
+      })
+    ).status,
+    409,
   );
 });
 

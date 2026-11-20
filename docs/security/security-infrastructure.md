@@ -1,6 +1,9 @@
 # Security infrastructure
 
-SoccerBot layers Cloudflare’s secure hosting, Turnstile’s bot checks and Resend-delivered email verification with server-enforced access controls. SimplyBook owns booking records and HitPay hosts payment; SoccerBot validates both before confirmation and retains recovery evidence to prevent duplicate transactions. Restricted credentials, protected data storage and GitHub’s dependency checks and verified releases safeguard operations. Planned Grafana monitoring adds failure visibility; client hosting, monitoring and operational safeguards still require acceptance before handover.
+- SoccerBot layers Cloudflare’s secure hosting, Turnstile’s bot checks and Resend-delivered email verification with server-enforced access controls.
+- SimplyBook owns booking records and HitPay hosts payment; SoccerBot validates both before confirmation and retains recovery evidence to prevent duplicate transactions.
+- Restricted credentials, protected data storage and GitHub’s dependency checks and verified releases safeguard operations.
+- Planned Grafana monitoring adds failure visibility; client hosting, monitoring and operational safeguards still require acceptance before handover.
 
 ```mermaid
 flowchart TB
@@ -59,9 +62,14 @@ flowchart TB
 
 ## Scope and status
 
-This document explains the security architecture, its trust boundaries, implemented controls, remaining acceptance work and proposed future layers. The diagram shows responsibility and data flow, not permission for every caller or a claim that every deployment is active. A provider response is validated even when it comes from an authenticated provider. A browser return or a signed webhook alone does not establish paid, valid booking state.
+- This document explains the security architecture, its trust boundaries, implemented controls, remaining acceptance work and proposed future layers.
+- The diagram shows responsibility and data flow, not permission for every caller or a claim that every deployment is active.
+- A provider response is validated even when it comes from an authenticated provider.
+- A browser return or a signed webhook alone does not establish paid, valid booking state.
 
-Architecture baseline reviewed on 28 October 2026; documentation and diagnostic boundary reviewed against PR26 on 5 November 2026. **Implemented** means a control exists in repository code; **prepared** means configuration or integration exists but operational acceptance is pending; **proposed** means future work. Client production, apex/renewal proof, Grafana activation and several handover controls remain separate from developer deployment and synthetic CI evidence. This is an architecture inventory, not a penetration-test report or compliance certification.
+- Architecture baseline reviewed on 28 October 2026; documentation and diagnostic boundary reviewed against PR26 on 5 November 2026. **Implemented** means a control exists in repository code; **prepared** means configuration or integration exists but operational acceptance is pending; **proposed** means future work.
+- Client production, apex/renewal proof, Grafana activation and several handover controls remain separate from developer deployment and synthetic CI evidence.
+- This is an architecture inventory, not a penetration-test report or compliance certification.
 
 [Business rules](../business-rules.md) owns the numbered requirements; [API contracts](../api-contracts.md) owns request/response details; [Runbook](../runbook.md) owns operational procedures; [Progress](../../PROGRESS.md) owns current failures and leave-off; [Journey](../journey.md) owns milestone acceptance and history. This document does not duplicate credentials, customer records or recovery codes.
 
@@ -83,7 +91,8 @@ Customer browser state, URL parameters, cached catalogue data, contact fields an
 
 **Implemented application controls:** [Worker entry](../../worker/index.ts) requires API HTTPS and the configured origin, rejects a conflicting supplied Origin, restricts query forms and dispatches only named routes. Browser mutations require same-origin Origin; signed webhooks use their separate authentication path. Production asset requests also enforce configured origin and allowed methods. [Pages adapter](../../worker/pages.ts) has its own forwarding/origin boundary; do not assume both hosting modes share identical deployment behavior.
 
-**Current ownership plan:** activate the destination Cloudflare zone before Registrar transfer, preserving email and DNSSEC coordination; bootstrap the closed Worker before domain hookup. Transfer/delegation are unverified; preserve email records and explicitly assess DNSSEC before nameserver changes. The client bootstrap target is now a closed Worker on its exact Workers.dev origin with previews disabled. The SaaS target remains a supported alternative with its own preflight; no custom domain is activated by this change. Account/zone/fallback/route and resource checks belong to [deployment preflight](../../scripts/deploy-cloudflare.mjs), [target validation](../../scripts/deployment-target.mjs) and [hosting rules BR-025–027](../business-rules.md#client-hosting-setup-prepared-not-deployed). Origin rejection reduces alternate-host entry; it does not replace user authorization or protect an exposed server secret.
+- The production manifest selects the client native custom domain. Origin validation and provider authorization are independent controls.
+- Use [domain operations](../runbook.md#8-domain-dns-and-https) for delegation, certificate and rollback checks.
 
 **Acceptance still needed:** exact DNS owners, apex support, proxy/CAA settings, trusted hostname coverage, persistent automated certificate validation/renewal prerequisites, availability/expiry alerts and rollback. Record initial issuance separately from actual renewal evidence. Preserve MX, SPF, DKIM, DMARC and unrelated DNS records. Platform features such as managed WAF, DNSSEC, edge rate limiting and bot rules are not claimed enabled merely because Cloudflare hosts the site.
 
@@ -91,11 +100,29 @@ API responses explicitly set no-store, JSON content type, nosniff and no-referre
 
 ## 3. Customer identity, sessions and abuse controls
 
-[Access](../../worker/access.ts) issues the server-owned `__Host-soccerbot-access` capability. It uses Secure, HttpOnly, SameSite=Strict and Path=/; storage binds capability to an owner and enforces expiry/revocation. Browser storage and attempt IDs are not authentication. An invalid old guest cookie cannot inherit the prior owner's attempts. Explicit access entry and checkout POST renew only still-valid, unrevoked capabilities for the configured lifetime while preserving owner/grants; read polling does not renew access, and financial/identity deadlines remain unchanged.
+- [Access](../../worker/access.ts) issues the server-owned `__Host-soccerbot-access` capability.
+- It uses Secure, HttpOnly, SameSite=Strict and Path=/; storage binds capability to an owner and enforces expiry/revocation.
+- Browser storage and attempt IDs are not authentication.
+- An invalid old guest cookie cannot inherit the prior owner's attempts.
+- Explicit access entry and checkout POST renew only still-valid, unrevoked capabilities for the configured lifetime while preserving owner/grants; read polling does not renew access, and financial/identity deadlines remain unchanged.
 
-[Identity](../../worker/identity.ts) and [delivery](../../worker/identity-delivery.ts) require current access, scoped delivery, normalized email, a bounded challenge and a valid code. Turnstile is checked server-side before permitted email delivery; request/attempt limits and expiry restrict abuse. Codes are stored as keyed hashes rather than plaintext. Migration0046 adds normalized-email-hash request limits across sessions and IPs; aliases remain independent. The local0047 candidate permits overlapping requests, with new codes independently valid for120 seconds and a fixed600-second block after the third admitted request. New issuance cannot invalidate older valid codes. Verification candidates remain bound to the same capability/email, consumed codes cannot replay, and wrong guesses charge all eligible live candidate budgets. An attacker who can pass the existing admission checks may temporarily consume another address's request allowance, but issued codes remain verifiable and blocked retries cannot extend its deadline. Resend delivers verification email; it is not the authority for booking or payment confirmation. A successful email challenge establishes access to that mailbox, not a real-world identity or permission to administer the business.
+- [Identity](../../worker/identity.ts) and [delivery](../../worker/identity-delivery.ts) require current access, scoped delivery, normalized email, a bounded challenge and a valid code.
+- Turnstile is checked server-side before permitted email delivery; request/attempt limits and expiry restrict abuse.
+- Codes are stored as keyed hashes rather than plaintext.
+- Migration0046 adds normalized-email-hash request limits across sessions and IPs; aliases remain independent.
+- The local0047 candidate permits overlapping requests, with new codes independently valid for120 seconds and a fixed600-second block after the third admitted request.
+- New issuance cannot invalidate older valid codes.
+- Verification candidates remain bound to the same capability/email, consumed codes cannot replay, and wrong guesses charge all eligible live candidate budgets.
+- An attacker who can pass the existing admission checks may temporarily consume another address's request allowance, but issued codes remain verifiable and blocked retries cannot extend its deadline.
+- Resend delivers verification email; it is not the authority for booking or payment confirmation.
+- A successful email challenge establishes access to that mailbox, not a real-world identity or permission to administer the business.
 
-[Remembered identity](../../worker/remembered-identity.ts) rotates/restores server-controlled authority within its original lifetime and revocation policy. Current-device sign-out and all-device revocation remain server operations. All-device revocation requires current verified email authority, including permitted remembered restoration; a guest cannot revoke another identity. [Contact profiles](../../worker/contact-profile.ts) require current identity, account/origin and consent predicates at the storage boundary. All-device email sign-out revokes saved-profile/remembered authority and older challenges while preserving other devices’ booking capabilities. Local logout and token replay retain booking revocation. Migration0048 records the revocation scope; no historical revoked capability is revived and no retained contact record is deleted.
+- [Remembered identity](../../worker/remembered-identity.ts) rotates/restores server-controlled authority within its original lifetime and revocation policy.
+- Current-device sign-out and all-device revocation remain server operations.
+- All-device revocation requires current verified email authority, including permitted remembered restoration; a guest cannot revoke another identity. [Contact profiles](../../worker/contact-profile.ts) require current identity, account/origin and consent predicates at the storage boundary.
+- All-device email sign-out revokes saved-profile/remembered authority and older challenges while preserving other devices’ booking capabilities.
+- Local logout and token replay retain booking revocation.
+- Migration0048 records the revocation scope; no historical revoked capability is revived and no retained contact record is deleted.
 
 [Browser identity service](../../src/services/identity.ts) rejects stale/aborted replies and identity-generation mismatches. Cached `current()` state is a UI convenience, not fresh server authority. HttpOnly reduces direct script access to cookie values but does not prevent an XSS payload from acting through an authenticated browser. SameSite/Origin defenses address cross-site request abuse, not same-origin script compromise. See [BR-003–005](../business-rules.md#identity-privacy-and-environment-isolation).
 
@@ -107,7 +134,19 @@ API responses explicitly set no-store, JSON content type, nosniff and no-referre
 
 ## 4. Authorization, validation and environment isolation
 
-[Bindings](../../worker/bindings.ts) checks configured account, environment, database and coordinator against the immutable foundation. Protected operations fail closed on missing/mismatched resources; an unknown database is not automatically claimed. Closed-production health can report an empty registration as `pending` only while all customer/provider/email/payment/warming switches are explicitly disabled. It reads the foundation table without writing identity or invoking a coordinator; missing schema and foreign identities still fail. A 200 closed-install health response is not operational readiness. [Policy](../../worker/policy.ts) and provider-specific configuration constrain access modes, operation windows, allowed accounts/hosts and credentials. Developer and client staging/production data, provider mappings and secrets must remain separate. SimplyBook credential lookup uses environment-selected DEV/PROD names without fallback; production authentication rejects a company that differs from the reviewed public target mapping. Target digests and artifact validation seal company/service mappings. Secret presence in health does not prove successful authentication. Client sandbox operations additionally require an explicit access switch and matching expected company, service and HitPay merchant/business configuration. Payment scope binds original account, environment, company, key digest and invoice/attempt even when app404 sandbox credentials are intentionally shared. HitPay transport remains sandbox-host-only; no live host is introduced. Production artifact validation rejects CLIENT_SANDBOX_ACCESS=enabled.
+- [Bindings](../../worker/bindings.ts) checks configured account, environment, database and coordinator against the immutable foundation.
+- Protected operations fail closed on missing/mismatched resources; an unknown database is not automatically claimed.
+- Closed-production health can report an empty registration as `pending` only while all customer/provider/email/payment/warming switches are explicitly disabled.
+- It reads the foundation table without writing identity or invoking a coordinator; missing schema and foreign identities still fail.
+- A 200 closed-install health response is not operational readiness. [Policy](../../worker/policy.ts) and provider-specific configuration constrain access modes, operation windows, allowed accounts/hosts and credentials.
+- Developer and client staging/production data, provider mappings and secrets must remain separate.
+- SimplyBook credential lookup uses environment-selected DEV/PROD names without fallback; production authentication rejects a company that differs from the reviewed public target mapping.
+- Target digests and artifact validation seal company/service mappings.
+- Secret presence in health does not prove successful authentication.
+- Client sandbox operations additionally require an explicit access switch and matching expected company, service and HitPay merchant/business configuration.
+- Payment scope binds original account, environment, company, key digest and invoice/attempt even when app404 sandbox credentials are intentionally shared.
+- HitPay transport remains sandbox-host-only; no live host is introduced.
+- Production artifact validation rejects CLIENT_SANDBOX_ACCESS=enabled.
 
 [Router](../../worker/index.ts), [domain schemas](../../src/domain/native-checkout.ts) and operation owners enforce body bounds, strict fields, consent, selected service/instructor/time/player limits and authoritative price/account scope. Server code rechecks ownership and current access for protected reads and writes. A disabled button, valid JSON schema, signed cookie or successful previous request is insufficient by itself. Public display snapshots speed browsing but cannot authorize a booking.
 
@@ -119,11 +158,22 @@ Security includes preventing unauthorized or duplicate financial effects. [Custo
 
 [HitPay hold](../../worker/hitpay-hold.ts), [payment journal](../../worker/hitpay-journal.ts) and [recovery](../../worker/hitpay-recovery.ts) bind attempt, merchant, invoice, request ID and amount. Hosted checkout keeps payment entry with HitPay; the website does not collect card details. This design does not by itself establish any particular PCI compliance scope or certification.
 
-Unknown writes retain their original identity and evidence; they are not retried with a new key. Browser closure, expiry, a deleted link or a lost response cannot prove nonpayment. Authenticated terminal nonpayment with an explicit empty payment list or only matching, explicit zero-refund `requires_payment_method` entries may release after original hold/checking expiry; unprocessed receipts, known money and unknown accounting block release. Release preserves financial identity and history, and novel late receipts reopen bounded reconciliation. Payment received may remain booking pending until accounting and valid booking readback reconcile. Cancellation is not a refund. [Receipt authorization](../../worker/receipt.ts) and [confirmation](../../worker/confirmation.ts) protect final success/export from cached browser claims. See [BR-007–013](../business-rules.md#checkout-durable-effects-and-customer-errors).
+- Unknown writes retain their original identity and evidence; they are not retried with a new key.
+- Browser closure, expiry, a deleted link or a lost response cannot prove nonpayment.
+- Two authenticated expired reads at least five seconds apart with no contradictory payment evidence, or cancellation with explicit empty or verified unstarted payment details, may release at or after the actual payment deadline under BR-011; unprocessed receipts, known money and unknown accounting block release.
+- Release preserves financial identity and history, and novel late receipts reopen bounded reconciliation.
+- Payment received may remain booking pending until accounting and valid booking readback reconcile.
+- Cancellation is not a refund. [Receipt authorization](../../worker/receipt.ts) and [confirmation](../../worker/confirmation.ts) protect final success/export from cached browser claims.
+- See [BR-007–013](../business-rules.md#checkout-durable-effects-and-customer-errors).
 
 ### Receipt refresh boundary
 
-Explicit export requests may refresh stale booking/invoice evidence through the existing coordinator queue. The server enforces owned access, the original checking window, shared check quota, provider account scope, and post-read state/authorization checks. Only known-ID reads are admitted; this path does not create bookings, register payments, reopen financial recovery or extend deadlines. Refreshed evidence authorizes that response only. Saved confirmation remains display evidence, not download authority. See the [receipt contract](../api-contracts.md#6-protected-confirmation-receipt-and-recovery).
+- Explicit export requests may refresh stale booking/invoice evidence through the existing coordinator queue.
+- The server enforces owned access, the original checking window, shared check quota, provider account scope, and post-read state/authorization checks.
+- Only known-ID reads are admitted; this path does not create bookings, register payments, reopen financial recovery or extend deadlines.
+- Refreshed evidence authorizes that response only.
+- Saved confirmation remains display evidence, not download authority.
+- See the [receipt contract](../api-contracts.md#6-protected-confirmation-receipt-and-recovery).
 
 ## 6. Webhook and outbound-provider boundaries
 
@@ -137,7 +187,13 @@ Provider credentials and webhook signing secrets have different uses and must be
 
 D1 retains access, identity/contact, attempts, grants and effect/payment/webhook/recovery evidence; public display snapshots are held in Durable Object storage. The [migrations](../../migrations) and application ownership checks preserve evidence needed for reconciliation. These records are not anonymous: contact and booking-associated records remain personal or sensitive operational data and require restricted access, retention decisions and secure recovery procedures.
 
-The [provider token cache](../../worker/provider-token-cache.ts) encrypts two token families in DO SQLite using AES-GCM with scoped authenticated metadata. Account/environment/credential identity, issuance and original expiry constrain restoration; ciphertext from another scope or invalid metadata is rejected. Admin access/refresh pairs remain encrypted together. Refresh consumption uses a conditional durable delete before dispatch; publication checks the authentication claim after encryption and rechecks invalidation after the awaited save before restoring memory. Interrupted refreshes cannot replay a single-use credential.401/419 access rejection can retain refresh material for the next operation; repeated expiry of access already retired for renewal does not cancel the replacement.403 and rejected refresh requests still invalidate the family. No authentication repair automatically replays a protected provider operation. [Provider session](../../worker/provider-session.ts) handles invalidation and replacement without turning cached tokens into customer authority. Do not describe this as application-level encryption of every D1 field: the explicit code-level encryption here covers provider tokens.
+- The [provider token cache](../../worker/provider-token-cache.ts) encrypts two token families in DO SQLite using AES-GCM with scoped authenticated metadata.
+- Account/environment/credential identity, issuance and original expiry constrain restoration; ciphertext from another scope or invalid metadata is rejected.
+- Admin access/refresh pairs remain encrypted together.
+- Refresh consumption uses a conditional durable delete before dispatch; publication checks the authentication claim after encryption and rechecks invalidation after the awaited save before restoring memory.
+- Interrupted refreshes cannot replay a single-use credential.401/419 access rejection can retain refresh material for the next operation; repeated expiry of access already retired for renewal does not cancel the replacement.403 and rejected refresh requests still invalidate the family.
+- No authentication repair automatically replays a protected provider operation. [Provider session](../../worker/provider-session.ts) handles invalidation and replacement without turning cached tokens into customer authority.
+- Do not describe this as application-level encryption of every D1 field: the explicit code-level encryption here covers provider tokens.
 
 No blanket retention/deletion or backup compliance claim is made. Restore capability, retention periods, approved RPO/RTO, encrypted backup access and a real restore drill still need recording for the selected accounts/plans. Financial uncertainty and audit evidence must not be erased by a cleanup job. See the [data lifecycle draft](../data-lifecycle.md) for current storage/expiry behavior and pending clause mapping, and the [data recovery runbook](../runbook.md#7-data-protection-and-restore) for restoration.
 
@@ -155,19 +211,36 @@ Automatic deployment candidates are first classified by a trusted-main job witho
 
 Browser shard receipts additionally bind the exact source fingerprint, public release profile, export hashes, repository, run and attempt. Aggregation requires both disjoint shards and the complete reviewed device/case inventory before producing a releasable receipt; shard success alone cannot authorize deployment. No shard/build job receives deployment credentials. These checks prevent accidental evidence substitution; they do not make unreviewed PR code trustworthy.
 
-[Client CI](../../.github/workflows/verify-target.yml) separates verification from main deployment; release jobs consume tested artifacts. [Verified-target checks](../../scripts/verified-target-run.mjs), [deployment preflight](../../scripts/deploy-cloudflare.mjs) and [deployment workflow](../../.github/workflows/deploy-release.yml) bind revision, artifact and target. Automatic staging accepts only current open non-draft same-repository PRs from human authors with write permission; bots/forks cannot deploy. Secret-bearing controllers execute trusted-main tooling after verification, never PR scripts. Production accepts only successfully verified current main. Configuration/cutover and client activation remain unverified until executed. Fork/Dependabot changes must not gain production secrets; account-scoped credentials and workflow conditions require review when ownership moves repositories.
+- [Client CI](../../.github/workflows/verify-target.yml) separates verification from main deployment; release jobs consume tested artifacts. [Verified-target checks](../../scripts/verified-target-run.mjs), [deployment preflight](../../scripts/deploy-cloudflare.mjs) and [deployment workflow](../../.github/workflows/deploy-release.yml) bind revision, artifact and target.
+- Automatic staging accepts only current open non-draft same-repository PRs from human authors with write permission; bots/forks cannot deploy.
+- Secret-bearing controllers execute trusted-main tooling after verification, never PR scripts.
+- Production accepts only successfully verified current main.
+- Configuration/cutover and client activation remain unverified until executed.
+- Fork/Dependabot changes must not gain production secrets; account-scoped credentials and workflow conditions require review when ownership moves repositories.
 
-Client CodeQL managed default setup was observed running on 4 November 2026. A successful scan means analysis completed, not that there are no findings; findings need individual triage. GitHub branch protection, required reviews, CODEOWNERS enforcement, secret scanning/push protection, artifact attestations and organization MFA are distinct controls. This document does not claim them configured from the presence of YAML or a clean run. Plan availability and account settings must be checked. [Dependency procedure](../runbook.md#3-dependency-maintenance-and-dependabot) owns remediation steps; [versions](../versions.md) owns the inventory.
+- Client CodeQL managed default setup was observed running on 4 November 2026.
+- A successful scan means analysis completed, not that there are no findings; findings need individual triage.
+- GitHub branch protection, required reviews, CODEOWNERS enforcement, secret scanning/push protection, artifact attestations and organization MFA are distinct controls.
+- This document does not claim them configured from the presence of YAML or a clean run.
+- Plan availability and account settings must be checked. [Dependency procedure](../runbook.md#3-dependency-maintenance-and-dependabot) owns remediation steps; [versions](../versions.md) owns the inventory.
 
 Finding assessments and unresolved advisories are owned by [False positives](false-positives.md). A repaired finding, a source-specific assessment and a closed GitHub alert are distinct states.
 
 ## 10. Observability, operator access and response
 
-[Diagnostics](../../worker/diagnostics.ts) expose sanitized correlation/timing/error classifications rather than credentials, customer fields, raw URLs, SQL or arbitrary exceptions. [Telemetry](../../worker/telemetry.ts) prepares bounded, sampled OTLP export outside the customer request path. Recognized failures bypass successful-event sampling within limits; best-effort export can still lose evidence. Provider failure events now pass the telemetry allowlist with signed numeric RPC codes, including previously unseen codes. Unknown text categories are classified as `unknown`; raw provider messages and response bodies remain excluded. This enables export when configured, not a production Grafana activation. A quiet dashboard is not proof of security or availability.
+- [Diagnostics](../../worker/diagnostics.ts) expose sanitized correlation/timing/error classifications rather than credentials, customer fields, raw URLs, SQL or arbitrary exceptions. [Telemetry](../../worker/telemetry.ts) prepares bounded, sampled OTLP export outside the customer request path.
+- Recognized failures bypass successful-event sampling within limits; best-effort export can still lose evidence.
+- Provider failure events now pass the telemetry allowlist with signed numeric RPC codes, including previously unseen codes.
+- Unknown text categories are classified as `unknown`; raw provider messages and response bodies remain excluded.
+- This enables export when configured, not a production Grafana activation.
+- A quiet dashboard is not proof of security or availability.
 
 Central company Grafana is intended; exporter activation, environment/service separation, receiver ingestion, redaction, dashboards and actionable alerts remain acceptance work. Telemetry is not a tamper-proof financial audit log or vulnerability scanner. Use the [signal dictionary](../runbook.md#4-monitoring-and-observability) and [incident procedure](../runbook.md#5-incident-response-and-recovery) for interpretation and recovery.
 
-Cloudflare, GitHub, Grafana, SimplyBook, Resend and HitPay need named owners, least-privilege roles, MFA, recovery access and offboarding. Their administrative consoles sit outside customer email verification. Complete actual access/billing/MFA arrangements before handover; never place secret values or recovery codes in this repository. For suspected compromise, preserve evidence, identify affected account/environment/revision, contain with authorized credential/access controls, reconcile financial effects and restore a verified state; do not blindly replay payments or delete D1/DO evidence.
+- Cloudflare, GitHub, Grafana, SimplyBook, Resend and HitPay need named owners, least-privilege roles, MFA, recovery access and offboarding.
+- Their administrative consoles sit outside customer email verification.
+- Complete actual access/billing/MFA arrangements before handover; never place secret values or recovery codes in this repository.
+- For suspected compromise, preserve evidence, identify affected account/environment/revision, contain with authorized credential/access controls, reconcile financial effects and restore a verified state; do not blindly replay payments or delete D1/DO evidence.
 
 ## 11. Additional layers to adopt
 
@@ -187,7 +260,7 @@ These are proposals or incomplete acceptance items, **not enabled features**. Re
 | Later: independent assurance                      | Find gaps not represented by current tests                      | Threat-model review and scoped penetration testing of identity, authorization, checkout/webhooks and admin access                                                                  | Written findings, fixes and retest tied to deployed revision; no uncontrolled real financial tests                              |
 | Later: stronger customer authentication if needed | Reduce reliance on mailbox security for higher-risk features    | Consider step-up/passkeys only if future stored payment/admin or sensitive account features justify the UX/recovery burden                                                         | Agreed threat model, recovery design, accessibility and phishing-resistance evidence                                            |
 
-### Approved follow-up: checkout abuse controls (11 November 2026)
+### Checkout abuse controls
 
 Owner-approved consolidated work: checkout Turnstile and recovery exclusions are now implemented locally, pending complete checks/CI and deployment. Custom-domain/edge rate-limit changes remain planned and are not enabled by this note. Targeted client email verification precedes the full physical acceptance round.
 
@@ -206,13 +279,23 @@ Acceptance must include normal desktop/mobile checkout, slow/mobile networks, Wi
 | Booking/payment authority and recovery | [native](../../worker/tests/native.test.mjs), [combined hold](../../worker/tests/combined-hold.test.mjs), [HitPay](../../worker/tests/hitpay.test.mjs), [recovery](../../worker/tests/recovery.test.mjs) | Live merchant/booking/provider configuration, owner payment journey and retained known-risk acceptance |
 | Signatures and replay handling         | [webhook tests](../../worker/tests/webhook.test.mjs), [HitPay tests](../../worker/tests/hitpay.test.mjs)                                                                                                 | Correct provider subscription/secret/delivery and operational reconciliation                           |
 | Queue/token/privacy controls           | [queue tests](../../worker/tests/provider-queue.test.mjs), [provider tests](../../worker/tests/provider.test.mjs), [telemetry tests](../../worker/tests/telemetry.test.mjs)                              | Actual sustained load, deployed redaction/ingestion, alert delivery and restoration                    |
-| Browser workflows                      | [customer tests](../../tests/customer.spec.ts), [experiment tests](../../tests/experiment.spec.ts), [UAT](../uat/simulated-user.md)                                                                      | Owner/device/provider acceptance; previously failed runs remain evidence                               |
+| Browser workflows                      | [customer tests](../../tests/customer.spec.ts), [experiment tests](../../tests/customer.spec.ts), [UAT](../uat/simulated-user.md)                                                                        | Owner/device/provider acceptance; previously failed runs remain evidence                               |
 
 Update this document when a trust boundary, authentication scheme, provider scope, storage policy or deployment path changes. Update the owning rule/API/runbook rather than copying mutable requirements here. Record observed security findings and exact remediation/deployment status in Progress, retain dated decisions in Journey, and never mark a proposed control implemented without source/configuration and acceptance evidence.
 
-Closed-install management authority: `FoundationManagement` is a named service-binding entrypoint, with no public HTTP handler or registration route. A principal able to configure a binding to this entrypoint has registration/initialization authority; treat Worker deployment and remote service-binding credentials accordingly. Caller-supplied identities are checked against the deployed configuration and namespace-derived ID, and all methods fail outside closed production. The operator client independently checks real control-plane bindings and sealed release evidence before calling it. Registration is insert-only and foreign/racing identities are verified rather than overwritten. Do not grant this service binding to untrusted Workers or expose a forwarding endpoint. Production cloud transport/permission acceptance remains pending until explicitly exercised.
+- Closed-install management authority: `FoundationManagement` is a named service-binding entrypoint, with no public HTTP handler or registration route.
+- A principal able to configure a binding to this entrypoint has registration/initialization authority; treat Worker deployment and remote service-binding credentials accordingly.
+- Caller-supplied identities are checked against the deployed configuration and namespace-derived ID, and all methods fail outside closed production.
+- The operator client independently checks real control-plane bindings and sealed release evidence before calling it.
+- Registration is insert-only and foreign/racing identities are verified rather than overwritten.
+- Do not grant this service binding to untrusted Workers or expose a forwarding endpoint.
+- Production cloud transport/permission acceptance remains pending until explicitly exercised.
 
-Foundation setup through GitHub Actions is manual-only on trusted current main, validates complete current-main gates/artifact before the credentialed step, and uses the existing production token only for the management operation. It shares the production deployment concurrency group. Dispatch input strings enter environment variables or parsed arguments, not executable shell interpolation. Ordinary deployment events do not register or initialize the foundation. The workspace developer token must not be substituted for the client identity.
+- Foundation setup through GitHub Actions is manual-only on trusted current main, validates complete current-main gates/artifact before the credentialed step, and uses the existing production token only for the management operation.
+- It shares the production deployment concurrency group.
+- Dispatch input strings enter environment variables or parsed arguments, not executable shell interpolation.
+- Ordinary deployment events do not register or initialize the foundation.
+- The workspace developer token must not be substituted for the client identity.
 
 ### Customer-facing error boundary
 
@@ -220,9 +303,16 @@ Account and enquiry UI render only locally authored `CustomerMessageError` guida
 
 Browser confirmation timing is local-only diagnostic output with allowlisted states, proof-source labels, monotonic times, build revision and a pseudonymous SHA-256 recovery key. It contains no raw attempt/provider IDs, customer details or credentials, and is not accepted as server payment evidence. No telemetry ingestion endpoint or new external destination is introduced.
 
-Invoice document numbers are optional display metadata from validated invoice evidence. They do not grant access, establish payment or replace internal association/financial identities. Confirmation presentation hides internal booking/invoice/attempt IDs; protected DTOs retain existing identifiers for compatibility. WhatsApp opens an owner-approved external contact without embedding a customer name, phone, invoice or access token in its URL, and cannot perform booking mutations. Notification HTML drafts contain unbound placeholders only; recipient isolation, final paid/confirmed triggers and sender authentication require owner validation before enabling.
+- Invoice document numbers are optional display metadata from validated invoice evidence.
+- They do not grant access, establish payment or replace internal association/financial identities.
+- Confirmation presentation hides internal booking/invoice/attempt IDs; protected DTOs retain existing identifiers for compatibility.
+- WhatsApp opens an owner-approved external contact without embedding a customer name, phone, invoice or access token in its URL, and cannot perform booking mutations.
+- Notification HTML drafts contain unbound placeholders only; recipient isolation, final paid/confirmed triggers and sender authentication require owner validation before enabling.
 
-Customer PDF/calendar generation is retired; the protected receipt API retains its authorization and freshness checks. Confirmed live cards resolve optional paid document metadata against the original order and authenticated invoice association; an unchanged order number is not substituted for the paid document. Delayed metadata can appear after confirmation without establishing or delaying financial proof. No prefix substitution or financial-proof change is authorized by the presentation change.
+- Customer PDF/calendar generation is retired; the protected receipt API retains its authorization and freshness checks.
+- Confirmed live cards resolve optional paid document metadata against the original order and authenticated invoice association; an unchanged order number is not substituted for the paid document.
+- Delayed metadata can appear after confirmation without establishing or delaying financial proof.
+- No prefix substitution or financial-proof change is authorized by the presentation change.
 
 ### Cache diagnostic boundary
 
@@ -230,6 +320,6 @@ Customer PDF/calendar generation is retired; the protected receipt API retains i
 
 These events are Cloudflare structured logs. They are not currently admitted by the Grafana Tail exporter. API `serve` plus matching snapshot headers proves an API response used the snapshot; it does not prove browser rendering, customer completion or payment. [Runbook](../runbook.md#4-monitoring-and-observability) owns interpretation; [assessment evidence](false-positives.md#regression-evidence-and-remaining-proof) owns probes and their limits.
 
-### Public display batching and entry identity — 12 November 2026 follow-up
+### Public display batching and entry identity
 
 The full-window calendar endpoint batches existing public display data only, with the configured month-count/schema bounds and existing coordinator provider read controls. It neither returns protected records nor authorizes capacity/payment actions. Browser identity readiness is an in-memory presentation marker, not server authentication; verification, revocation, contact access, checkout and recovery checks remain authoritative. Internal navigation does not restore a signed-out identity. Fresh reload/entry rechecks under the existing capability rules.

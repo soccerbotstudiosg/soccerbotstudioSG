@@ -83,7 +83,7 @@ Grant archival preserves records; it does not delete the underlying attempt or p
 flowchart LR
   guest_access -. "owner_id checked by application" .-> attempts
   native_checkout_grants -. "rejected preflight or verified no creation" .-> rejected_native_checkout_grants
-  native_checkout_grants -. "completed dismissal" .-> completed_native_checkout_grants
+  native_checkout_grants -. "completed exit or new checkout after verified completion" .-> completed_native_checkout_grants
   native_checkout_grants -. "eligible expiry" .-> expired_native_checkout_grants
   rejected_native_checkout_grants -. "attempt_id logical link" .-> attempts
   completed_native_checkout_grants -. "attempt_id logical link" .-> attempts
@@ -103,7 +103,7 @@ The three archive tables use `CREATE TABLE AS SELECT`: they **do not inherit pri
 | `checkout_preparation_rejections`  | PK: `attempt_id` (no attempt FK)  | Immutable no-dispatch rejection proof for a key that never became an attempt.                           |
 | `native_checkout_grants`           | PK: `capability_hash`             | Current capability-bound checkout authority and availability snapshots.                                 |
 | `rejected_native_checkout_grants`  | No PK; unique index: `attempt_id` | Preserved grant history after preflight rejection or verified no-creation resolution.                   |
-| `completed_native_checkout_grants` | No PK; unique index: `attempt_id` | Preserved grant history after leaving a completed booking.                                              |
+| `completed_native_checkout_grants` | No PK; unique index: `attempt_id` | Grant history retained on completed exit or admission of a later checkout after verified completion.    |
 | `expired_native_checkout_grants`   | No PK; unique index: `attempt_id` | Preserved grant history after an eligible reservation expires.                                          |
 
 - `checkout_preparation_rejections` (migration0042): owner link, canonical input hash, bounded summary/rejection JSON and recording time. No attempt FK because the original attempt must not exist. Update/delete triggers retain proof; reciprocal insert guards forbid an attempt and rejection for the same key. The owner index supports protected recovery.

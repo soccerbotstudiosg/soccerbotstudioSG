@@ -761,6 +761,10 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "Review from Details after quick Back shows the classified conflict once on Calendar and keeps both surviving sessions"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "seeded indexed selection conflict retains the other session through Calendar edits and refresh"
   },
   {
@@ -886,6 +890,10 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "expiry release permits Continue with replacement selections without replaying payment"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "inconclusive payment checks return acknowledged replacement Review to Calendar help until the original payment resolves"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -1118,6 +1126,10 @@
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "a late reply from a previous attempt cannot confirm the current attempt"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "a paid tab recovers its original receipt on reload and Home reentry while a disjoint checkout is active"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -1854,6 +1866,10 @@
   {
     "file": "tests/live-email.spec.ts",
     "title": "native guest journey preserves players contact and one checkout across refresh"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "one browser recovers rejected email, unpaid expiry, overlapping tabs and the surviving cart"
   },
   {
     "file": "tests/live-email.spec.ts",
