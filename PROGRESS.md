@@ -2,7 +2,7 @@
 
 ## Active outcome
 
-- The checkout-expiry candidate preserves the guest access deadline when preparation rejects a competing checkout. Staging and owner verification of this change are pending.
+- The checkout-expiry candidate preserves the guest access deadline when preparation rejects a competing checkout. A cooldown before the first provider booking write now produces a retryable no-start result. Staging and owner verification are pending.
 
 - Local candidate fixes the Home loop on unpaid expiry after returning from HitPay and updates the [leave dialog and rejected-email notices](docs/booking-flows.md#customer-message-inventory).
 - The three individual edit-after-Back cases and the expanded master passed locally in desktop Chromium with isolated providers. The master covers expiry on both sides of the hosted-payment return. [Physical master checklist](docs/uat/simulated-user.md#two-tab-master-booking-check)

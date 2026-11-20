@@ -256,3 +256,7 @@ Retained milestone ID/title; PDF/calendar actions were retired by owner decision
 ### 20 November 2026 — Rejected checkout extended guest access
 
 A competing selection renewed guest access before checkout preparation rejected it. The focused Worker regression reproduced the deadline change with one minute remaining. The transaction that claims the first booking write now renews valid guest access. The change preserves the measured database round-trip budget for single and batch checkouts.
+
+### 20 November 2026 — Cooldown before the first booking write
+
+An availability HTTP 502 preceded the account cooldown. The original checkout recorded an unknown dispatch before provider admission, so five recovery checks ran for a request that never left the Worker. Combined checkout now claims the first write after admission and before transport, and persists a restartable result for a refused first write. [Master regression and incident timing](uat/simulated-user.md#draft-follow-up--manual-simplybook-cancellation-with-a-calendar-left-open)

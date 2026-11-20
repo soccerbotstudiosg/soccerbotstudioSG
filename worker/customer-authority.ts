@@ -69,6 +69,11 @@ export async function authorizeCustomerCheckout(
   const services = providerServiceIds(env);
   const access =
     verifiedAccess ?? (await authenticate(request, env, Date.now()));
+  if (access.stopped_input_hash) {
+    if (access.stopped_input_hash !== (await digest(JSON.stringify(input))))
+      throw new ApiError(409, "native_attempt_unavailable");
+    throw new ApiError(503, "checkout_not_started");
+  }
   if (access.preparation_rejected === 1) {
     const rejection = await preparationRejection(
       env,

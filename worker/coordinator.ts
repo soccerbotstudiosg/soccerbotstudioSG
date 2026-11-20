@@ -1526,6 +1526,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
             holding: true,
             combinedHold: true,
             creationOnly,
+            checkoutInput: scope.checkout ? input : undefined,
             displayCatalogue: creationOnly
               ? this.snapshots().read("catalogue", "catalogue")
               : undefined,
