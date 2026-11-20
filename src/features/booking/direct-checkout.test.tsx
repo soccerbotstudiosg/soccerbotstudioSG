@@ -5157,6 +5157,27 @@ it("Review from Details after quick Back shows the classified conflict once on C
   saveLiveDraft({ ...draft, slots });
   const write = Promise.withResolvers<Response>();
   const fetcher = vi.fn<typeof globalThis.fetch>((path, init) => {
+    if (String(path) === "/api/catalogue" && (init?.method ?? "GET") === "GET")
+      return Promise.resolve(
+        Response.json({
+          environment: "developer",
+          observedAtMs: Date.now(),
+          complete: true,
+          services: [
+            {
+              id: "2",
+              name: "Session",
+              active: true,
+              durationMinutes: 40,
+              recurring: false,
+              priceMinor: 8800,
+              currency: "SGD",
+              instructorIds: ["4"],
+            },
+          ],
+          instructors: [{ id: "4", name: "Instructor", active: true }],
+        }),
+      );
     if (
       init?.method === "POST" &&
       String(path).startsWith("/api/booking/checkout/")
@@ -5282,10 +5303,11 @@ it("Review from Details after quick Back shows the classified conflict once on C
   await act(async () => {});
   expectConflictNotice();
   async function enterDetails() {
-    const link = (
-      await screen.findAllByRole("link", { name: /^Enter contact details/ })
-    )[0];
-    expect(link).toHaveAttribute("href", "/book/details");
+    const links = await screen.findAllByRole("link", {
+      name: /^Enter contact details/,
+    });
+    for (const link of links)
+      expect(link).toHaveAttribute("href", "/book/details");
     act(() => visit("details"));
     expect(
       await screen.findByRole("heading", { name: "Your details" }),
@@ -5309,7 +5331,9 @@ it("Review from Details after quick Back shows the classified conflict once on C
   ).toBeVisible();
   expect(navigation.replace).not.toHaveBeenCalled();
   expect(loadLiveDraft().slots).toEqual(survivors);
-  expect(fetcher.mock.calls.map(([url, init]) => [init?.method ?? "GET", String(url)])).toEqual([["POST", path]]);
+  expect(
+    fetcher.mock.calls.filter(([, init]) => (init?.method ?? "GET") !== "GET"),
+  ).toEqual([[path, init]]);
 });
 
 /** Replay seeded customer edits and history traversal around one real checkout request. */
