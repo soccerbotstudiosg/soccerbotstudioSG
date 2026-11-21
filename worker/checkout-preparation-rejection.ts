@@ -6,6 +6,7 @@ import {
 } from "../src/domain/native-checkout";
 import {
   MAX_PLAYERS,
+  SESSION_MINUTES,
   MAX_BOOKING_SESSIONS,
 } from "../src/domain/booking-policy";
 import { authenticate, type Access } from "./access";
@@ -19,6 +20,7 @@ const summarySchema = z.strictObject({
     .array(
       z.strictObject({
         startMs: z.number().int().positive().safe(),
+        durationMinutes: z.literal(SESSION_MINUTES).optional(),
         players: z.number().int().min(1).max(MAX_PLAYERS),
       }),
     )
@@ -81,6 +83,7 @@ export async function retainPreparationRejection(
     currency: "SGD",
     sessions: input.sessions.map(({ startMs, players }) => ({
       startMs,
+      durationMinutes: SESSION_MINUTES,
       players,
     })),
   });

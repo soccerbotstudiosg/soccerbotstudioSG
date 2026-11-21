@@ -4741,7 +4741,7 @@ test("preparation rejection survives refresh without provider reads and permanen
       accepted: true,
       sessions: [
         ...c.input.sessions,
-        { ...c.input.sessions[0], startMs: m.startMs + 6000000 },
+        { ...c.input.sessions[0], startMs: m.startMs + 7200000 },
       ],
     };
     const send = (body = input, headers = c.headers) =>
@@ -4777,7 +4777,11 @@ test("preparation rejection survives refresh without provider reads and permanen
     assert.deepEqual(body.checkout, { state: "unavailable" });
     assert.deepEqual(
       body.summary.sessions,
-      input.sessions.map(({ startMs, players }) => ({ startMs, players })),
+      input.sessions.map(({ startMs, players }) => ({
+        startMs,
+        players,
+        durationMinutes: 50,
+      })),
     );
     assert.equal(
       JSON.stringify(body).includes(c.input.key),
@@ -7046,7 +7050,7 @@ test("a second selection under the same checkout cookie preserves the original b
     assert.equal(restored.attemptId, a);
     const current = await collisionContext(m, owner, a);
     assert.deepEqual(current.summary.sessions, [
-      { startMs: m.heldStartMs, players: 2 },
+      { startMs: m.heldStartMs, players: 2, durationMinutes: 50 },
     ]);
     assert.deepEqual(current.checkout, originalContext.checkout);
     assert.equal(
