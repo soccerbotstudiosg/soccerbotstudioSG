@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { LOCATION, type CustomerCatalogue } from "@/domain/catalog";
 import { Icon } from "@/components/icon";
-import { MAX_PLAYERS } from "@/domain/booking-policy";
+import { SESSION_MINUTES, MAX_PLAYERS } from "@/domain/booking-policy";
 import { SERVICE_NAME } from "@/domain/demo-catalog";
 import { sessionPrices } from "@/domain/session-pricing";
 import { LiveCatalogue } from "./live-catalogue";
@@ -145,7 +145,7 @@ function LiveSession({
   const eligible = data.services.filter(
     (service) =>
       service.active &&
-      service.durationMinutes === 40 &&
+      service.durationMinutes === SESSION_MINUTES &&
       service.currency === "SGD" &&
       !service.recurring &&
       data.instructors.some(
@@ -327,10 +327,12 @@ function SessionPresentation({
               <span className="session-product-name">{serviceName}</span>
               <span className="session-product-meta">
                 {mobile ? (
-                  <>40 minutes · 1–{MAX_PLAYERS} players</>
+                  <>
+                    {SESSION_MINUTES} minutes · 1–{MAX_PLAYERS} players
+                  </>
                 ) : (
                   <>
-                    <span>40 minutes</span>
+                    <span>{SESSION_MINUTES} minutes</span>
                     <span>1–{MAX_PLAYERS} players</span>
                   </>
                 )}

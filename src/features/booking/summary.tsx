@@ -101,7 +101,7 @@ export function SessionList({
             <div className={remove ? undefined : "series-date"}>
               <strong>{dateLabel(slot.date)}</strong>
               <span>
-                {slot.start}–{endTime(slot.start)} SGT
+                {slot.start}–{endTime(slot.start, slot.durationMinutes)} SGT
               </span>
               <div className="session-trainer-row">
                 <span className="session-instructor">

@@ -23,7 +23,7 @@ const booking: Booking = {
   slots: [
     {
       date: "2026-11-20",
-      start: "15:20",
+      start: "15:00",
       studio: "Apex @ Henderson",
       instructor: "2",
       native: {
@@ -111,7 +111,7 @@ test("confirmed booking copies a formatted paid summary and reports clipboard fa
       "Booking confirmed · Paid",
       "",
       "Date: Fri, 20 Nov 2026",
-      "Time: 15:20–16:00 SGT",
+      "Time: 15:00–15:50 SGT",
       "Session: Synthetic session",
       "Trainer: Synthetic Trainer",
       "",
@@ -257,7 +257,7 @@ test("unresolved post-payment confirmation keeps the receipt layout with a pendi
   );
   expect(screen.getByText("Booking Contact")).toBeVisible();
   expect(screen.getByRole("heading", { name: "Order Summary" })).toBeVisible();
-  expect(screen.getByText("15:20–16:00 SGT")).toBeVisible();
+  expect(screen.getByText("15:00–15:50 SGT")).toBeVisible();
   expect(screen.getByText("Total")).toBeVisible();
   expect(screen.queryByText("Total Paid")).toBeNull();
   expect(

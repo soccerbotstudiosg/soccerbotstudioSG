@@ -1,4 +1,5 @@
 import {
+  SESSION_MINUTES,
   BOOKING_LEAD_MINUTES,
   START_INTERVAL_MINUTES,
 } from "../src/domain/booking-policy";
@@ -27,7 +28,7 @@ import {
   type ReadOptions,
 } from "./public-calendar";
 import { providerSecrets } from "./provider-transport";
-import { intentSchema, associationSchema } from "./journal";
+import { occupiedMinutes, intentSchema, associationSchema } from "./journal";
 
 export type Grant = {
   capability_hash: string;
@@ -181,7 +182,7 @@ export async function authorizeCustomerCheckout(
     ...(p.PREMIUM_SERVICE_ID ? { premiumServiceId: p.PREMIUM_SERVICE_ID } : {}),
     currency: "SGD",
     taxMinor: 0,
-    durationMinutes: 40,
+    durationMinutes: SESSION_MINUTES,
     bufferAfterMinutes: 10,
     clientLoginRequired: false,
     providerSchedules: "customer-choice",
@@ -396,8 +397,9 @@ export async function rejectedCheckoutReadback(
     const indexes = input.sessions.flatMap((session, index) =>
       intent.sessions.some(
         (existing) =>
-          Math.abs(existing.startMs - session.startMs) <
-          START_INTERVAL_MINUTES * 60000,
+          existing.startMs < session.startMs + START_INTERVAL_MINUTES * 60000 &&
+          session.startMs <
+            existing.startMs + occupiedMinutes(existing) * 60000,
       )
         ? [index]
         : [],

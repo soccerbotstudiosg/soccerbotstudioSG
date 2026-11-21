@@ -49,7 +49,7 @@ export async function createBookingCollision(options = {}) {
               : {
                   [String(body.params[3])]: available.map((ms) => [
                     wall(ms).slice(11),
-                    wall(ms + 3000000).slice(11),
+                    wall(ms + 3600000).slice(11),
                   ]),
                 };
         }
@@ -104,7 +104,7 @@ export async function createBookingCollision(options = {}) {
               client_hash: "synthetic-second-customer",
               hash: "synthetic-batch-booking-702",
               start_date_time: wall(ms),
-              end_date_time: wall(ms + 3000000),
+              end_date_time: wall(ms + 3600000),
             },
           ],
         });
@@ -118,7 +118,7 @@ export async function createBookingCollision(options = {}) {
       return undefined;
     },
   });
-  starts = [m.startMs - 3000000, m.startMs];
+  starts = [m.startMs - 3600000, m.startMs];
   return {
     ...m,
     heldStartMs: starts[1],

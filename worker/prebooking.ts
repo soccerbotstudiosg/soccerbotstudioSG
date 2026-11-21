@@ -14,14 +14,15 @@ import {
   type CatalogueBinding,
 } from "../src/domain/catalog";
 import {
+  CHANGEOVER_MINUTES,
+  SESSION_MINUTES,
   BOOKING_LEAD_MINUTES,
   isStudioSessionStart,
   BOOKING_LEAD_MS,
   NATIVE_TRIAL_LEAD_MS,
-  SESSION_MINUTES,
 } from "../src/domain/booking-policy";
 import { ApiError } from "./policy";
-import { intentSchema } from "./journal";
+import { intentSchema, bookedMinutes } from "./journal";
 import { CatalogueReads, freshReceipt } from "./catalogue";
 import { providerId } from "./provider-normalization";
 import type { NativeExchange } from "./provider-transport";
@@ -89,8 +90,8 @@ export const nativeAccountContractSchema = z
       .optional(),
     currency: z.literal("SGD"),
     taxMinor: z.literal(0),
-    durationMinutes: z.literal(40),
-    bufferAfterMinutes: z.literal(10),
+    durationMinutes: z.union([z.literal(40), z.literal(SESSION_MINUTES)]),
+    bufferAfterMinutes: z.literal(CHANGEOVER_MINUTES),
     clientLoginRequired: z.literal(false),
     providerSchedules: z.enum(["non-overlapping", "customer-choice"]),
     recoveryIntakeField: recoveryIntakeField.optional(),
@@ -236,7 +237,7 @@ export class NativePrebooking {
     if (!selected) return { state: "selection_unavailable" as const, intent };
     const { service, instructor } = selected;
     if (
-      service.durationMinutes !== SESSION_MINUTES ||
+      service.durationMinutes !== bookedMinutes(session) ||
       service.recurring ||
       service.currency !== intent.currency ||
       intent.taxMinor !== 0

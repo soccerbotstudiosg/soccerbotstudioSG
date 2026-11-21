@@ -1,4 +1,5 @@
 "use client";
+import { SESSION_MINUTES } from "@/domain/booking-policy";
 import { AVAILABILITY_LOAD_FAILED } from "@/domain/booking-messages";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import { useEffect, useState, type ReactNode } from "react";
@@ -89,7 +90,7 @@ export function LiveCatalogue({
             </p>
             {onSelect &&
               item.currency === "SGD" &&
-              item.durationMinutes === 40 &&
+              item.durationMinutes === SESSION_MINUTES &&
               !item.recurring && (
                 <button className="button" onClick={() => onSelect(item.id)}>
                   Select session

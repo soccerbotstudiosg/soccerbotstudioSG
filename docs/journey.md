@@ -260,3 +260,7 @@ A competing selection renewed guest access before checkout preparation rejected 
 ### 20 November 2026 — Cooldown before the first booking write
 
 An availability HTTP 502 preceded the account cooldown. The original checkout recorded an unknown dispatch before provider admission, so five recovery checks ran for a request that never left the Worker. Combined checkout now claims the first write after admission and before transport, and persists a restartable result for a refused first write. [Master regression and incident timing](uat/simulated-user.md#draft-follow-up--manual-simplybook-cancellation-with-a-calendar-left-open)
+
+## 21 November 2026 — hourly starts
+
+Production SimplyBook services 3 and 4 now have 50 minutes of play and 10 minutes of changeover. The production timeline for provider 2 and service 4 returned eight hourly starts for 22 November. The website candidate adopts this grid and records duration on new checkout sessions. Earlier journal entries retain their original 40-minute duration.

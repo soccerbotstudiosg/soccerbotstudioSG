@@ -1190,7 +1190,7 @@ test("native guest journey preserves players contact and one checkout across ref
     await page.getByRole("button", { name: label, exact: true }).click();
     await page
       .getByRole("group", { name: "Session times" })
-      .getByRole("button", { name: /12:00–12:40/ })
+      .getByRole("button", { name: /12:00–12:50/ })
       .click();
     await page
       .getByRole("combobox", { name: /Trainer for .* at 12:00/ })
@@ -2385,7 +2385,7 @@ async function guestDetails(
     .click();
   const starts = journey?.starts ?? [
     mechanism.startMs,
-    ...(batch ? [mechanism.startMs + 3000000] : []),
+    ...(batch ? [mechanism.startMs + 3600000] : []),
   ];
   await enterSessionDetails(page, mechanism, starts);
   await page.getByLabel("Full name", { exact: false }).fill("Synthetic Guest");

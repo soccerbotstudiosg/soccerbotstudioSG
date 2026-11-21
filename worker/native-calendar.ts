@@ -1,3 +1,4 @@
+import { SESSION_MINUTES } from "../src/domain/booking-policy";
 import { z } from "zod";
 import {
   nativeCalendarSchema,
@@ -73,6 +74,7 @@ export class NativeCalendarReads {
     dates: string[];
     cacheOnly?: boolean;
     studioGrid?: boolean;
+    durationMinutes?: number;
     parallelReads?: boolean;
     catalogue: () => Promise<ProviderCatalogue>;
     exchange: NativeExchange;
@@ -84,6 +86,7 @@ export class NativeCalendarReads {
       input.month,
       dates,
       input.studioGrid === true,
+      input.durationMinutes ?? SESSION_MINUTES,
     ]);
     let entry = this.entries.get(key);
     if (
@@ -109,7 +112,7 @@ export class NativeCalendarReads {
         (s) =>
           s.id === input.serviceId &&
           s.active &&
-          s.durationMinutes === 40 &&
+          s.durationMinutes === (input.durationMinutes ?? SESSION_MINUTES) &&
           !s.recurring &&
           s.currency === "SGD",
       );

@@ -1852,7 +1852,7 @@ it("proven unstarted checkout stays editable without entering payment recovery",
   expect(screen.getByTestId("retained")).toBeEmptyDOMElement();
   expect(screen.getByTestId("action")).toHaveTextContent("failure");
   expect(screen.getByText("test@example.com")).toBeInTheDocument();
-  expect(screen.getByText("12:00–12:40 SGT")).toBeInTheDocument();
+  expect(screen.getByText("12:00–12:50 SGT")).toBeInTheDocument();
   expect(navigation.push).not.toHaveBeenCalled();
   expect(fetch).toHaveBeenCalledTimes(2);
 });
@@ -1949,7 +1949,7 @@ it("rejected checkout window clears the undispatched draft attempt without payme
     Response.json({ error: "checkout_already_active" }, { status: 503 }),
   );
   vi.stubGlobal("fetch", fetch);
-  const other = { ...draft.slots[0], start: "12:50" };
+  const other = { ...draft.slots[0], start: "13:00" };
   function Probe() {
     const state = useBooking();
     return (
@@ -2175,7 +2175,7 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
       });
       expect(fetch).toHaveBeenCalledTimes(1);
     }
-  const other = { ...draft.slots[0], start: "12:50" };
+  const other = { ...draft.slots[0], start: "13:00" };
   let finishAvailability!: (
     slots: Awaited<ReturnType<BookingService["availability"]>>,
   ) => void;
@@ -2259,7 +2259,7 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
   fireEvent.click(screen.getByText("Seed multi"));
   await waitFor(() =>
     expect(screen.getByTestId("conflict-calendar").textContent).toContain(
-      "12:50",
+      "13:00",
     ),
   );
   fireEvent.click(screen.getByText("Checkout multi"));
@@ -2540,7 +2540,7 @@ async function verifyExpiryRetention(multi: boolean) {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   navigation.path = "/book/time/";
-  const other = { ...draft.slots[0], start: "12:50" };
+  const other = { ...draft.slots[0], start: "13:00" };
   const availability = vi.fn<BookingService["availability"]>(async () => [
     { ...draft.slots[0], available: false },
     { ...other, available: true },
@@ -2934,7 +2934,7 @@ async function verifyMockPaymentExpiry(
     checkUntil: 0,
     booking: null,
   };
-  const other = { ...draft.slots[0], start: "12:50" };
+  const other = { ...draft.slots[0], start: "13:00" };
   const offers = [
     draft.slots[0],
     { ...draft.slots[0], instructor: "5" },
@@ -3154,12 +3154,12 @@ async function verifyMockPaymentExpiry(
     expect(
       screen.getByRole("button", { name: "Ask the studio to contact me" }),
     ).toBeVisible();
-    const replacement = screen.getByRole("button", { name: /12:50–13:30/ });
+    const replacement = screen.getByRole("button", { name: /13:00–13:50/ });
     fireEvent.click(replacement);
     fireEvent.change(
-      screen.getByLabelText(`Trainer for ${other.date} at 12:50`),
+      screen.getByLabelText(`Trainer for ${other.date} at 13:00`),
       {
-        target: { value: `${other.date}|12:50|2|4` },
+        target: { value: `${other.date}|13:00|2|4` },
       },
     );
     expect(
@@ -3232,12 +3232,12 @@ async function verifyMockPaymentExpiry(
     JSON.parse(screen.getByTestId("mock-expiry-draft").textContent!).slots,
   ).toEqual([]);
   view.rerender(tree("time"));
-  await screen.findByRole("button", { name: /12:50–13:30/ });
+  await screen.findByRole("button", { name: /13:00–13:50/ });
   expect(
     within(screen.getByRole("alert")).getByRole("listitem"),
-  ).toHaveTextContent("Tue, 20 Oct 2026, 12:00–12:40.");
-  expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
-  expect(screen.getByRole("button", { name: /12:50–13:30/ })).toBeEnabled();
+  ).toHaveTextContent("Tue, 20 Oct 2026, 12:00–12:50.");
+  expect(screen.queryByRole("button", { name: /12:00–12:50/ })).toBeNull();
+  expect(screen.getByRole("button", { name: /13:00–13:50/ })).toBeEnabled();
   await waitFor(() =>
     expect(
       document.querySelector(".booking-flow-overlay, .payment-check-feedback"),
@@ -3255,11 +3255,11 @@ async function verifyMockPaymentExpiry(
     const cart = () =>
       JSON.parse(screen.getByTestId("mock-expiry-draft").textContent!).slots;
     const chooseReplacement = () => {
-      fireEvent.click(screen.getByRole("button", { name: /12:50–13:30/ }));
+      fireEvent.click(screen.getByRole("button", { name: /13:00–13:50/ }));
       fireEvent.change(
-        screen.getByLabelText(`Trainer for ${other.date} at 12:50`),
+        screen.getByLabelText(`Trainer for ${other.date} at 13:00`),
         {
-          target: { value: `${other.date}|12:50|2|4` },
+          target: { value: `${other.date}|13:00|2|4` },
         },
       );
       selected = true;
@@ -3296,7 +3296,7 @@ async function verifyMockPaymentExpiry(
       );
       page = "time";
       view.rerender(tree(page));
-      await screen.findByRole("button", { name: /12:50–13:30/ });
+      await screen.findByRole("button", { name: /13:00–13:50/ });
     };
     const backToCalendar = async () => {
       page = "time";
@@ -3304,7 +3304,7 @@ async function verifyMockPaymentExpiry(
         window.dispatchEvent(new PopStateEvent("popstate"));
         view.rerender(tree(page));
       });
-      await screen.findByRole("button", { name: /12:50–13:30/ });
+      await screen.findByRole("button", { name: /13:00–13:50/ });
     };
     try {
       for (let index = 0; index < 18; index++) {
@@ -3329,7 +3329,7 @@ async function verifyMockPaymentExpiry(
           case "remove replacement":
             fireEvent.click(
               screen.getByRole("button", {
-                name: `Remove selected session ${other.date} at 12:50`,
+                name: `Remove selected session ${other.date} at 13:00`,
               }),
             );
             selected = false;
@@ -3349,7 +3349,7 @@ async function verifyMockPaymentExpiry(
           case "refresh Calendar":
             view.unmount();
             view = render(tree("time"));
-            await screen.findByRole("button", { name: /12:50–13:30/ });
+            await screen.findByRole("button", { name: /13:00–13:50/ });
             break;
           case "leave for Home":
             fireEvent.click(
@@ -3428,8 +3428,8 @@ async function verifyMockPaymentExpiry(
       ),
     ).toBeNull();
     expect(screen.queryByRole("button", { name: "Check status" })).toBeNull();
-    expect(screen.getByRole("button", { name: /12:50–13:30/ })).toBeEnabled();
-    expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+    expect(screen.getByRole("button", { name: /13:00–13:50/ })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: /12:00–12:50/ })).toBeNull();
   };
   assertBackgroundOnly();
   // Keep the next scheduled status response in flight: no interval may replace
@@ -3497,7 +3497,7 @@ async function verifyMockPaymentExpiry(
   await act(async () => {
     view = render(tree("time"));
   });
-  expect(screen.getByRole("button", { name: /12:50–13:30/ })).toBeEnabled();
+  expect(screen.getByRole("button", { name: /13:00–13:50/ })).toBeEnabled();
   expect(
     JSON.parse(screen.getByTestId("mock-expiry-attempt").textContent!),
   ).toEqual(retained);
@@ -3507,7 +3507,7 @@ async function verifyMockPaymentExpiry(
   // Arrival consumes navigation intent while preserving financial recovery.
   expect(screen.getByTestId("mock-expiry-return")).toHaveTextContent("false");
   expect(screen.getByTestId("mock-expiry-recovery")).toHaveTextContent("true");
-  expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: /12:00–12:50/ })).toBeNull();
   expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
   // Later authenticated payment evidence must return to the original payment
   // recovery, never permit another checkout or discard the paid attempt.
@@ -3556,7 +3556,7 @@ async function verifyMockPaymentExpiry(
   expect(screen.getByTestId("mock-expiry-recovery")).toHaveTextContent(
     "undefined",
   );
-  expect(screen.queryByRole("button", { name: /12:50–13:30/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: /13:00–13:50/ })).toBeNull();
   cleanup();
   await act(async () => {
     render(tree("confirmation"));
@@ -3606,7 +3606,7 @@ it("an expired payment window after a submitted checkout departure returns once 
 it("archived expiry replay preserves replacements and requires current original unpaid release proof", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
-  const replacement = { ...draft.slots[0], start: "12:50" };
+  const replacement = { ...draft.slots[0], start: "13:00" };
   const editable = { ...draft, accepted: false, slots: [replacement] };
   const otherId = "00000000-0000-4000-8000-000000000002";
   for (const outcome of [
@@ -3726,7 +3726,7 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
   const notice =
     "Some sessions may no longer be available. Please check again.";
   const otherId = "00000000-0000-4000-8000-000000000002";
-  const available = { ...draft.slots[0], start: "12:50", available: true };
+  const available = { ...draft.slots[0], start: "13:00", available: true };
   let otherActive = false;
   const restore = vi.fn(async (): Promise<Attempt | null> =>
     otherActive
@@ -3821,7 +3821,7 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
   ).toBe(notice);
   expect(
     within(screen.getByRole("alert")).getByRole("listitem"),
-  ).toHaveTextContent("Tue, 20 Oct 2026, 12:00–12:40.");
+  ).toHaveTextContent("Tue, 20 Oct 2026, 12:00–12:50.");
   expect(screen.getByTestId("conflict-refresh-notice").textContent).toBe(
     notice,
   );
@@ -3841,7 +3841,7 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
   const refreshed = render(tree("time"));
   await waitFor(() => expect(restore).toHaveBeenCalledTimes(restoreBefore + 1));
   expect(
-    await screen.findByRole("button", { name: /12:50–13:30/ }),
+    await screen.findByRole("button", { name: /13:00–13:50/ }),
   ).toBeEnabled();
   expect(screen.getByTestId("conflict-refresh-attempt")).toHaveTextContent(
     "none",
@@ -3852,7 +3852,7 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
   expect(saved.slots).toEqual([]);
   expect(saved.contact).toEqual(draft.contact);
   expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
-  expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: /12:00–12:50/ })).toBeNull();
   await waitFor(() =>
     expect(
       document.querySelector(".booking-flow-overlay, .payment-check-feedback"),
@@ -3872,7 +3872,7 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
   );
   expect(
     within(screen.getByRole("alert")).getByRole("listitem"),
-  ).toHaveTextContent("Tue, 20 Oct 2026, 12:00–12:40.");
+  ).toHaveTextContent("Tue, 20 Oct 2026, 12:00–12:50.");
   expect(screen.getByTestId("conflict-refresh-notice").textContent).toBe(
     notice,
   );
@@ -3881,22 +3881,22 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
   ).toEqual([{ date: "2026-10-20", start: "12:00" }]);
 
   // Calendar edits do not dismiss the conflict explanation.
-  fireEvent.click(screen.getByRole("button", { name: /12:50–13:30/ }));
+  fireEvent.click(screen.getByRole("button", { name: /13:00–13:50/ }));
   fireEvent.change(
-    screen.getByLabelText(`Trainer for ${available.date} at 12:50`),
+    screen.getByLabelText(`Trainer for ${available.date} at 13:00`),
     {
-      target: { value: `${available.date}|12:50|2|4` },
+      target: { value: `${available.date}|13:00|2|4` },
     },
   );
   expect(
     JSON.parse(screen.getByTestId("conflict-refresh-draft").textContent!).slots,
-  ).toEqual([{ ...draft.slots[0], start: "12:50" }]);
+  ).toEqual([{ ...draft.slots[0], start: "13:00" }]);
   expect(screen.getByRole("alert").querySelector("p")?.textContent).toBe(
     notice,
   );
   expect(
     within(screen.getByRole("alert")).getByRole("listitem"),
-  ).toHaveTextContent("Tue, 20 Oct 2026, 12:00–12:40.");
+  ).toHaveTextContent("Tue, 20 Oct 2026, 12:00–12:50.");
   expect(screen.getByTestId("conflict-refresh-notice").textContent).toBe(
     notice,
   );
@@ -3917,7 +3917,7 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
   expect(sessionStorage.getItem("soccerbot-conflict-notice")).toBeNull();
   refreshed.rerender(tree("time"));
   expect(
-    await screen.findByRole("button", { name: /12:50–13:30/ }),
+    await screen.findByRole("button", { name: /13:00–13:50/ }),
   ).toBeEnabled();
   expect(screen.getByTestId("conflict-refresh-notice")).toBeEmptyDOMElement();
   expect(screen.queryByText(notice)).toBeNull();
@@ -3928,7 +3928,7 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
     expect(restore).toHaveBeenCalledTimes(afterLeaveRestore + 1),
   );
   expect(
-    await screen.findByRole("button", { name: /12:50–13:30/ }),
+    await screen.findByRole("button", { name: /13:00–13:50/ }),
   ).toBeEnabled();
   expect(screen.getByTestId("conflict-refresh-notice")).toBeEmptyDOMElement();
   expect(sessionStorage.getItem("soccerbot-conflict-notice")).toBeNull();
@@ -4061,7 +4061,7 @@ async function verifyNoCreationRecovery(
     availability: vi.fn(async ({ fresh }) => {
       const replacement = {
         ...draft.slots[0],
-        start: "12:50",
+        start: "13:00",
         available: true,
       };
       if (fresh && emailOutcome === "taken") return [replacement];
@@ -4314,14 +4314,14 @@ async function verifyNoCreationRecovery(
           );
         }
         fireEvent.click(
-          await screen.findByRole("button", { name: /12:50–13:30/ }),
+          await screen.findByRole("button", { name: /13:00–13:50/ }),
         );
         fireEvent.change(
           await screen.findByLabelText(
-            `Trainer for ${draft.slots[0].date} at 12:50`,
+            `Trainer for ${draft.slots[0].date} at 13:00`,
           ),
           {
-            target: { value: `${draft.slots[0].date}|12:50|2|4` },
+            target: { value: `${draft.slots[0].date}|13:00|2|4` },
           },
         );
         const detailsLink = screen.getByRole("link", {
@@ -4367,7 +4367,7 @@ async function verifyNoCreationRecovery(
     expect(recoveryNotice).toHaveTextContent(notice);
     expect(within(recoveryNotice).getAllByRole("listitem")).toHaveLength(1);
     expect(within(recoveryNotice).getByRole("listitem")).toHaveTextContent(
-      "Tue, 20 Oct 2026, 12:00–12:40.",
+      "Tue, 20 Oct 2026, 12:00–12:50.",
     );
     await waitFor(() =>
       expect(
@@ -4392,7 +4392,7 @@ async function verifyNoCreationRecovery(
       ),
     );
     // Warm offers for both trainers must stay hidden through a failed fresh read.
-    expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /12:00–12:50/ })).toBeNull();
     expect(
       JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
     ).toEqual(draft.slots);
@@ -4412,7 +4412,7 @@ async function verifyNoCreationRecovery(
       ).toEqual([]),
     );
     expect(
-      await screen.findByRole("button", { name: /12:00–12:40/ }),
+      await screen.findByRole("button", { name: /12:00–12:50/ }),
     ).toBeEnabled();
     // A resolved notice is display-only state, retained across document reloads.
     view.unmount();
@@ -4422,7 +4422,7 @@ async function verifyNoCreationRecovery(
     expect(reloadedNotice).toHaveTextContent(notice);
     expect(within(reloadedNotice).getAllByRole("listitem")).toHaveLength(1);
     expect(within(reloadedNotice).getByRole("listitem")).toHaveTextContent(
-      "Tue, 20 Oct 2026, 12:00–12:40.",
+      "Tue, 20 Oct 2026, 12:00–12:50.",
     );
     await act(async () => {});
     fireEvent.click(screen.getByText("Accept original"));
@@ -4522,7 +4522,7 @@ it("conflict handoff waits for complete classification after all or partial fail
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
     navigation.path = "/book/review/";
-    const other = { ...draft.slots[0], date: "2026-10-21", start: "12:50" };
+    const other = { ...draft.slots[0], date: "2026-10-21", start: "13:00" };
     let recovering = false;
     const availability = vi.fn<BookingService["availability"]>(
       async ({ date }) => {
@@ -4728,7 +4728,7 @@ it("refresh during conflict classification retains its original indexed snapshot
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   navigation.path = "/book/review/";
-  const other = { ...draft.slots[0], start: "12:50" };
+  const other = { ...draft.slots[0], start: "13:00" };
   const original = { ...draft, slots: [draft.slots[0], other] };
   const foreignId = "00000000-0000-4000-8000-000000000099";
   let refreshed = false;
@@ -5081,7 +5081,7 @@ it("detached predispatch conflicts preserve newer edits and never take over Home
         restore: undefined,
         availability: vi.fn(async () => [available]),
       };
-      const edited = { ...draft.slots[0], start: "12:50" };
+      const edited = { ...draft.slots[0], start: "13:00" };
       let state!: ReturnType<typeof useBooking>;
       function Probe() {
         const booking = useBooking();
@@ -5148,7 +5148,7 @@ it("detached predispatch conflicts preserve newer edits and never take over Home
 it("Review from Details after quick Back shows the classified conflict once on Calendar and keeps both surviving sessions", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
-  const slots = ["12:00", "12:50", "13:40"].map((start) => ({
+  const slots = ["12:00", "13:00", "14:00"].map((start) => ({
     ...draft.slots[0],
     start,
   }));
@@ -5168,7 +5168,7 @@ it("Review from Details after quick Back shows the classified conflict once on C
               id: "2",
               name: "Session",
               active: true,
-              durationMinutes: 40,
+              durationMinutes: 50,
               recurring: false,
               priceMinor: 8800,
               currency: "SGD",
@@ -5244,7 +5244,7 @@ it("Review from Details after quick Back shows the classified conflict once on C
     );
     const rows = within(alert).getAllByRole("listitem");
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toHaveTextContent(`${dateLabel(lost.date)}, 12:50–13:30.`);
+    expect(rows[0]).toHaveTextContent(`${dateLabel(lost.date)}, 13:00–13:50.`);
     expect(loadLiveDraft().slots).toEqual(survivors);
   }
   navigation.path = "/book/review/";
@@ -5345,7 +5345,7 @@ async function verifyConflictSequence(scenario: 6 | 7, originalSeed: number) {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   const date = draft.slots[0].date;
-  const times = ["12:00", "12:50", "13:40", "14:30"];
+  const times = ["12:00", "13:00", "14:00", "15:00"];
   const offers = times.map((start) => ({
     ...draft.slots[0],
     start,
@@ -6194,7 +6194,7 @@ it("completed conflict allows immediate calendar Back and Continue with retained
       vi.useFakeTimers({ toFake: ["Date"] });
       vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
       navigation.path = "/book/review/";
-      const retained = ["12:50", "13:40"].map((start) => ({
+      const retained = ["13:00", "14:00"].map((start) => ({
         ...draft.slots[0],
         start,
       }));
@@ -6309,7 +6309,7 @@ async function expectRecoveryReleaseNavigation(
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   navigation.path = "/book/time/";
   saveLiveDraft(draft, true, id);
-  const replacement = { ...draft.slots[0], start: "13:40" };
+  const replacement = { ...draft.slots[0], start: "14:00" };
   const restore = vi.fn<NonNullable<BookingService["restore"]>>(async () => ({
     id,
     draft,
@@ -7041,7 +7041,7 @@ it("expired held Review with unresolved release returns affected sessions in the
   const notice = await screen.findByRole("alert");
   expect(notice).toHaveTextContent(PAYMENT_WINDOW_ENDED);
   expect(within(notice).getByRole("listitem")).toHaveTextContent(
-    "Tue, 20 Oct 2026, 12:00–12:40.",
+    "Tue, 20 Oct 2026, 12:00–12:50.",
   );
   expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id);
   expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual(
@@ -7055,9 +7055,9 @@ it("expired held Review with unresolved release returns affected sessions in the
 
 it("idle Review removes cutoff-crossed sessions at the strict four-hour boundary and preserves valid selections", async () => {
   vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
-  vi.setSystemTime(new Date("2026-11-12T11:19:59.999+08:00"));
+  vi.setSystemTime(new Date("2026-11-12T10:59:59.999+08:00"));
   navigation.path = "/book/review/";
-  const slots = ["15:20", "16:10"].map((start) => ({
+  const slots = ["15:00", "16:00"].map((start) => ({
     ...draft.slots[0],
     date: "2026-11-12",
     start,
@@ -7115,21 +7115,21 @@ it("idle Review removes cutoff-crossed sessions at the strict four-hour boundary
   expect(state!.draft.accepted).toBe(false);
   expect(state!.selectionNotice).toBe("Session no longer available.");
   expect(state!.selectionNoticeSlots).toEqual([
-    { date: "2026-11-12", start: "15:20" },
+    { date: "2026-11-12", start: "15:00" },
   ]);
   expect(
     screen.getByRole("heading", { name: "Select dates and times" }),
   ).toBeVisible();
   expect(screen.getByText("Session no longer available.")).toBeVisible();
   expect(
-    within(screen.getByRole("alert")).getByText(/15:20–16:00/),
+    within(screen.getByRole("alert")).getByText(/15:00–15:50/),
   ).toBeVisible();
   const times = screen.getByRole("group", { name: "Session times" });
   expect(
-    within(times).queryByRole("button", { name: /^15:20–16:00/ }),
+    within(times).queryByRole("button", { name: /^15:00–15:50/ }),
   ).toBeNull();
   expect(
-    within(times).getByRole("button", { name: /^16:10–16:50/ }),
+    within(times).getByRole("button", { name: /^16:00–16:50/ }),
   ).toBeVisible();
   expect(await state!.review()).toBe(true);
   expect(checkout).not.toHaveBeenCalled();
@@ -7137,9 +7137,9 @@ it("idle Review removes cutoff-crossed sessions at the strict four-hour boundary
 
 it("unselected calendar offers disappear at cutoff while a background availability read is pending", async () => {
   vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
-  vi.setSystemTime(new Date("2026-11-12T11:19:59.999+08:00"));
+  vi.setSystemTime(new Date("2026-11-12T10:59:59.999+08:00"));
   navigation.path = "/book/time/";
-  const slots = ["15:20", "16:10"].map((start) => ({
+  const slots = ["15:00", "16:00"].map((start) => ({
     ...draft.slots[0],
     date: "2026-11-12",
     start,
@@ -7166,25 +7166,25 @@ it("unselected calendar offers disappear at cutoff while a background availabili
   );
   await act(async () => {});
   const times = screen.getByRole("group", { name: "Session times" });
-  fireEvent.click(within(times).getByRole("button", { name: /^15:20–16:00/ }));
+  fireEvent.click(within(times).getByRole("button", { name: /^15:00–15:50/ }));
   expect(
-    within(times).getByRole("button", { name: /^15:20–16:00/ }),
+    within(times).getByRole("button", { name: /^15:00–15:50/ }),
   ).toHaveAttribute("aria-expanded", "true");
   const readsBeforeCutoff = availability.mock.calls.length;
   await act(async () => {
     vi.advanceTimersByTime(1);
   });
   expect(
-    within(times).getByRole("button", { name: /^15:20–16:00/ }),
+    within(times).getByRole("button", { name: /^15:00–15:50/ }),
   ).toBeVisible();
   await act(async () => {
     vi.advanceTimersByTime(1);
   });
   expect(
-    within(times).queryByRole("button", { name: /^15:20–16:00/ }),
+    within(times).queryByRole("button", { name: /^15:00–15:50/ }),
   ).toBeNull();
   expect(
-    within(times).getByRole("button", { name: /^16:10–16:50/ }),
+    within(times).getByRole("button", { name: /^16:00–16:50/ }),
   ).toBeVisible();
   expect(screen.queryByText("Session no longer available.")).toBeNull();
   // The normal minute refresh is the only additional read; hiding is local.
@@ -7200,10 +7200,10 @@ it("unselected calendar offers disappear at cutoff while a background availabili
 
 it("cutoff recovery survives refresh and permits replacement without reviving removed sessions", async () => {
   vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
-  vi.setSystemTime(new Date("2026-11-12T11:20:00.001+08:00"));
+  vi.setSystemTime(new Date("2026-11-12T11:00:00.001+08:00"));
   navigation.path = "/book/time/";
-  const expired = { ...draft.slots[0], date: "2026-11-12", start: "15:20" };
-  const replacement = { ...expired, start: "16:10" };
+  const expired = { ...draft.slots[0], date: "2026-11-12", start: "15:00" };
+  const replacement = { ...expired, start: "16:00" };
   saveLiveDraft({ ...draft, slots: [expired] });
   const service = {
     ...liveBookingService,
@@ -7252,11 +7252,11 @@ it("cutoff recovery survives refresh and permits replacement without reviving re
 
 it("cutoff timers cannot remove a held attempt or an in-flight checkout snapshot", async () => {
   vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
-  vi.setSystemTime(new Date("2026-11-12T11:19:59.999+08:00"));
+  vi.setSystemTime(new Date("2026-11-12T10:59:59.999+08:00"));
   navigation.path = "/book/review/";
   const selected = {
     ...draft,
-    slots: [{ ...draft.slots[0], date: "2026-11-12", start: "15:20" }],
+    slots: [{ ...draft.slots[0], date: "2026-11-12", start: "15:00" }],
   };
   saveLiveDraft(selected);
   let finish!: (attempt: Attempt) => void;
@@ -7325,10 +7325,10 @@ it("cutoff timers cannot remove a held attempt or an in-flight checkout snapshot
 
 it("replacement cancels the old cutoff timer and focus removes only newly stale editable slots", async () => {
   vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
-  vi.setSystemTime(new Date("2026-11-12T11:19:59.999+08:00"));
+  vi.setSystemTime(new Date("2026-11-12T10:59:59.999+08:00"));
   navigation.path = "/book/session/";
-  const original = { ...draft.slots[0], date: "2026-11-12", start: "15:20" };
-  const replacement = { ...original, start: "16:10" };
+  const original = { ...draft.slots[0], date: "2026-11-12", start: "15:00" };
+  const replacement = { ...original, start: "16:00" };
   saveLiveDraft({ ...draft, slots: [original] });
   const service = {
     ...liveBookingService,
@@ -7377,7 +7377,7 @@ it("cutoff pruning waits for protected restoration and leaves a restored hold un
   navigation.path = "/book/review/";
   const selected = {
     ...draft,
-    slots: [{ ...draft.slots[0], date: "2026-11-12", start: "15:20" }],
+    slots: [{ ...draft.slots[0], date: "2026-11-12", start: "15:00" }],
   };
   saveLiveDraft(selected, true, id);
   let finish!: (attempt: Attempt) => void;
@@ -7589,7 +7589,7 @@ it("inconclusive payment checks return acknowledged replacement Review to Calend
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   const start = Date.now();
-  const replacement = { ...draft.slots[0], start: "13:40" };
+  const replacement = { ...draft.slots[0], start: "14:00" };
   const base = `/api/attempts/${id}`;
   for (const outcome of ["paid", "released"] as const) {
     saveLiveDraft({ ...draft, slots: [replacement] }, true, id);

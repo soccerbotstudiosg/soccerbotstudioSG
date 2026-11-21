@@ -15,7 +15,7 @@ function catalogue() {
         id: "12",
         name: "Session",
         active: true,
-        durationMinutes: 40,
+        durationMinutes: 50,
         recurring: false,
         priceMinor: 8800,
         currency: "SGD",

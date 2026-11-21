@@ -3030,6 +3030,9 @@
       font-size: 0.5625rem;
       letter-spacing: var(--tracking-ui-label);
     }
+    .studio-back > span {
+      display: none;
+    }
     .studio-signature {
       padding-inline: 72px;
       letter-spacing: 0.1em;

@@ -5,7 +5,8 @@ import {
   retainReservationDenial,
 } from "./reservation-abuse";
 import {
-  START_INTERVAL_MINUTES,
+  SESSION_MINUTES,
+  CHANGEOVER_MINUTES,
   MAX_PLAYERS,
   PAYMENT_WINDOW_MS,
   CHECKING_BUFFER_MS,
@@ -16,6 +17,14 @@ import type { Access } from "./access";
 import { journalContactSchema } from "../src/domain/contact";
 import { z } from "zod";
 import { ApiError, digest } from "./policy";
+/** Read the original playing duration, including attempts recorded before hourly starts. */
+export function bookedMinutes(session: { durationMinutes?: number }) {
+  return session.durationMinutes ?? 40;
+}
+/** Include the changeover when comparing retained studio reservations. */
+export function occupiedMinutes(session: { durationMinutes?: number }) {
+  return bookedMinutes(session) + CHANGEOVER_MINUTES;
+}
 // Internal server-approved intent only. No HTTP endpoint accepts this envelope.
 export const intentSchema = z
   .strictObject({
@@ -37,6 +46,9 @@ export const intentSchema = z
           serviceId: z.string().min(1).max(128),
           instructorId: z.string().min(1).max(128),
           startMs: z.number().int().positive().safe(),
+          durationMinutes: z
+            .union([z.literal(40), z.literal(SESSION_MINUTES)])
+            .optional(),
           players: z.number().int().min(1).max(MAX_PLAYERS),
           totalMinor: z.number().int().nonnegative().safe(),
           taxMinor: z.number().int().nonnegative().safe(),
@@ -55,10 +67,13 @@ export const intentSchema = z
       v.sessions.reduce((n, s) => n + s.taxMinor, 0) !== v.taxMinor
     )
       ctx.addIssue({ code: "custom", message: "money" });
-    const starts = v.sessions.map((s) => s.startMs).sort((a, b) => a - b);
+    const starts = [...v.sessions].sort((a, b) => a.startMs - b.startMs);
     if (
       starts.some(
-        (s, i) => i > 0 && s - starts[i - 1] < START_INTERVAL_MINUTES * 60000,
+        (s, i) =>
+          i > 0 &&
+          s.startMs - starts[i - 1].startMs <
+            occupiedMinutes(starts[i - 1]) * 60000,
       )
     )
       ctx.addIssue({ code: "custom", message: "overlap" });

@@ -12,7 +12,7 @@ function catalogue(name = "Current provider session"): CustomerCatalogue {
         id: "12",
         name,
         active: true,
-        durationMinutes: 40,
+        durationMinutes: 50,
         recurring: false,
         priceMinor: 9100,
         currency: "SGD",

@@ -1461,7 +1461,7 @@
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "accepts different session instructors and rejects stale assignments or missing rotation disclosures"
+    "title": "accepts different session instructors and rejects stale assignments or incorrect rotation disclosures"
   },
   {
     "file": "src/services/booking.test.ts",
@@ -1481,7 +1481,7 @@
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "discloses crossing rotations while retaining the starting instructor for the whole session"
+    "title": "hourly sessions finish before the next rotation and retain their assigned instructor"
   },
   {
     "file": "src/services/booking.test.ts",
@@ -1573,7 +1573,7 @@
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "uses one shared studio with 40-minute sessions every 50 minutes"
+    "title": "uses one shared studio with 50-minute sessions every hour"
   },
   {
     "file": "src/services/booking.test.ts",
@@ -1717,7 +1717,7 @@
   },
   {
     "file": "tests/customer.spec.ts",
-    "title": "50-minute cadence, chosen instructors, contact validation and final-slot conflict"
+    "title": "Hourly cadence, chosen instructors, contact validation and final-slot conflict"
   },
   {
     "file": "tests/customer.spec.ts",

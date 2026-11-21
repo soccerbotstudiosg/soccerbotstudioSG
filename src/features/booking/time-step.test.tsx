@@ -44,7 +44,7 @@ beforeEach(() => {
     slots: [
       demoSession({
         date: restoredDate,
-        start: "14:30",
+        start: "14:00",
       })!,
     ],
   };
@@ -136,7 +136,7 @@ async function calendarScenario(mobile: boolean) {
   ).toHaveTextContent("Apex @ Henderson");
   expect(
     view.container.querySelector(".time-heading .calendar-duration-note"),
-  ).toHaveTextContent("*40-min session · 10-min changeover.");
+  ).toHaveTextContent("*50-min session · 10-min changeover.");
   fireEvent.click(
     screen.getByRole("button", { name: dateLabel(restoredDate) }),
   );
@@ -160,7 +160,7 @@ async function calendarScenario(mobile: boolean) {
   expect(
     within(calendar).getByRole("button", { name: dateLabel(todaySG()) }),
   ).toHaveAttribute("aria-pressed", "false");
-  const crossing = times().getByRole("button", { name: /14:30–15:10/ });
+  const crossing = times().getByRole("button", { name: /14:00–14:50/ });
   expect(crossing).toHaveAttribute("aria-pressed", "true");
   expect(crossing).toHaveTextContent("Faisal Shahril");
   const selectedWrap = crossing.closest(".time-choice-wrap")!;
@@ -169,11 +169,11 @@ async function calendarScenario(mobile: boolean) {
     selectedWrap.previousElementSibling?.querySelector(".time-slot-cue"),
   ).toBeNull();
   const nextWrap = times()
-    .getByRole("button", { name: /15:20–16:00/ })
+    .getByRole("button", { name: /15:00–15:50/ })
     .closest(".time-choice-wrap")!;
   expect(nextWrap.querySelector(".time-slot-cue")).toBeNull();
   const firstWrap = times()
-    .getByRole("button", { name: /12:00–12:40/ })
+    .getByRole("button", { name: /12:00–12:50/ })
     .closest(".time-choice-wrap")!;
   expect(firstWrap.querySelector(".time-slot-cue")).not.toBeNull();
   expect(crossing).not.toHaveTextContent("instructor rotation");
@@ -190,12 +190,12 @@ async function calendarScenario(mobile: boolean) {
     })[0],
   ).toBeInTheDocument();
   if (!mobile) {
-    expect(times().getByRole("button", { name: /15:20–16:00/ })).toBeEnabled();
-    await user.click(times().getByRole("button", { name: /15:20–16:00/ }));
+    expect(times().getByRole("button", { name: /15:00–15:50/ })).toBeEnabled();
+    await user.click(times().getByRole("button", { name: /15:00–15:50/ }));
     expect(loadBooking().draft.slots).toHaveLength(1);
     await user.selectOptions(
-      screen.getByLabelText(`Trainer for ${restoredDate} at 15:20`),
-      `${restoredDate}|15:20|demo|daniel`,
+      screen.getByLabelText(`Trainer for ${restoredDate} at 15:00`),
+      `${restoredDate}|15:00|demo|daniel`,
     );
     expect(nextWrap.querySelector(".time-slot-cue")).toBeNull();
     const instructors = screen.getByRole("region", {
@@ -234,7 +234,7 @@ async function calendarScenario(mobile: boolean) {
     expect(
       within(instructors).getByRole("article", { name: "Daniel Tan" }),
     ).toBeInTheDocument();
-    await user.click(times().getByRole("button", { name: /12:00–12:40/ }));
+    await user.click(times().getByRole("button", { name: /12:00–12:50/ }));
     await user.selectOptions(
       screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
       `${restoredDate}|12:00|demo|faisal`,
@@ -263,13 +263,13 @@ async function calendarScenario(mobile: boolean) {
     ).not.toBeInTheDocument();
     await user.click(
       times().getByRole("button", {
-        name: `Remove selected session ${restoredDate} at 15:20`,
+        name: `Remove selected session ${restoredDate} at 15:00`,
       }),
     );
     expect(within(instructors).getAllByRole("article")).toHaveLength(1);
     expect(nextWrap.querySelector(".time-slot-cue")).toBeNull();
     const selectedSlot = times().getByRole("button", {
-      name: /12:00–12:40/,
+      name: /12:00–12:50/,
       pressed: true,
     });
     if (selectedSlot.getAttribute("aria-expanded") !== "true")
@@ -319,7 +319,7 @@ async function calendarScenario(mobile: boolean) {
     view.container.querySelector(".calendar-selection-context strong"),
   ).toHaveTextContent("Apex @ Henderson · Kickoff Special");
   expect(view.container.querySelector(".lead")).toHaveTextContent(
-    "40-min session · 10-min changeover.",
+    "50-min session · 10-min changeover.",
   );
   expect(
     screen.queryByRole("complementary", { name: "Your booking summary" }),
@@ -329,7 +329,7 @@ async function calendarScenario(mobile: boolean) {
       .getByRole("button", { name: "Open cart, 0 sessions" })
       .querySelector(".booking-cart-count"),
   ).toBeNull();
-  await user.click(times().getByRole("button", { name: /12:00–12:40/ }));
+  await user.click(times().getByRole("button", { name: /12:00–12:50/ }));
   await user.selectOptions(
     screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
     `${restoredDate}|12:00|demo|faisal`,
@@ -337,10 +337,10 @@ async function calendarScenario(mobile: boolean) {
   expect(
     screen.getAllByRole("link", { name: /^Enter contact details/ }),
   ).toHaveLength(1);
-  await user.click(times().getByRole("button", { name: /14:30–15:10/ }));
+  await user.click(times().getByRole("button", { name: /14:00–14:50/ }));
   await user.selectOptions(
-    screen.getByLabelText(`Trainer for ${restoredDate} at 14:30`),
-    `${restoredDate}|14:30|demo|faisal`,
+    screen.getByLabelText(`Trainer for ${restoredDate} at 14:00`),
+    `${restoredDate}|14:00|demo|faisal`,
   );
   expect(
     screen
@@ -352,10 +352,10 @@ async function calendarScenario(mobile: boolean) {
       .getByRole("button", { name: "View selected trainers, 1 trainer" })
       .querySelector(".booking-cart-count"),
   ).toHaveTextContent("1");
-  await user.click(times().getByRole("button", { name: /15:20–16:00/ }));
+  await user.click(times().getByRole("button", { name: /15:00–15:50/ }));
   await user.selectOptions(
-    screen.getByLabelText(`Trainer for ${restoredDate} at 15:20`),
-    `${restoredDate}|15:20|demo|daniel`,
+    screen.getByLabelText(`Trainer for ${restoredDate} at 15:00`),
+    `${restoredDate}|15:00|demo|daniel`,
   );
   expect(
     screen
@@ -414,7 +414,7 @@ async function calendarScenario(mobile: boolean) {
   ).not.toBeInTheDocument();
   await user.click(
     within(cartPanel).getByRole("button", {
-      name: `Remove ${restoredDate} at 15:20`,
+      name: `Remove ${restoredDate} at 15:00`,
     }),
   );
   await user.click(
@@ -449,7 +449,7 @@ async function calendarScenario(mobile: boolean) {
     minHeight: "600px",
   });
   expect(
-    screen.queryByRole("button", { name: /12:00–12:40/ }),
+    screen.queryByRole("button", { name: /12:00–12:50/ }),
   ).not.toBeInTheDocument();
   await act(async () => {});
   expect(
@@ -539,7 +539,7 @@ test("confirmation places three retained actions below the summary with complete
     },
     slots: [
       ...stored.draft.slots,
-      demoSession({ date: stored.draft.slots[0].date, start: "15:20" })!,
+      demoSession({ date: stored.draft.slots[0].date, start: "15:00" })!,
     ],
   };
   const checking = demoBookingModel.pay(
@@ -628,7 +628,7 @@ test("an open booking page expires a selected slot at its start and keeps it rem
     </BookingProvider>,
   );
   await act(async () => {});
-  const slot = screen.getByRole("button", { name: /12:00–12:40/ });
+  const slot = screen.getByRole("button", { name: /12:00–12:50/ });
   expect(slot).toBeEnabled();
   fireEvent.click(slot);
   fireEvent.change(screen.getByLabelText("Trainer for 2026-10-06 at 12:00"), {
@@ -656,13 +656,13 @@ test("an open booking page expires a selected slot at its start and keeps it rem
     screen.getByRole("button", { name: "Remove 2026-10-06 at 12:00" }),
   );
   expect(loadBooking().draft.slots).toHaveLength(0);
-  expect(screen.getByRole("button", { name: /12:00–12:40/ })).toBeDisabled();
+  expect(screen.getByRole("button", { name: /12:00–12:50/ })).toBeDisabled();
   view.unmount();
 });
 
 test("restored elapsed sessions remain labelled and removable alongside valid future sessions", async () => {
   vi.setSystemTime(new Date("2027-01-01T00:00:00+08:00"));
-  const stale = demoSession({ date: "2026-12-31", start: "18:40" })!;
+  const stale = demoSession({ date: "2026-12-31", start: "19:00" })!;
   const future = demoSession({ date: "2027-01-01", start: "12:00" })!;
   saveBooking({
     version: 2,
@@ -684,7 +684,7 @@ test("restored elapsed sessions remain labelled and removable alongside valid fu
   ).toBeDisabled();
   expect(loadBooking().draft.slots).toEqual([stale, future]);
   fireEvent.click(
-    screen.getByRole("button", { name: "Remove 2026-12-31 at 18:40" }),
+    screen.getByRole("button", { name: "Remove 2026-12-31 at 19:00" }),
   );
   await act(async () => {});
   expect(loadBooking().draft.slots).toEqual([future]);
@@ -708,7 +708,7 @@ test("selection rechecks time before dispatch and refreshes after a suspended ta
     </BookingProvider>,
   );
   await act(async () => {});
-  const slot = screen.getByRole("button", { name: /12:00–12:40/ });
+  const slot = screen.getByRole("button", { name: /12:00–12:50/ });
   expect(slot).toBeEnabled();
   // Move Date only, without delivering the scheduled UI timer.
   vi.setSystemTime(new Date("2026-10-06T12:00:00+08:00"));
@@ -717,8 +717,8 @@ test("selection rechecks time before dispatch and refreshes after a suspended ta
   await act(async () => {
     fireEvent.focus(window);
   });
-  expect(screen.getByRole("button", { name: /12:00–12:40/ })).toBeDisabled();
-  expect(screen.getByRole("button", { name: /12:00–12:40/ })).toHaveTextContent(
+  expect(screen.getByRole("button", { name: /12:00–12:50/ })).toBeDisabled();
+  expect(screen.getByRole("button", { name: /12:00–12:50/ })).toHaveTextContent(
     "Session has started",
   );
 });
@@ -760,21 +760,21 @@ test("each time requires an independent trainer choice and changing it preserves
     </BookingProvider>,
   );
   await act(async () => {});
-  expect(screen.getAllByRole("button", { name: /12:00–12:40/ })).toHaveLength(
+  expect(screen.getAllByRole("button", { name: /12:00–12:50/ })).toHaveLength(
     1,
   );
-  await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  await user.click(screen.getByRole("button", { name: /12:00–12:50/ }));
   expect(loadBooking().draft.slots).toHaveLength(1);
-  await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  await user.click(screen.getByRole("button", { name: /12:00–12:50/ }));
   expect(
     screen.queryByLabelText(`Trainer for ${restoredDate} at 12:00`),
   ).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /12:00–12:40/ })).toHaveAttribute(
+  expect(screen.getByRole("button", { name: /12:00–12:50/ })).toHaveAttribute(
     "aria-expanded",
     "false",
   );
   expect(loadBooking().draft.slots).toHaveLength(1);
-  await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  await user.click(screen.getByRole("button", { name: /12:00–12:50/ }));
   const openedPicker = screen.getByLabelText(
     `Trainer for ${restoredDate} at 12:00`,
   );
@@ -783,7 +783,7 @@ test("each time requires an independent trainer choice and changing it preserves
   await user.click(openedPicker.parentElement!);
   expect(openedPicker).not.toBeInTheDocument();
   expect(loadBooking().draft.slots).toHaveLength(1);
-  await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  await user.click(screen.getByRole("button", { name: /12:00–12:50/ }));
   const picker = screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`);
   await user.selectOptions(picker, `${restoredDate}|12:00|demo|daniel`);
   expect(
@@ -793,7 +793,7 @@ test("each time requires an independent trainer choice and changing it preserves
   expect(picker).toBeVisible();
   expect(picker).toHaveValue(`${restoredDate}|12:00|demo|daniel`);
   expect(picker).not.toHaveFocus();
-  const selected = screen.getByRole("button", { name: /12:00–12:40/ });
+  const selected = screen.getByRole("button", { name: /12:00–12:50/ });
   expect(selected).toHaveTextContent("Trainer: Daniel Tan");
   expect(selected).toHaveAttribute("aria-expanded", "true");
   expect(
@@ -812,7 +812,7 @@ test("each time requires an independent trainer choice and changing it preserves
   expect(picker).toHaveFocus();
   expect(loadBooking().draft.slots).toHaveLength(2);
   expect(
-    loadBooking().draft.slots.find((slot) => slot.start === "14:30")
+    loadBooking().draft.slots.find((slot) => slot.start === "14:00")
       ?.instructor,
   ).toBe("faisal");
   view.unmount();
@@ -822,7 +822,7 @@ test("each time requires an independent trainer choice and changing it preserves
     </BookingProvider>,
   );
   await act(async () => {});
-  expect(screen.getByRole("button", { name: /12:00–12:40/ })).toHaveTextContent(
+  expect(screen.getByRole("button", { name: /12:00–12:50/ })).toHaveTextContent(
     "Trainer: Faisal Shahril",
   );
   await user.click(
@@ -843,7 +843,7 @@ test("a trainer choice opened before expiry cannot add the session after its sta
     </BookingProvider>,
   );
   await act(async () => {});
-  fireEvent.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  fireEvent.click(screen.getByRole("button", { name: /12:00–12:50/ }));
   const picker = screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`);
   vi.setSystemTime(new Date("2026-10-13T12:00:00+08:00"));
   fireEvent.change(picker, {
@@ -920,7 +920,7 @@ test("pre-checkout recovery hides the original time until verified release then 
       currency: "SGD" as const,
     },
   };
-  const other = { ...original, start: "12:50" };
+  const other = { ...original, start: "13:00" };
   const draft = {
     ...blankDraft(),
     mode: "guest" as const,
@@ -1085,7 +1085,7 @@ test("pre-checkout recovery hides the original time until verified release then 
   fireEvent.click(
     await screen.findByRole("button", { name: dateLabel(restoredDate) }),
   );
-  expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: /12:00–12:50/ })).toBeNull();
   await act(async () => reads[1].resolve([offers[1]]));
   expect(
     JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
@@ -1096,7 +1096,7 @@ test("pre-checkout recovery hides the original time until verified release then 
   await act(async () =>
     reads[2].reject(new Error("Synthetic offline fresh read")),
   );
-  expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: /12:00–12:50/ })).toBeNull();
   vi.setSystemTime(new Date("2026-10-07T02:02:00Z"));
   fireEvent.focus(window);
   await waitFor(() => expect(reads).toHaveLength(4));
@@ -1108,8 +1108,8 @@ test("pre-checkout recovery hides the original time until verified release then 
     JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
   ).toEqual([original]);
   await act(async () => reads[4].resolve(offers));
-  expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
-  expect(screen.getByRole("button", { name: /12:50–13:30/ })).toBeEnabled();
+  expect(screen.queryByRole("button", { name: /12:00–12:50/ })).toBeNull();
+  expect(screen.getByRole("button", { name: /13:00–13:50/ })).toBeEnabled();
   expect(
     JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
   ).toEqual([original]);
@@ -1135,9 +1135,9 @@ test("pre-checkout recovery hides the original time until verified release then 
   expect(contextReads).toBeGreaterThan(previousReads);
   expect(reads).toHaveLength(7);
   expect(reads[5].signal.aborted).toBe(true);
-  expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: /12:00–12:50/ })).toBeNull();
   await act(async () => reads[6].resolve(offers));
-  fireEvent.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  fireEvent.click(screen.getByRole("button", { name: /12:00–12:50/ }));
   fireEvent.change(
     screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
     {
@@ -1167,7 +1167,7 @@ test("pre-checkout recovery hides the original time until verified release then 
 test("expiry recovery hides affected studio times across trainers while other selections remain editable", async () => {
   const original = demoSession({ date: restoredDate, start: "12:00" })!;
   const alternateTrainer = { ...original, instructor: "daniel" };
-  const other = demoSession({ date: restoredDate, start: "12:50" })!;
+  const other = demoSession({ date: restoredDate, start: "13:00" })!;
   const originalDraft = { ...loadBooking().draft, slots: [original] };
   const retained = {
     id: "00000000-0000-4000-8000-000000000001",
@@ -1229,10 +1229,10 @@ test("expiry recovery hides affected studio times across trainers while other se
     ),
   );
   expect(
-    screen.queryByRole("button", { name: /12:00–12:40/ }),
+    screen.queryByRole("button", { name: /12:00–12:50/ }),
   ).not.toBeInTheDocument();
   expect(
-    await screen.findByRole("button", { name: /12:50–13:30/ }),
+    await screen.findByRole("button", { name: /13:00–13:50/ }),
   ).toBeEnabled();
   expect(JSON.parse(screen.getByTestId("recovery-cart").textContent!)).toEqual(
     [],
@@ -1240,11 +1240,11 @@ test("expiry recovery hides affected studio times across trainers while other se
   expect(
     JSON.parse(screen.getByTestId("recovery-attempt").textContent!),
   ).toEqual(retained);
-  fireEvent.click(screen.getByRole("button", { name: /12:50–13:30/ }));
+  fireEvent.click(screen.getByRole("button", { name: /13:00–13:50/ }));
   fireEvent.change(
-    screen.getByLabelText(`Trainer for ${restoredDate} at 12:50`),
+    screen.getByLabelText(`Trainer for ${restoredDate} at 13:00`),
     {
-      target: { value: `${restoredDate}|12:50|demo|faisal` },
+      target: { value: `${restoredDate}|13:00|demo|faisal` },
     },
   );
   expect(JSON.parse(screen.getByTestId("recovery-cart").textContent!)).toEqual([
@@ -1266,11 +1266,11 @@ test("expiry recovery hides affected studio times across trainers while other se
     JSON.parse(screen.getByTestId("recovery-suppressed").textContent!),
   ).toEqual([original]);
   expect(
-    screen.queryByRole("button", { name: /12:00–12:40/ }),
+    screen.queryByRole("button", { name: /12:00–12:50/ }),
   ).not.toBeInTheDocument();
   fireEvent.click(screen.getByText("Authoritative unpaid release"));
   await waitFor(() =>
-    expect(screen.getByRole("button", { name: /12:00–12:40/ })).toBeEnabled(),
+    expect(screen.getByRole("button", { name: /12:00–12:50/ })).toBeEnabled(),
   );
   expect(
     JSON.parse(screen.getByTestId("recovery-attempt").textContent!),

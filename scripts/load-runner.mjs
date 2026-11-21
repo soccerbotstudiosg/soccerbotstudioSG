@@ -137,7 +137,7 @@ export async function runCohort(config) {
           sessions: Array.from({ length: size }, (_, j) => ({
             serviceId: "2",
             instructorId: "14",
-            startMs: startMs + j * 3000000,
+            startMs: startMs + j * 3600000,
             players: 2,
             totalMinor: 8800,
           })),

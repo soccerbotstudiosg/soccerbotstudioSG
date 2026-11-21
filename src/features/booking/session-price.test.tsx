@@ -32,7 +32,7 @@ function catalogue(environment: "developer" | "production"): CustomerCatalogue {
         id: "3",
         name: "Kickoff Special",
         active: true,
-        durationMinutes: 40,
+        durationMinutes: 50,
         recurring: false,
         priceMinor: environment === "production" ? 10800 : 8800,
         currency: "SGD",

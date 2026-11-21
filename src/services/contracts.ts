@@ -177,7 +177,7 @@ export type CheckoutContext = {
     players: number;
     totalMinor: number;
     currency: "SGD";
-    sessions: { startMs: number; players: number }[];
+    sessions: { startMs: number; players: number; durationMinutes?: number }[];
   };
   checking: {
     deadlineMs: number;

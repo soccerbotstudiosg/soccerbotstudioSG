@@ -1,11 +1,8 @@
 import { z } from "zod";
-import {
-  SESSION_MINUTES,
-  START_INTERVAL_MINUTES,
-} from "../src/domain/booking-policy";
+
 import { emailSchema } from "../src/domain/contact";
 import { freshReceipt } from "./catalogue";
-import { intentSchema } from "./journal";
+import { intentSchema, bookedMinutes, occupiedMinutes } from "./journal";
 import { recoveryMarker } from "./native-creation-marker";
 import { studioStartsFromIntervals } from "./native-grid";
 import { ApiError } from "./policy";
@@ -50,7 +47,7 @@ type WindowGroup = {
 };
 const singaporeWallTime = (ms: number) =>
   new Date(ms + 8 * 3600000).toISOString();
-const occupiedMs = START_INTERVAL_MINUTES * 60000;
+
 const invalidReport = () =>
   new ApiError(503, "native_booking_list_unavailable");
 const lookupMarker = z.strictObject({
@@ -103,6 +100,7 @@ export async function lookupUnknownCreationEvidence(options: {
         marker?.values[index],
       ]),
     );
+    const byStart = new Map(intent.sessions.map((s) => [s.startMs, s]));
     const groups = new Map<string, WindowGroup>();
     for (const session of intent.sessions) {
       const date = singaporeWallTime(session.startMs).slice(0, 10);
@@ -156,12 +154,14 @@ export async function lookupUnknownCreationEvidence(options: {
           const contact = emailSchema.safeParse(row.client?.email);
           if (contact.success && contact.data !== email) continue;
           for (const original of starts) {
+            const session = byStart.get(original)!;
+            const occupiedMs = occupiedMinutes(session) * 60000;
             if (end <= original || start >= original + occupiedMs) continue;
             if (
               contact.success &&
               start === original &&
               end === original + occupiedMs &&
-              providerId(row.duration) === String(SESSION_MINUTES) &&
+              providerId(row.duration) === String(bookedMinutes(session)) &&
               !candidates.has(original)
             )
               candidates.set(original, id);
@@ -209,6 +209,7 @@ export async function lookupUnknownCreationEvidence(options: {
         intervals.body,
         scope.date,
         scope.instructorId,
+        occupiedMinutes(byStart.get(starts[0])!),
       );
       if (
         starts.some(

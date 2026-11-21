@@ -127,7 +127,7 @@ export async function createBookingSequence(sizes, options = {}) {
                   {
                     [String(body.params[3])]: starts.map((start) => [
                       start,
-                      new Date(Date.parse(`${date}T${start}Z`) + 50 * 60000)
+                      new Date(Date.parse(`${date}T${start}Z`) + 60 * 60000)
                         .toISOString()
                         .slice(11, 19),
                     ]),
@@ -223,14 +223,14 @@ export async function createBookingSequence(sizes, options = {}) {
     const sessions = Array.from({ length: size }, () => {
       const number = slot++;
       const id = 701 + number;
-      const startMs = m.startMs + number * 3000000;
+      const startMs = m.startMs + number * 3600000;
       const creation = {
         ...structuredClone(fixtures.creation.bookings[0]),
         id: String(id),
         event_id: 2,
         unit_id: 14,
         start_date_time: wall(startMs),
-        end_date_time: wall(startMs + 3000000),
+        end_date_time: wall(startMs + 3600000),
         hash: `synthetic-booking-${id}`,
         client_hash: "synthetic-client-hash",
       };
@@ -240,9 +240,10 @@ export async function createBookingSequence(sizes, options = {}) {
         event_id: "2",
         invoice_id: String(invoice.id),
         invoice_amount: (88 * size).toFixed(4),
+        event_duration: "50",
         invoice_line_id: String(801 + number),
         start_date_time: wall(startMs),
-        end_date_time: wall(startMs + 3000000),
+        end_date_time: wall(startMs + 3600000),
         invoice_number: invoice.number,
       };
       const line = structuredClone(fixtures.invoiceBefore.lines[0]);
@@ -254,8 +255,9 @@ export async function createBookingSequence(sizes, options = {}) {
       Object.assign(line.bookings[0], {
         id,
         service_id: 2,
+        duration: 50,
         start_datetime: wall(startMs),
-        end_datetime: wall(startMs + 3000000),
+        end_datetime: wall(startMs + 3600000),
       });
       invoice.lines.push(line);
       return { startMs, creation, details, booked: false };

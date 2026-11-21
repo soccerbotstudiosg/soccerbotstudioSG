@@ -1,13 +1,14 @@
 import { invoiceNumberSchema } from "../src/domain/provider-references";
-import {
-  START_INTERVAL_MINUTES,
-  SESSION_MINUTES,
-  CHANGEOVER_MINUTES,
-} from "../src/domain/booking-policy";
+import { CHANGEOVER_MINUTES } from "../src/domain/booking-policy";
 import type { ConfirmationInput } from "../src/domain/confirmation";
 import { z } from "zod";
 import { ApiError } from "./policy";
-import { intentSchema, associationSchema } from "./journal";
+import {
+  bookedMinutes,
+  occupiedMinutes,
+  intentSchema,
+  associationSchema,
+} from "./journal";
 
 // Unknown flag values must not be coerced to false or paid.
 /** Normalize a provider flag without relying on loose truthiness. */
@@ -522,12 +523,12 @@ function invoiceEvidence(raw: unknown, context: NativeReadContext) {
         context.timezone,
         "invoice.line.booking.end_datetime",
       ),
-      expected.startMs + START_INTERVAL_MINUTES * 60000,
+      expected.startMs + occupiedMinutes(expected) * 60000,
       "invoice.line.booking.end_datetime",
     );
     equal(
       providerId(nested.duration, "invoice.line.booking.duration"),
-      String(SESSION_MINUTES),
+      String(bookedMinutes(expected)),
       "invoice.line.booking.duration",
     );
     equal(line.currency, intent.currency, "invoice.line.currency");
@@ -709,7 +710,7 @@ function bookingFieldChecks(
       run: () => {
         equal(
           providerId(booking.event_duration, "booking.event_duration"),
-          String(SESSION_MINUTES),
+          String(bookedMinutes(expected)),
           "booking.event_duration",
         );
       },
@@ -763,7 +764,7 @@ function bookingFieldChecks(
             context.timezone,
             "booking.end_date_time",
           ),
-          expected.startMs + START_INTERVAL_MINUTES * 60000,
+          expected.startMs + occupiedMinutes(expected) * 60000,
           "booking.end_date_time",
         );
       },
@@ -877,9 +878,10 @@ export function inspectNativeBooking(
       "booking.end_date_time",
     );
     endInterval =
-      end === context.expected.startMs + SESSION_MINUTES * 60000
+      end === context.expected.startMs + bookedMinutes(context.expected) * 60000
         ? "play"
-        : end === context.expected.startMs + START_INTERVAL_MINUTES * 60000
+        : end ===
+            context.expected.startMs + occupiedMinutes(context.expected) * 60000
           ? "occupied"
           : "other";
   } catch (error) {
@@ -1026,9 +1028,9 @@ export function normalizeNativeReads(
         serviceId: expected.serviceId,
         instructorId: expected.instructorId,
         startMs: expected.startMs,
-        playEndMs: expected.startMs + SESSION_MINUTES * 60000,
+        playEndMs: expected.startMs + bookedMinutes(expected) * 60000,
         occupiedStartMs: expected.startMs,
-        occupiedEndMs: expected.startMs + START_INTERVAL_MINUTES * 60000,
+        occupiedEndMs: expected.startMs + occupiedMinutes(expected) * 60000,
       },
       status,
     };
@@ -1108,7 +1110,7 @@ export function normalizeNativeSession(
       context.timezone,
       "creation.booking.end_date_time",
     ),
-    expected.startMs + START_INTERVAL_MINUTES * 60000,
+    expected.startMs + occupiedMinutes(expected) * 60000,
     "creation.booking.end_date_time",
   );
   const hash = nativeHash(booking.hash, "creation.booking.hash");

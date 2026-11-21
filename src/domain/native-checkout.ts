@@ -230,6 +230,7 @@ export const bookingDetailsSchema = z
     sessions: z
       .array(
         nativeOfferSchema.extend({
+          durationMinutes: z.union([z.literal(40), z.literal(50)]).optional(),
           players: z.number().int().min(1).max(MAX_PLAYERS),
         }),
       )

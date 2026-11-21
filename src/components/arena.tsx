@@ -1,4 +1,5 @@
 "use client";
+import { SESSION_MINUTES } from "@/domain/booking-policy";
 import Link from "next/link";
 import { useRef, type PointerEvent } from "react";
 import { studioMedia } from "@/content/media";
@@ -148,7 +149,7 @@ export function Arena() {
                 »
               </span>
               <span className="arena-session-meta">
-                40 minutes · 1–4 players
+                {SESSION_MINUTES} minutes · 1–4 players
                 <br />
                 Instructor included
               </span>

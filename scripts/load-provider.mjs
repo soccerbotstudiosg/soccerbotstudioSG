@@ -91,7 +91,7 @@ export function loadProvider({ delayMs = 0, maxCalls = 2000 } = {}) {
       const id = ++serial,
         lineId = ++serial;
       const start = Date.parse(slot.replace(" ", "T") + "+08:00"),
-        end = wall(start + 3000000);
+        end = wall(start + 3600000);
       const item = {
         ...structuredClone(templates.creation.bookings[0]),
         id: String(id),
@@ -105,6 +105,7 @@ export function loadProvider({ delayMs = 0, maxCalls = 2000 } = {}) {
         ...structuredClone(templates.bookingBefore),
         id: String(id),
         event_id: "2",
+        event_duration: "50",
         invoice_id: String(g.id),
         invoice_line_id: String(lineId),
         start_date_time: slot,
@@ -119,6 +120,7 @@ export function loadProvider({ delayMs = 0, maxCalls = 2000 } = {}) {
       Object.assign(line.bookings[0], {
         id,
         service_id: 2,
+        duration: 50,
         start_datetime: slot,
         end_datetime: end,
       });
@@ -163,7 +165,7 @@ export function loadProvider({ delayMs = 0, maxCalls = 2000 } = {}) {
         result[date] = [0, 6].includes(d.getUTCDay())
           ? []
           : Array.from({ length: 8 }, (_, i) =>
-              wall(Date.parse(date + "T12:10:00+08:00") + i * 3000000).slice(
+              wall(Date.parse(date + "T12:00:00+08:00") + i * 3600000).slice(
                 11,
               ),
             ).filter((time) => !occupied.has(`${date} ${time}`));
