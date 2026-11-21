@@ -6,7 +6,7 @@ Align the booking site and Worker with the production 50-minute sessions and hou
 
 ## Next actions
 
-Review the hourly schedule on the branch and verify the provider configuration in staging before physical checkout acceptance.
+Both staging SimplyBook services now have 50-minute sessions and a 10-minute buffer. Verify the website staging deployment and physical checkout.
 
 ## Ordered work after this slice
 

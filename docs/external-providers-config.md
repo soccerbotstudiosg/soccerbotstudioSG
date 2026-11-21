@@ -29,13 +29,13 @@ SimplyBook owns availability, booking records and invoices. HitPay collects paym
 
 Both service lists were read through their respective connectors on 2 November 2026. Client company information independently reported login `soccerbotadmin` and timezone `Asia/Singapore`.
 
-| Setting                                    | Staging                                 | Client                  | Reason                                                                                            |
-| ------------------------------------------ | --------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------- |
-| Weekday service                            | ID2, S$88                               | ID3, S$108              | Explicit company-local service mapping                                                            |
-| Weekend / Singapore public-holiday service | ID3, S$108                              | ID4, S$128              | Date-based premium price; IDs are not portable between companies                                  |
-| Currency                                   | SGD                                     | SGD                     | Payment amount/currency must match the original invoice                                           |
-| Session / changeover                       | 40 minutes / 10 minutes (last recorded) | 50 minutes / 10 minutes | Studio occupancy includes changeover                                                              |
-| Linked provider IDs                        | 2, 3, 4, 5, 6                           | 2, 3, 4, 5, 6           | All five are linked to both services; equal IDs do not establish shared identity across companies |
+| Setting                                    | Staging                 | Client                  | Reason                                                                                            |
+| ------------------------------------------ | ----------------------- | ----------------------- | ------------------------------------------------------------------------------------------------- |
+| Weekday service                            | ID2, S$88               | ID3, S$108              | Explicit company-local service mapping                                                            |
+| Weekend / Singapore public-holiday service | ID3, S$108              | ID4, S$128              | Date-based premium price; IDs are not portable between companies                                  |
+| Currency                                   | SGD                     | SGD                     | Payment amount/currency must match the original invoice                                           |
+| Session / changeover                       | 50 minutes / 10 minutes | 50 minutes / 10 minutes | Studio occupancy includes changeover                                                              |
+| Linked provider IDs                        | 2, 3, 4, 5, 6           | 2, 3, 4, 5, 6           | All five are linked to both services; equal IDs do not establish shared identity across companies |
 
 Client active roster API-observed on 2 November: Faisal (2), Nabil (3), Caelan (4), Rifqi (5), Azam (6). Add future trainers through reviewed provider/service mappings and schedule checks; the application reads the complete bounded linked roster rather than assuming three or five trainers forever.
 
