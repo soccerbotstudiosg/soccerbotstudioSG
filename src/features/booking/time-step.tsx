@@ -24,6 +24,7 @@ import {
   useLayoutEffect,
 } from "react";
 import {
+  SESSION_MINUTES,
   BOOKING_LEAD_MS,
   MAX_BOOKING_SESSIONS,
   START_INTERVAL_MINUTES,
@@ -526,7 +527,9 @@ export function TimeStep({
       {mobile && (
         <>
           {calendarContext}
-          <p className="lead">40-min session · 10-min changeover.</p>
+          <p className="lead">
+            {SESSION_MINUTES}-min session · 10-min changeover.
+          </p>
         </>
       )}
       {notices}
@@ -723,7 +726,7 @@ export function TimeStep({
             <h2>{dateLabel(date)}</h2>
             {!mobile && (
               <p className="calendar-duration-note">
-                *40-min session · 10-min changeover.
+                *{SESSION_MINUTES}-min session · 10-min changeover.
               </p>
             )}
             {!mobile && calendarContext}

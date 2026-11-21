@@ -1,14 +1,16 @@
 import { parallelReads } from "./parallel-reads";
 import type { NativeCreationMarker } from "./native-creation-marker";
-import {
-  SESSION_MINUTES,
-  START_INTERVAL_MINUTES,
-} from "../src/domain/booking-policy";
+
 import { nativeBookingComment, type NativePrebooking } from "./prebooking";
 import { isNativeCheckoutUrl } from "../src/domain/native-checkout";
 import { z } from "zod";
 import { ApiError, digest } from "./policy";
-import { intentSchema, associationSchema } from "./journal";
+import {
+  bookedMinutes,
+  occupiedMinutes,
+  intentSchema,
+  associationSchema,
+} from "./journal";
 import {
   normalizeNativeCreation,
   normalizeNativeBatchClosure,
@@ -137,9 +139,9 @@ export function nativeBookingOperations(options: {
             serviceId: expected.serviceId,
             instructorId: expected.instructorId,
             startMs: expected.startMs,
-            playEndMs: expected.startMs + SESSION_MINUTES * 60000,
+            playEndMs: expected.startMs + bookedMinutes(expected) * 60000,
             occupiedStartMs: expected.startMs,
-            occupiedEndMs: expected.startMs + START_INTERVAL_MINUTES * 60000,
+            occupiedEndMs: expected.startMs + occupiedMinutes(expected) * 60000,
           },
         })),
       },

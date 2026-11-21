@@ -6,6 +6,8 @@ import {
   rejectReservationPreparation,
 } from "./reservation-abuse";
 import {
+  SESSION_MINUTES,
+  START_INTERVAL_MINUTES,
   BOOKING_MONTH_COUNT,
   MAX_BOOKING_SESSIONS,
   PAYMENT_WINDOW_MS,
@@ -1389,6 +1391,12 @@ export async function prepareCustomerNative(
     );
   const input = nativePrepareSchema.parse(value);
   if (
+    grant.ongoing === 1 &&
+    !grant.attempt_id &&
+    contract.durationMinutes !== SESSION_MINUTES
+  )
+    throw new ApiError(409, "native_restart_required");
+  if (
     input.holding &&
     hitpaySetting(env, "CHECKOUT_PAYMENT_ROUTE") !== "hitpay"
   )
@@ -1462,7 +1470,13 @@ export async function prepareCustomerNative(
       (total, session) => total + session.totalMinor,
       0,
     ),
-    sessions: input.sessions.map((session) => ({ ...session, taxMinor: 0 })),
+    sessions: input.sessions.map((session) => ({
+      ...session,
+      ...(contract.durationMinutes === SESSION_MINUTES
+        ? { durationMinutes: SESSION_MINUTES }
+        : {}),
+      taxMinor: 0,
+    })),
   });
   const hash = await digest(JSON.stringify(intent));
   if (grant.attempt_id) {
@@ -1701,7 +1715,7 @@ export async function customerNativeAvailability(options: {
     if (
       !service ||
       service.recurring ||
-      service.durationMinutes !== 40 ||
+      service.durationMinutes !== contract.durationMinutes ||
       service.currency !== "SGD"
     )
       throw new ApiError(503, "native_service_unavailable");
@@ -1749,7 +1763,8 @@ export async function customerNativeAvailability(options: {
           contract.providerSchedules !== "customer-choice" &&
           offers.some(
             (offer) =>
-              Math.abs(offer.startMs - startMs) < 3000000 &&
+              Math.abs(offer.startMs - startMs) <
+                START_INTERVAL_MINUTES * 60000 &&
               offer.instructorId !== instructor.id,
           )
         )
@@ -1923,6 +1938,7 @@ export async function customerNativeCalendar(options: {
     const raw = await options.cache.read({
       scope: JSON.stringify([binding, p.SOURCE_REVISION]),
       studioGrid: contract.bookingLeadMinutes !== undefined,
+      durationMinutes: contract.durationMinutes,
       month,
       serviceId,
       dates: approved,

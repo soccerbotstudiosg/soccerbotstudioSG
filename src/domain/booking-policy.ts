@@ -1,5 +1,5 @@
 // Shared business limits; provider data and demo fixtures do not override them.
-export const SESSION_MINUTES = 40;
+export const SESSION_MINUTES = 50;
 export const CHANGEOVER_MINUTES = 10;
 export const START_INTERVAL_MINUTES = SESSION_MINUTES + CHANGEOVER_MINUTES;
 export const MAX_PLAYERS = 4;

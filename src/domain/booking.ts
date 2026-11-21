@@ -38,6 +38,7 @@ export const sessionSchema = slotSchema
         currency: z.literal("SGD"),
       })
       .optional(),
+    durationMinutes: z.union([z.literal(40), z.literal(50)]).optional(),
     rotationAt: z
       .string()
       .regex(/^([01]\d|2[0-3]):[0-5]\d$/)

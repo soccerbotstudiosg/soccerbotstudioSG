@@ -454,7 +454,7 @@ test("calendar and basket share delayed availability once and preserve selection
   await act(async () => {
     response.resolve(demoBookingModel.availability(date));
   });
-  expect(screen.getByRole("button", { name: /12:00–12:40/ })).toHaveAttribute(
+  expect(screen.getByRole("button", { name: /12:00–12:50/ })).toHaveAttribute(
     "aria-pressed",
     "true",
   );
@@ -560,7 +560,7 @@ test("reordered dates and player revisions discard old replies even when the ada
   await act(async () => {
     current.resolve(demoBookingModel.availability(date));
   });
-  expect(screen.getByRole("button", { name: /12:00–12:40/ })).toBeEnabled();
+  expect(screen.getByRole("button", { name: /12:00–12:50/ })).toBeEnabled();
   fireEvent.click(screen.getByRole("button", { name: "Change players" }));
   expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
   await act(async () => {
@@ -571,7 +571,7 @@ test("reordered dates and player revisions discard old replies even when the ada
     changed.resolve(demoBookingModel.availability(date));
   });
   expect(availability.mock.calls[2][0].players).toBe(2);
-  expect(screen.getByRole("button", { name: /12:00–12:40/ })).toBeEnabled();
+  expect(screen.getByRole("button", { name: /12:00–12:50/ })).toBeEnabled();
   expect(
     screen.queryByText("No sessions available on this date."),
   ).not.toBeInTheDocument();
@@ -598,7 +598,7 @@ test("unmount aborts the shared read and a late reply cannot replace remounted s
   });
   expect(screen.getByText("No sessions available on this date.")).toBeVisible();
   expect(
-    screen.queryByRole("button", { name: /12:00–12:40/ }),
+    screen.queryByRole("button", { name: /12:00–12:50/ }),
   ).not.toBeInTheDocument();
 });
 test("review waits before navigation and same-turn duplicate checkout has one logical effect", async () => {
@@ -1136,7 +1136,7 @@ test("a checkout capacity conflict invalidates shared availability before return
       name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toBeDisabled();
-  expect(screen.getByRole("button", { name: /12:00–12:40/ })).toHaveTextContent(
+  expect(screen.getByRole("button", { name: /12:00–12:50/ })).toHaveTextContent(
     "Unavailable",
   );
   expect(loadBooking().draft.slots).toHaveLength(1);
@@ -1185,7 +1185,7 @@ test("expiry after checkout resumes day reads and replacement navigation while t
   });
   const availability = vi.fn<BookingService["availability"]>(
     async ({ date: offeredDate }) => [
-      { ...nativeSlot(offeredDate, "13:40"), available: true },
+      { ...nativeSlot(offeredDate, "14:00"), available: true },
     ],
   );
   const service: BookingService = {
@@ -1258,7 +1258,7 @@ test("expiry after checkout resumes day reads and replacement navigation while t
         <button
           onClick={() =>
             state.update({
-              slots: [nativeSlot("2026-10-14", "13:40")],
+              slots: [nativeSlot("2026-10-14", "14:00")],
             })
           }
         >

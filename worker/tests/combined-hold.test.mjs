@@ -575,7 +575,7 @@ test("combined batch hold uses one validation per item and retains partial or un
       const c = await customer(m);
       c.input.sessions.push({
         ...c.input.sessions[0],
-        startMs: m.startMs + 3000000,
+        startMs: m.startMs + 3600000,
       });
       const response = await c.send();
       assert.equal(response.status, 200, await response.clone().text());
@@ -608,7 +608,7 @@ test("combined batch hold uses one validation per item and retains partial or un
       assert.equal(current.attemptId, c.input.key);
       assert.equal(current.state, fault === "none" ? "held" : "checking");
       assert.equal(current.sessions.length, 2);
-      assert.equal(current.sessions[1].startMs, m.startMs + 3000000);
+      assert.equal(current.sessions[1].startMs, m.startMs + 3600000);
       if (fault === "conflict")
         assert.equal(current.sessions[1].serviceName, "Requested session");
       assert.equal(books, before);
@@ -869,7 +869,7 @@ test("single hold progress requires validated retained creation before comments 
       if (scenario.batch)
         intent.sessions.push({
           ...intent.sessions[0],
-          startMs: intent.sessions[0].startMs + 3000000,
+          startMs: intent.sessions[0].startMs + 3600000,
         });
       if (scenario.batch) intent.totalMinor *= 2;
       const json = JSON.stringify(intent);
@@ -1158,10 +1158,10 @@ async function checkRotatedCreationMarker(field) {
                 id: 701,
                 service_id: 2,
                 provider_id: 14,
-                duration: 40,
+                duration: 50,
                 client: { email: "synthetic@example.test" },
                 start_datetime: date + " 12:00:00",
-                end_datetime: date + " 12:50:00",
+                end_datetime: date + " 13:00:00",
               },
             ]
           : [];
@@ -1301,7 +1301,7 @@ test("configured intake marker binds each original session and checks its servic
       if (route === "checkout")
         c.input.sessions.push({
           ...c.input.sessions[0],
-          startMs: m.startMs + 3000000,
+          startMs: m.startMs + 3600000,
         });
       const start = () =>
         m.mf.dispatchFetch(m.origin + `/api/booking/${route}/${c.input.key}`, {
@@ -1623,7 +1623,7 @@ test("combined batch checkout retains one payment effect and exact booking assoc
       .run();
     c.input.sessions.push({
       ...c.input.sessions[0],
-      startMs: m.startMs + 3000000,
+      startMs: m.startMs + 3600000,
     });
     const send = () =>
       m.mf.dispatchFetch(m.origin + `/api/booking/checkout/${c.input.key}`, {
@@ -1710,7 +1710,7 @@ test("batch closure fallback and failed hold persistence preserve one original a
       const c = await customer(m);
       c.input.sessions.push({
         ...c.input.sessions[0],
-        startMs: m.startMs + 3000000,
+        startMs: m.startMs + 3600000,
       });
       if (failure === "hold-save")
         await m.db.exec(
@@ -2717,7 +2717,7 @@ test("cooldown after a batch booking preserves prior effects under the original 
       { name: "simplybook-developer-account" },
     );
     const c = await customer(m);
-    const starts = [m.startMs, m.startMs + 3000000];
+    const starts = [m.startMs, m.startMs + 3600000];
     const result = await collisionCheckout(m, c, c.input.key, starts);
     assert.equal(result.state, "recovery_required");
     const current = await collisionContext(m, c, c.input.key);
@@ -3065,7 +3065,7 @@ test("direct batch checkout uses creation responses for two four and five sessio
       const c = await customer(m);
       c.input.sessions = Array.from({ length: count }, (_, index) => ({
         ...c.input.sessions[0],
-        startMs: m.startMs + index * 3000000,
+        startMs: m.startMs + index * 3600000,
       }));
       const send = () =>
         m.mf.dispatchFetch(m.origin + `/api/booking/checkout/${c.input.key}`, {
@@ -3201,7 +3201,7 @@ test("direct batch rejection lost response and invalid invoice retain original e
         const c = await customer(m);
         c.input.sessions = Array.from({ length: count }, (_, index) => ({
           ...c.input.sessions[0],
-          startMs: m.startMs + index * 3000000,
+          startMs: m.startMs + index * 3600000,
         }));
         const send = () =>
           m.mf.dispatchFetch(
@@ -3938,7 +3938,7 @@ test("batch transport claims recheck revocation at each creation boundary withou
       const c = await customer(m);
       c.input.sessions.push({
         ...c.input.sessions[0],
-        startMs: m.startMs + 3000000,
+        startMs: m.startMs + 3600000,
       });
       const send = () =>
         m.mf.dispatchFetch(m.origin + `/api/booking/checkout/${c.input.key}`, {
@@ -4015,7 +4015,7 @@ test("single and batch recovery retain verified evidence with bounded read overl
       const c = await customer(m);
       c.input.sessions = Array.from({ length: count }, (_, i) => ({
         ...c.input.sessions[0],
-        startMs: m.startMs + i * 3000000,
+        startMs: m.startMs + i * 3600000,
       }));
       const response = await m.mf.dispatchFetch(
         m.origin + `/api/booking/checkout/${c.input.key}`,
@@ -4083,7 +4083,7 @@ test("deferred single and batch checkout reject failed foundation and conditiona
         const c = await customer(m);
         c.input.sessions = Array.from({ length: count }, (_, i) => ({
           ...c.input.sessions[0],
-          startMs: m.startMs + i * 3000000,
+          startMs: m.startMs + i * 3600000,
         }));
         if (fault === "foundation")
           await m.db.exec(
@@ -4472,7 +4472,7 @@ test("recovery publication rolls back on storage failure and resumes without dup
       m,
       c,
       crypto.randomUUID(),
-      [m.startMs + 3000000],
+      [m.startMs + 3600000],
       503,
     );
     assert.equal(denied.error, "checkout_already_active");
@@ -4550,7 +4550,7 @@ test("rejected concurrent checkout reads the owned active attempt without repeat
             accepted: true,
             sessions: c.input.sessions.map((session) => ({
               ...session,
-              startMs: session.startMs + 3000000,
+              startMs: session.startMs + 3600000,
             })),
           }),
         },
@@ -4727,7 +4727,7 @@ test("preparation rejection survives refresh without provider reads and permanen
     const c = await customer(m);
     c.input.sessions.push({
       ...c.input.sessions[0],
-      startMs: m.startMs + 3000000,
+      startMs: m.startMs + 3600000,
     });
     const initial = await c.send();
     assert.equal(initial.status, 200);
@@ -4962,7 +4962,7 @@ test("rejected unbound window checks fresh availability and preserves failed or 
           result: {
             [call.body.params[0]]: {
               [String(call.body.params[3])]:
-                outcome === "occupied" ? [] : [["12:00:00", "12:50:00"]],
+                outcome === "occupied" ? [] : [["12:00:00", "13:00:00"]],
             },
           },
         });
@@ -5087,7 +5087,7 @@ test("409 preparation readback distinguishes unavailable selection from unresolv
             [call.body.params[0]]: {
               [String(call.body.params[3])]: occupied
                 ? []
-                : [["12:00:00", "12:50:00"]],
+                : [["12:00:00", "13:00:00"]],
             },
           },
         });
@@ -5305,7 +5305,7 @@ test("customer-selected trainers survive a multi-slot hold and restoration witho
     c.input.sessions.push({
       ...c.input.sessions[0],
       instructorId: "14",
-      startMs: m.startMs + 3000000,
+      startMs: m.startMs + 3600000,
     });
     const result = await checkoutResult(c.send(), 200);
     assert.equal(result.state, "associated");
@@ -5688,7 +5688,7 @@ test("reservation admission caps new checkouts at five sessions before provider 
     const c = await customer(m);
     c.input.sessions = Array.from({ length: 6 }, (_, index) => ({
       ...c.input.sessions[0],
-      startMs: m.startMs + index * 3000000,
+      startMs: m.startMs + index * 3600000,
     }));
     await checkoutResult(c.send(), 400);
     assert.equal(

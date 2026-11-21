@@ -62,7 +62,7 @@ function fixtures() {
       12: {
         id: 12,
         name: "Session",
-        duration: "40",
+        duration: "50",
         is_active: "1",
         is_public: "1",
         is_recurring: "0",
@@ -92,6 +92,7 @@ function approved() {
         serviceId: "12",
         instructorId: "14",
         players: 2,
+        durationMinutes: 50,
         startMs:
           Math.floor(Date.now() / 86400000) * 86400000 +
           3 * 86400000 +
@@ -133,7 +134,7 @@ function exchangeFor(data, intent = approved()) {
                   {
                     [request.instructorId]: starts.map((start) => [
                       start,
-                      new Date(Date.parse(`${day}T${start}Z`) + 50 * 60000)
+                      new Date(Date.parse(`${day}T${start}Z`) + 60 * 60000)
                         .toISOString()
                         .slice(11, 19),
                     ]),
@@ -457,7 +458,7 @@ test("prebooking validates freshness account lead time and supported service pro
   await assert.rejects(validation.review(intent), /provider_data_stale/);
   read.setAge(0);
   for (const patch of [
-    { duration: 50 },
+    { duration: 40 },
     { is_recurring: 1 },
     { currency: "USD" },
   ]) {
@@ -924,7 +925,7 @@ test("prebooking accepts scoped owner declarations for fresh booking contact and
     priceMinor: 8800,
     currency: "SGD",
     taxMinor: 0,
-    durationMinutes: 40,
+    durationMinutes: 50,
     bufferAfterMinutes: 10,
     clientLoginRequired: false,
     providerSchedules: "non-overlapping",
@@ -997,7 +998,7 @@ test("owner date-scoped trial lead exception preserves default account instructo
     priceMinor: 8800,
     currency: "SGD",
     taxMinor: 0,
-    durationMinutes: 40,
+    durationMinutes: 50,
     bufferAfterMinutes: 10,
     clientLoginRequired: false,
     providerSchedules: "non-overlapping",
@@ -1092,7 +1093,7 @@ test("owner trial exception rechecks twenty-four-hour minimum and contract expir
       priceMinor: 8800,
       currency: "SGD",
       taxMinor: 0,
-      durationMinutes: 40,
+      durationMinutes: 50,
       bufferAfterMinutes: 10,
       clientLoginRequired: false,
       providerSchedules: "non-overlapping",
@@ -1782,7 +1783,7 @@ test("priced customer calendar chooses native service by Singapore weekday and p
           body[day.toISOString().slice(0, 10)] = {
             [request.instructorId]: available
               ? [
-                  ["11:59:00", "12:50:00"],
+                  ["11:59:00", "13:00:00"],
                   ["19:21:00", "20:00:00"],
                 ]
               : [],
@@ -1895,7 +1896,7 @@ test("priced prebooking accepts exact mixed service totals and rejects cheap hol
     priceMinor: 8800,
     currency: "SGD",
     taxMinor: 0,
-    durationMinutes: 40,
+    durationMinutes: 50,
     bufferAfterMinutes: 10,
     clientLoginRequired: false,
     providerSchedules: "non-overlapping",
@@ -1970,34 +1971,34 @@ test("customer booking accepts exactly 240 minutes and rechecks the cutoff after
       "2026-11-06",
       "14",
     );
-  assert.deepEqual(free([["14:00:00", "16:00:00"]]), ["14:30:00"]);
+  assert.deepEqual(free([["14:00:00", "16:00:00"]]), ["14:00:00", "15:00:00"]);
   assert.deepEqual(
     free([
       ["12:00:00", "13:00:00"],
       ["13:50:00", "15:20:00"],
     ]),
-    ["12:00:00", "14:30:00"],
+    ["12:00:00", "14:00:00"],
   );
   assert.deepEqual(free([["12:00:00", "12:40:00"]]), []);
   assert.deepEqual(
     free([
       ["12:00:00", "12:25:00"],
-      ["12:25:01", "12:50:00"],
+      ["12:25:01", "13:00:00"],
     ]),
     [],
   );
   assert.deepEqual(
     free([
-      ["12:25:00", "12:50:00"],
+      ["12:25:00", "13:00:00"],
       ["12:00:00", "12:25:00"],
     ]),
     ["12:00:00"],
   );
-  assert.deepEqual(free([["18:40:00", "20:00:00"]]), ["18:40:00"]);
+  assert.deepEqual(free([["18:40:00", "20:00:00"]]), ["19:00:00"]);
   assert.deepEqual(free([]), []);
-  assert.deepEqual(free([{ from: "12:00:00", to: "13:40:00" }]), [
+  assert.deepEqual(free([{ from: "12:00:00", to: "14:00:00" }]), [
     "12:00:00",
-    "12:50:00",
+    "13:00:00",
   ]);
   assert.deepEqual(free([{ from: "12:00:00", to: "12:40:00" }]), []);
   for (const raw of [
@@ -2021,7 +2022,7 @@ test("customer booking accepts exactly 240 minutes and rechecks the cutoff after
     priceMinor: 8800,
     currency: "SGD",
     taxMinor: 0,
-    durationMinutes: 40,
+    durationMinutes: 50,
     bufferAfterMinutes: 10,
     clientLoginRequired: false,
     providerSchedules: "non-overlapping",
@@ -2086,7 +2087,7 @@ test("customer booking accepts exactly 240 minutes and rechecks the cutoff after
     ["11:59:00", false],
     ["12:00:00", true],
     ["19:20:00", false],
-    ["18:40:00", true],
+    ["19:00:00", true],
     ["14:40:00", false],
     ["12:00:00.001", false],
     ["19:21:00", false],
@@ -2375,7 +2376,7 @@ test("persistent display snapshots retain original deadlines across restarts and
           offers: [
             offer,
             { ...offer, instructorId: "2" },
-            { ...offer, startMs: startMs + 3000000 },
+            { ...offer, startMs: startMs + 3600000 },
           ],
         },
       ],
@@ -2429,7 +2430,7 @@ test("persistent display snapshots retain original deadlines across restarts and
     const edited = restarted.read("calendar", key);
     assert.deepEqual(
       edited.dates[0].offers.map((x) => x.startMs),
-      [startMs + 3000000],
+      [startMs + 3600000],
       "shared studio booking removes every trainer at that time, retaining other sessions",
     );
     assert.equal(edited.displayExpiresAtMs, expected.displayExpiresAtMs);
@@ -3274,7 +3275,7 @@ test("customer-choice prebooking keeps the requested eligible trainer and refuse
     priceMinor: 8800,
     currency: "SGD",
     taxMinor: 0,
-    durationMinutes: 40,
+    durationMinutes: 50,
     bufferAfterMinutes: 10,
     clientLoginRequired: false,
     providerSchedules: "customer-choice",
@@ -3485,7 +3486,7 @@ test("client sandbox contracts bind merchant company environment and pricing wit
     priceMinor: 10800,
     currency: "SGD",
     taxMinor: 0,
-    durationMinutes: 40,
+    durationMinutes: 50,
     bufferAfterMinutes: 10,
     clientLoginRequired: false,
     providerSchedules: "customer-choice",

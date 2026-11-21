@@ -1,4 +1,4 @@
-import { MAX_PLAYERS } from "../src/domain/booking-policy";
+import { MAX_PLAYERS, SESSION_MINUTES } from "../src/domain/booking-policy";
 import { z } from "zod";
 import { authenticate, type Access } from "./access";
 import { ApiError, digest } from "./policy";
@@ -29,6 +29,9 @@ const acceptedSession = z.strictObject({
   serviceId: reference,
   instructorId: reference,
   startMs: z.number().int().safe(),
+  durationMinutes: z
+    .union([z.literal(40), z.literal(SESSION_MINUTES)])
+    .optional(),
   players: z.number().int().min(1).max(MAX_PLAYERS),
   currency: z.literal("SGD"),
   totalMinor: z.number().int().nonnegative().safe(),
@@ -279,6 +282,7 @@ export async function orchestrateBooking(
         accepted.instructorId !== session.instructorId ||
         accepted.startMs !== session.startMs ||
         accepted.players !== session.players ||
+        accepted.durationMinutes !== session.durationMinutes ||
         accepted.totalMinor !== session.totalMinor ||
         accepted.taxMinor !== session.taxMinor ||
         ids.includes(accepted.bookingId)

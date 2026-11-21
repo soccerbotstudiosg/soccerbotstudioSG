@@ -1,3 +1,4 @@
+import { SESSION_MINUTES } from "@/domain/booking-policy";
 import { sitePath } from "@/content/site-path";
 import { Arena } from "@/components/arena";
 import { PromotionPanel, PromotionBanner } from "@/components/promotion-panel";
@@ -35,13 +36,13 @@ export default function Home() {
           title={["Kickoff", "Special"]}
           activeTitle={["Ready for", "kickoff?"]}
           teaser="Your game. A whole new dimension."
-          description="A 40-minute studio session for up to four players. Explore Single, Team and Battle play in the immersive arena, with an instructor guiding your group throughout."
+          description={`A ${SESSION_MINUTES}-minute studio session for up to four players. Explore Single, Team and Battle play in the immersive arena, with an instructor guiding your group throughout.`}
           photo={homeMedia.kickoff}
           href="/book/account/"
           actionLabel="Book now"
         >
           <div className="promotion-details">
-            <span>40 minutes · 1–4 players</span>
+            <span>{SESSION_MINUTES} minutes · 1–4 players</span>
             <strong>
               <SessionPrice />
             </strong>

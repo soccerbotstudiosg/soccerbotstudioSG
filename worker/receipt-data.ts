@@ -1,7 +1,7 @@
 import { retainedInvoiceNumber } from "./invoice-document";
 import { z } from "zod";
 import { ApiError } from "./policy";
-import { associationSchema, intentSchema } from "./journal";
+import { bookedMinutes, associationSchema, intentSchema } from "./journal";
 import {
   nativeAvailabilitySchema,
   receiptSchema,
@@ -45,7 +45,11 @@ export async function bookingDetailsData(
         item.priceMinor === session.totalMinor,
     );
     if (!offer) throw new ApiError(503, "receipt_details_unavailable");
-    return { ...offer, players: session.players };
+    return {
+      ...offer,
+      durationMinutes: bookedMinutes(session),
+      players: session.players,
+    };
   });
   const association = associationSchema.parse(
     JSON.parse(row.association_json || "null"),

@@ -16,7 +16,7 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 **BR-001** — Customer booking website for one Singapore venue and one shared studio across instructors.
 
-- Sessions are 40 minutes on 50-minute starts, 1–4 players, with up to five selected sessions per new checkout.
+- Sessions are 50 minutes on hourly starts, 1–4 players, with up to five selected sessions per new checkout.
 - Historical booking/receipt reads retain their existing capacity.
 - After choosing a time, the customer explicitly chooses an eligible trainer from that slot’s dropdown; each session has its own independent choice.
 - Changing trainer replaces that slot’s selection, never adds another simultaneous session.
@@ -29,7 +29,7 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 The following capacity and recovery invariants are mandatory under BR-001:
 
-- **Capacity belongs to the studio:** at most one booking occupies any studio time, including the required changeover. Trainer, service type, player count, browser tab and customer identity never create parallel capacity. Current starts use the studio-wide 50-minute grid; adjacent valid starts remain bookable. Trainer eligibility is a separate selection constraint, not a capacity partition.
+- **Capacity belongs to the studio:** at most one booking occupies any studio time, including the required changeover. Trainer, service type, player count, browser tab and customer identity never create parallel capacity. Current starts use the studio-wide hourly grid; adjacent valid starts remain bookable. Trainer eligibility is a separate selection constraint, not a capacity partition.
 - **Display is not reservation authority:** cached availability permits browsing only. Provider booking acceptance remains authoritative; a stale offer, refresh, timeout, redirect or failed read never permits bypassing a rejection or replaying an uncertain write. SimplyBook shared-resource configuration requires owner acceptance.
 - **Conflict must not switch bookings:** a proven rejected selection returns to selection recovery. An unrelated owned active checkout is offered through an explicit action; never silently replace the requested draft or open its payment page. An uncertain dispatched attempt retains its original identity and protected recovery.
 - **Repair cache locally:** on proven selection rejection, remove the rejected cart selection(s) and overlapping studio offers across all trainers. Preserve contact details, unaffected dates/months and valid cached offers. Do not clear the whole calendar or require the next scheduled warm to display already-valid data. Provider latency, a genuinely missing/expired cache and unverified release remain separate conditions; never invent availability to eliminate waiting.
@@ -37,27 +37,24 @@ The following capacity and recovery invariants are mandatory under BR-001:
 
 The decision contract is in [API contracts](api-contracts.md#conflict-recovery-decision-contract); implementation and regression obligations are in [Technical behavior](code-owners/technical-behavior.md#shared-studio-conflict-regression-contract). These are standing rules, not a claim of deployed acceptance.
 
-The shared studio grid is anchored at12:00 Singapore time for the12:00–20:00 operating window. Trainer changes and existing bookings must not shift that anchor. Availability may remove a start or trainer; it must not introduce off-grid starts. Each row contains40 minutes of play and10 minutes of changeover:
+The shared studio grid is anchored at12:00 Singapore time for the12:00–20:00 operating window. Trainer changes and existing bookings must not shift that anchor. Availability may remove a start or trainer; it must not introduce off-grid starts. Each row contains 50 minutes of play and 10 minutes of changeover:
 
 | Start | Playing session | Changeover ends |
 | ----- | --------------- | --------------- |
-| 12:00 | 12:00–12:40     | 12:50           |
-| 12:50 | 12:50–13:30     | 13:40           |
-| 13:40 | 13:40–14:20     | 14:30           |
-| 14:30 | 14:30–15:10     | 15:20           |
-| 15:20 | 15:20–16:00     | 16:10           |
-| 16:10 | 16:10–16:50     | 17:00           |
-| 17:00 | 17:00–17:40     | 17:50           |
-| 17:50 | 17:50–18:30     | 18:40           |
-| 18:40 | 18:40–19:20     | 19:30           |
+| 12:00 | 12:00–12:50     | 13:00           |
+| 13:00 | 13:00–13:50     | 14:00           |
+| 14:00 | 14:00–14:50     | 15:00           |
+| 15:00 | 15:00–15:50     | 16:00           |
+| 16:00 | 16:00–16:50     | 17:00           |
+| 17:00 | 17:00–17:50     | 18:00           |
+| 18:00 | 18:00–18:50     | 19:00           |
+| 19:00 | 19:00–19:50     | 20:00           |
 
-- There is no19:30 start: its playing session would end20:10, beyond closing.
-- The remaining19:30–20:00 interval cannot fit a complete session.
 - This grid is distinct from the account-wide limit of one simultaneous booking including changeover.
 - Public normalization and new-checkout validation enforce this grid.
 - Admins may enter off-grid manual package/event bookings; these records retain their actual times and block overlapping public sessions rather than moving the grid.
-- A trainer is offered only when the provider reports a continuous free interval covering the entire40-minute session and10-minute changeover.
-- For example,14:00–16:00 free permits14:30, but not15:20; a manual13:00–13:50 booking blocks public12:50 and13:40.
+- A trainer is offered only when the provider reports a continuous free interval covering the entire 50-minute session and 10-minute changeover.
+- For example, 14:00–16:00 free permits 14:00 and 15:00. An existing booking occupying 12:50–13:40 blocks both the noon and 13:00 starts.
 - Provider interval semantics and shared-capacity enforcement require owner acceptance; see Progress for local/deployed evidence.
 
 <a id="br-002"></a>
@@ -136,7 +133,7 @@ Access lifetime: explicit access entry and an admitted checkout may renew an aut
 - Each minute admits one due month, prioritizing missing snapshots then the least recently attempted month; fresh months are reused until15 minutes old.
 - A failed or interrupted month waits at least one minute and cannot starve its siblings.
 - Warming yields between provider operations for waiting customer/recovery work; snapshots have a fixed maximum 30-minute display lifetime, never renewed by serving them.
-- Booking dispatch or an authoritative selection-unavailable result removes overlapping50-minute studio intervals across trainers from the shared snapshot and invalidates the affected short-lived calendar read; it does not expire all months or trigger a full rebuild.
+- Booking dispatch or an authoritative selection-unavailable result removes overlapping 60-minute studio intervals across trainers from the shared snapshot and invalidates the affected short-lived calendar read; it does not expire all months or trigger a full rebuild.
 - Provider-confirmed day reads or scheduled refresh restore released availability; a local expiry timer is not release proof.
 - Unknown dispatches keep affected display windows hidden until authoritative availability resolves that display uncertainty. Availability never establishes the outcome of an uncertain booking write or releases its attempt.
 - Off-grid retained offers are removed without extending snapshot expiry.

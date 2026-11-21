@@ -24,6 +24,7 @@ export function studioStartsFromIntervals(
   raw: unknown,
   date: string,
   instructorId: string,
+  intervalMinutes = START_INTERVAL_MINUTES,
 ): string[] {
   const parsed = z
     .record(z.string(), z.record(z.string(), intervals))
@@ -48,14 +49,14 @@ export function studioStartsFromIntervals(
   const starts: string[] = [];
   for (
     let minute = OPENING_MINUTE;
-    minute + START_INTERVAL_MINUTES <= CLOSING_MINUTE;
-    minute += START_INTERVAL_MINUTES
+    minute + intervalMinutes <= CLOSING_MINUTE;
+    minute += intervalMinutes
   ) {
     if (
       continuous.some(
         (range) =>
           range.from <= minute * 60 &&
-          range.to >= (minute + START_INTERVAL_MINUTES) * 60,
+          range.to >= (minute + intervalMinutes) * 60,
       )
     )
       starts.push(

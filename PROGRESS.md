@@ -2,14 +2,11 @@
 
 ## Active outcome
 
-- The checkout-expiry candidate preserves the guest access deadline when preparation rejects a competing checkout. A cooldown before the first provider booking write now produces a retryable no-start result. Staging and owner verification are pending.
-
-- Local candidate fixes the Home loop on unpaid expiry after returning from HitPay and updates the [leave dialog and rejected-email notices](docs/booking-flows.md#customer-message-inventory).
-- The three individual edit-after-Back cases and the expanded master passed locally in desktop Chromium with isolated providers. The master covers expiry on both sides of the hosted-payment return. [Physical master checklist](docs/uat/simulated-user.md#two-tab-master-booking-check)
+Align the booking site and Worker with the production 50-minute sessions and hourly starts. Preserve the original duration for existing booking records. On mobile the Studio Back link shows its arrow.
 
 ## Next actions
 
-Run the candidate through CI and staging. Physical verification of the repaired return remains pending, along with iPad keyboard dismissal and trainer-field geometry.
+Review the hourly schedule on the branch and verify the provider configuration in staging before physical checkout acceptance.
 
 ## Ordered work after this slice
 
@@ -17,7 +14,7 @@ This queue tracks remaining operational work. These are planned deliverables, no
 
 | Order | Workstream                          | Deliverable and owner                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ----- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1     | Docs maintenance            | Align source, deployed behaviour, accepted tests and remaining limitations across [document owners](AGENTS.md#authority-and-document-ownership). Preserve historical evidence.                                                                                                                                                                                                                                                                               |
+| 1     | Docs maintenance                    | Align source, deployed behaviour, accepted tests and remaining limitations across [document owners](AGENTS.md#authority-and-document-ownership). Preserve historical evidence.                                                                                                                                                                                                                                                                               |
 | 2     | Notification wording and formatting | Finalize verification, booking, cancellation, reminder, invoice and payment copy, triggers, sender/reply-to and provider ownership; check duplicate/misleading notifications and guest edit/cancel wording. Owners: [notification templates](docs/notification-templates/), [provider settings](docs/external-providers-config.md).                                                                                                                          |
 | 3     | Service providers and user accounts | Reconcile trainer profiles, schedules, staff/admin permissions and account ownership. Owners: [provider settings](docs/external-providers-config.md), [admin UAT](docs/uat/admin.md).                                                                                                                                                                                                                                                                        |
 | 4     | Domain and booking entry points     | Verify custom-domain routing; review deactivation/restriction of the public Cloudflare fallback while retaining required health/integration access. Inventory SimplyBook website/widget/direct booking routes and close unintended entry points through supported provider controls; free Custom CSS is presentation, not access control. Owners: [runbook](docs/runbook.md#8-domain-dns-and-https), [provider settings](docs/external-providers-config.md). |
