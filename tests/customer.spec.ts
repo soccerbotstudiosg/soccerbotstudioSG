@@ -3043,7 +3043,8 @@ function bookingTypography(page: Page) {
       const primaryBar = page.locator(".booking-primary-action");
       const action = primaryBar.locator(":scope > .button");
       await expect(primaryBar).toHaveCount(1);
-      await expect(action).toBeInViewport({ ratio: 1 });
+      // Chromium can round a fully visible intersection down by one float32 step.
+      await expect(action).toBeInViewport({ ratio: 1 - 2 ** -24 });
       const previousScroll = await page.evaluate(() => scrollY);
       await page.locator(".site-footer").scrollIntoViewIfNeeded();
       await expect(page.locator(".booking-action-anchor")).toHaveCSS(

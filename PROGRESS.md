@@ -6,7 +6,7 @@ Align the booking site and Worker with the production 50-minute sessions and hou
 
 ## Next actions
 
-Both staging SimplyBook services now have 50-minute sessions and a 10-minute buffer. Verify the website staging deployment and physical checkout.
+Both staging SimplyBook services now have 50-minute sessions and a 10-minute buffer. Verify the website staging deployment and physical checkout. Verification run 44913232623 reported a desktop sticky-button intersection ratio of 0.9999999403953552. Its viewport assertion now accepts one float32 rounding step. The earlier tablet unpaid-expiry failure in run 44901684062 passed in the master regression on run 44913116190.
 
 ## Ordered work after this slice
 
