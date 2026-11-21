@@ -2692,7 +2692,7 @@ test("unpaid release refreshes only its cached day and preserves the month deadl
         2: {
           id: 2,
           name: "Session",
-          duration: "40",
+          duration: "50",
           is_active: "1",
           is_public: "1",
           is_recurring: "0",

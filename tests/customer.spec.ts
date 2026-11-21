@@ -4426,7 +4426,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await closeBookingPanel(page);
   if (page.viewportSize()!.width > 700) {
     await page.setViewportSize({ width: 1366, height: 768 });
-    for (const start of ["13:00", "14:00", "15:00", "17:00"]) {
+    for (const start of ["13:00", "14:00", "15:00", "16:00"]) {
       await page
         .getByRole("button", { name: new RegExp(`^${start}–`) })
         .click();
@@ -4503,7 +4503,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
       "overflow-y",
       "visible",
     );
-    await cart.getByRole("button", { name: `Remove ${date} at 17:00` }).click();
+    await cart.getByRole("button", { name: `Remove ${date} at 16:00` }).click();
     await expect(cartRows).toHaveCount(4);
     for (const row of await cartRows.all()) {
       await expect(row).toHaveCSS("padding", "12px");
