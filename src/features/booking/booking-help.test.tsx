@@ -48,7 +48,7 @@ test("booking help prevents duplicate clicks reports failures honestly and confi
                 <strong>We couldn’t confirm your booking status.</strong>
               </p>
               <ul>
-                <li>Fri, 20 Nov 2026, 15:20–16:00.</li>
+                <li>Fri, 20 Nov 2026, 15:00–15:50.</li>
               </ul>
             </div>
           </BookingHelp>

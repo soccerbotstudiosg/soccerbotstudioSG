@@ -35,7 +35,7 @@ export async function createBookingMechanism(options = {}) {
   while (day.getUTCDay() !== 3) day.setUTCDate(day.getUTCDate() + 1);
   const date = day.toISOString().slice(0, 10);
   const startMs =
-    Date.parse(date + "T12:00:00+08:00") + (options.startSlot ?? 0) * 3000000;
+    Date.parse(date + "T12:00:00+08:00") + (options.startSlot ?? 0) * 3600000;
   const fixtures = JSON.parse(
     readFileSync("worker/tests/native-fixtures.json", "utf8"),
   ).responses;
@@ -44,12 +44,14 @@ export async function createBookingMechanism(options = {}) {
     invoice = structuredClone(fixtures.invoiceBefore);
   const wall = (ms) =>
     new Date(ms + 28800000).toISOString().slice(0, 19).replace("T", " ");
+  booking.event_duration = "50";
   for (const value of [booking, creation.bookings[0]]) {
     value.event_id = serviceId;
     value.start_date_time = wall(startMs);
-    value.end_date_time = wall(startMs + 3000000);
+    value.end_date_time = wall(startMs + 3600000);
   }
   for (const value of [invoice, creation.invoice]) {
+    value.lines[0].bookings[0].duration = 50;
     value.lines[0].bookings[0].service_id = serviceId;
     value.due_datetime = new Date(
       Date.now() + (options.invoiceWindowMs ?? 900000),
@@ -57,7 +59,7 @@ export async function createBookingMechanism(options = {}) {
       .toISOString()
       .replace(/\.\d{3}Z$/, "Z");
     value.lines[0].bookings[0].start_datetime = wall(startMs);
-    value.lines[0].bookings[0].end_datetime = wall(startMs + 3000000);
+    value.lines[0].bookings[0].end_datetime = wall(startMs + 3600000);
   }
   if (client) {
     booking.company_login = company;
@@ -87,13 +89,13 @@ export async function createBookingMechanism(options = {}) {
   const bookingDetails = [booking];
   if (options.batch) {
     for (let index = 1; index < batchSize; index++) {
-      const itemStartMs = startMs + index * 3000000;
+      const itemStartMs = startMs + index * 3600000;
       const item = structuredClone(creation.bookings[0]);
       const details = structuredClone(booking);
       for (const value of [item, details]) {
         value.id = String(701 + index);
         value.start_date_time = wall(itemStartMs);
-        value.end_date_time = wall(itemStartMs + 3000000);
+        value.end_date_time = wall(itemStartMs + 3600000);
       }
       item.hash =
         index === 1
@@ -108,7 +110,7 @@ export async function createBookingMechanism(options = {}) {
         line.booking_ids = [701 + index];
         line.bookings[0].id = 701 + index;
         line.bookings[0].start_datetime = wall(itemStartMs);
-        line.bookings[0].end_datetime = wall(itemStartMs + 3000000);
+        line.bookings[0].end_datetime = wall(itemStartMs + 3600000);
         value.lines.push(line);
       }
     }
@@ -378,7 +380,7 @@ export async function createBookingMechanism(options = {}) {
                 key === date
                   ? options.batch
                     ? Array.from({ length: batchSize }, (_, i) =>
-                        wall(startMs + i * 3000000).slice(11),
+                        wall(startMs + i * 3600000).slice(11),
                       ).slice(batchBooks)
                     : !booked
                       ? [wall(startMs).slice(11)]
@@ -406,7 +408,7 @@ export async function createBookingMechanism(options = {}) {
               [serviceId]: {
                 id: serviceId,
                 name: "Native Session",
-                duration: "40",
+                duration: "50",
                 is_active: "1",
                 is_public: "1",
                 is_recurring: "0",
@@ -440,7 +442,7 @@ export async function createBookingMechanism(options = {}) {
                 {
                   [String(body.params[3])]: starts.map((start) => ({
                     from: start,
-                    to: new Date(Date.parse(`${date}T${start}Z`) + 50 * 60000)
+                    to: new Date(Date.parse(`${date}T${start}Z`) + 60 * 60000)
                       .toISOString()
                       .slice(11, 19),
                   })),

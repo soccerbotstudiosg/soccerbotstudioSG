@@ -274,7 +274,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
         </nav>
         {(pathname === "/studio/" || pathname === "/studio") && (
           <div className="studio-signature">
-            <BookingLink href="/" className="studio-back">
+            <BookingLink href="/" className="studio-back" aria-label="Back">
               <Icon name="back" />
               <span>Back</span>
             </BookingLink>

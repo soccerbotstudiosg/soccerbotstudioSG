@@ -8,10 +8,7 @@ import {
   recordedHitpayPayment,
   hitpayConfirmationGuard,
 } from "./hitpay-journal";
-import {
-  START_INTERVAL_MINUTES,
-  SESSION_MINUTES,
-} from "../src/domain/booking-policy";
+
 import { receiptData, bookingDetailsData } from "./receipt-data";
 import { storedNativeCheckout } from "./native-adapter";
 import {
@@ -19,7 +16,12 @@ import {
   verifyRecordedConfirmation,
 } from "../src/domain/confirmation";
 import { authenticate, type Access } from "./access";
-import { intentSchema, associationSchema } from "./journal";
+import {
+  bookedMinutes,
+  occupiedMinutes,
+  intentSchema,
+  associationSchema,
+} from "./journal";
 import { ApiError, policy, liveCustomerAccess } from "./policy";
 import { checkoutSelectionRejectionSchema } from "../src/domain/native-checkout";
 export type { StoredAttempt } from "./confirmation-snapshot";
@@ -260,9 +262,9 @@ export function decideStoredConfirmation(
         serviceId: s.serviceId,
         instructorId: s.instructorId,
         startMs: s.startMs,
-        playEndMs: s.startMs + SESSION_MINUTES * 60000,
+        playEndMs: s.startMs + bookedMinutes(s) * 60000,
         occupiedStartMs: s.startMs,
-        occupiedEndMs: s.startMs + START_INTERVAL_MINUTES * 60000,
+        occupiedEndMs: s.startMs + occupiedMinutes(s) * 60000,
       },
       money: {
         currency: intent.currency,
@@ -474,6 +476,7 @@ export async function checkoutContext(
       sessions: intent.sessions.map((s) => ({
         startMs: s.startMs,
         players: s.players,
+        durationMinutes: bookedMinutes(s),
       })),
     },
     checking: {

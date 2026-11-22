@@ -126,7 +126,7 @@ async function chooseSlots(page: Page, multiple = false) {
       exact: true,
     })
     .click();
-  await page.getByRole("button", { name: /12:00–12:40/ }).click();
+  await page.getByRole("button", { name: /12:00–12:50/ }).click();
   await page
     .getByRole("combobox", { name: /Trainer for .* at 12:00/ })
     .selectOption({ index: 1 });
@@ -152,7 +152,7 @@ async function chooseSlots(page: Page, multiple = false) {
         exact: true,
       })
       .click();
-    await page.getByRole("button", { name: /12:00–12:40/ }).click();
+    await page.getByRole("button", { name: /12:00–12:50/ }).click();
     await page
       .getByRole("combobox", { name: /Trainer for .* at 12:00/ })
       .selectOption({ index: 1 });
@@ -981,10 +981,14 @@ test("public routes remove staff access and fit the viewport", async ({
   const studioBackAlignment = page.locator(".studio-back");
   const backIcon = await studioBackAlignment.locator("svg").boundingBox();
   const backLabel = await studioBackAlignment.locator("span").boundingBox();
-  expect(backIcon!.y + backIcon!.height / 2).toBeCloseTo(
-    backLabel!.y + backLabel!.height / 2,
-    0,
-  );
+  await expect(studioBackAlignment).toHaveAccessibleName("Back");
+  expect(backIcon).not.toBeNull();
+  if (page.viewportSize()!.width <= 700) expect(backLabel).toBeNull();
+  else
+    expect(backIcon!.y + backIcon!.height / 2).toBeCloseTo(
+      backLabel!.y + backLabel!.height / 2,
+      0,
+    );
   const signatureBox = await page.locator(".studio-signature").boundingBox();
   const studioHeaderBox = await page.locator(".site-header").boundingBox();
   expect(signatureBox).not.toBeNull();
@@ -1436,7 +1440,7 @@ test("late payment has a contact path without another payment", async ({
     page.getByRole("link", { name: "Contact the studio", exact: true }),
   ).toHaveAttribute("href", /^tel:/);
 });
-test("50-minute cadence, chosen instructors, contact validation and final-slot conflict", async ({
+test("Hourly cadence, chosen instructors, contact validation and final-slot conflict", async ({
   page,
   hasTouch,
 }) => {
@@ -1586,7 +1590,7 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
     "no longer available",
   );
   await page.getByRole("link", { name: "Review selections" }).click();
-  await expect(page.getByRole("button", { name: /12:50–13:30/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /13:00–13:50/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /12:40–13:20/ })).toHaveCount(
     0,
   );
@@ -2057,7 +2061,7 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
   );
   if (!cardWidths.mobile) {
     await expect(sessionMeta.locator(":scope > span")).toHaveText([
-      "40 minutes",
+      "50 minutes",
       "1–4 players",
       "Trainer included",
     ]);
@@ -2140,7 +2144,7 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
     await expect(continueButton).toHaveCSS("scale", "none");
   }
   await fullWidth(".actions .button", ".actions");
-  await expect(page.locator(".session-product")).toContainText("40 minutes");
+  await expect(page.locator(".session-product")).toContainText("50 minutes");
   await expect(page.locator(".session-product")).toContainText(
     "Trainer included",
   );
@@ -2220,13 +2224,13 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
       exact: true,
     })
     .click();
-  await expect(page.getByRole("button", { name: /12:00–12:40/ })).toContainText(
+  await expect(page.getByRole("button", { name: /12:00–12:50/ })).toContainText(
     "Faisal Shahril",
   );
-  await expect(page.getByRole("button", { name: /15:20–16:00/ })).toContainText(
+  await expect(page.getByRole("button", { name: /15:00–15:50/ })).toContainText(
     "Daniel Tan",
   );
-  await expect(page.getByRole("button", { name: /18:40–19:20/ })).toContainText(
+  await expect(page.getByRole("button", { name: /19:00–19:50/ })).toContainText(
     "Instructor 3",
   );
   await expect(page.getByRole("button", { name: /18:10–18:50/ })).toHaveCount(
@@ -2237,7 +2241,7 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
   );
   await expect(
     page.getByRole("group", { name: "Session times" }).getByRole("button"),
-  ).toHaveCount(9);
+  ).toHaveCount(8);
   const timeCards = await page
     .locator(".times > .time-choice-wrap > .time-choice")
     .evaluateAll((cards) =>
@@ -2265,16 +2269,16 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
       expect(current.y).toBeGreaterThan(previous.y);
     }
   }
-  const crossing = page.getByRole("button", { name: /14:30–15:10/ });
+  const crossing = page.getByRole("button", { name: /14:00–14:50/ });
   await expect(crossing).not.toContainText("instructor rotation");
   await crossing.click();
   await page
-    .getByRole("combobox", { name: /Trainer for .* at 14:30/ })
+    .getByRole("combobox", { name: /Trainer for .* at 14:00/ })
     .selectOption({ index: 1 });
   await expect(page.getByRole("radio")).toHaveCount(0);
-  await page.getByRole("button", { name: /15:20–16:00/ }).click();
+  await page.getByRole("button", { name: /15:00–15:50/ }).click();
   await page
-    .getByRole("combobox", { name: /Trainer for .* at 15:20/ })
+    .getByRole("combobox", { name: /Trainer for .* at 15:00/ })
     .selectOption({ index: 1 });
   await openBookingPanel(page, "trainers");
   const instructors = page.getByRole("region", { name: "Your instructors" });
@@ -2790,7 +2794,7 @@ function bookingTypography(page: Page) {
     const instructions: Record<string, string> = {
       "Start your booking": "Choose how to continue.",
       "Your session": "Confirm your session and players.",
-      "Select dates and times": "40-min session · 10-min changeover.",
+      "Select dates and times": "50-min session · 10-min changeover.",
       "Your details": "Enter your contact details.",
       "Review Booking": "Review your booking before payment.",
     };
@@ -3039,7 +3043,8 @@ function bookingTypography(page: Page) {
       const primaryBar = page.locator(".booking-primary-action");
       const action = primaryBar.locator(":scope > .button");
       await expect(primaryBar).toHaveCount(1);
-      await expect(action).toBeInViewport({ ratio: 1 });
+      // Chromium can round a fully visible intersection down by one float32 step.
+      await expect(action).toBeInViewport({ ratio: 1 - 2 ** -24 });
       const previousScroll = await page.evaluate(() => scrollY);
       await page.locator(".site-footer").scrollIntoViewIfNeeded();
       await expect(page.locator(".booking-action-anchor")).toHaveCSS(
@@ -3472,7 +3477,7 @@ test("calendar and contact retain typography and continuous sticky geometry", as
       exact: true,
     })
     .click();
-  const crossing = page.getByRole("button", { name: /14:30–15:10/ });
+  const crossing = page.getByRole("button", { name: /14:00–14:50/ });
   await expect(
     page.locator(".date:not(:disabled):not(.selected)").first(),
   ).toHaveCSS("border-top-color", "rgb(122, 130, 153)");
@@ -3566,7 +3571,7 @@ test("calendar and contact retain typography and continuous sticky geometry", as
   await expect(crossing).toHaveCSS("background-color", selectedColour);
   await expect(crossing).toHaveCSS("border-color", "rgb(23, 96, 120)");
   await page
-    .getByRole("combobox", { name: /Trainer for .* at 14:30/ })
+    .getByRole("combobox", { name: /Trainer for .* at 14:00/ })
     .selectOption({ index: 1 });
   await expect(page.locator(".date.in-booking strong")).toHaveCSS(
     "background-color",
@@ -3586,7 +3591,7 @@ test("calendar and contact retain typography and continuous sticky geometry", as
     "16px",
   );
   await expect(
-    page.getByRole("combobox", { name: /Trainer for .* at 14:30/ }),
+    page.getByRole("combobox", { name: /Trainer for .* at 14:00/ }),
   ).toBeVisible();
   await expect(crossing.locator(".rotation-notice")).toHaveCount(0);
   await openBookingPanel(page, "trainers");
@@ -3701,9 +3706,9 @@ test("review payment and confirmation retain typography and continuous sticky ge
       exact: true,
     })
     .click();
-  await page.getByRole("button", { name: /14:30–15:10/ }).click();
+  await page.getByRole("button", { name: /14:00–14:50/ }).click();
   await page
-    .getByRole("combobox", { name: /Trainer for .* at 14:30/ })
+    .getByRole("combobox", { name: /Trainer for .* at 14:00/ })
     .selectOption({ index: 1 });
   await page
     .getByRole("link", {
@@ -3905,7 +3910,7 @@ test("elapsed selections block checkout on an open page and remain removable bef
       .first(),
   ).toBeDisabled();
   await expect(
-    page.getByRole("button", { name: /12:00–12:40/ }),
+    page.getByRole("button", { name: /12:00–12:50/ }),
   ).toHaveAttribute("aria-pressed", "true");
   expect(
     await page.evaluate(
@@ -3927,21 +3932,21 @@ test("elapsed selections block checkout on an open page and remain removable bef
     ).toHaveCount(0);
   }
   await expect(
-    page.getByRole("button", { name: /12:00–12:40/ }),
+    page.getByRole("button", { name: /12:00–12:50/ }),
   ).toBeDisabled();
   await page.clock.runFor(1);
   await expect(
-    page.getByRole("button", { name: /12:00–12:40/ }),
+    page.getByRole("button", { name: /12:00–12:50/ }),
   ).toBeDisabled();
   await page.clock.resume();
-  await page.getByRole("button", { name: /12:50–13:30/ }).click();
+  await page.getByRole("button", { name: /13:00–13:50/ }).click();
   await page
-    .getByRole("combobox", { name: /Trainer for .* at 12:50/ })
+    .getByRole("combobox", { name: /Trainer for .* at 13:00/ })
     .selectOption({ index: 1 });
   await page
     .getByRole("button", { name: dateLabel("2026-10-07"), exact: true })
     .click();
-  await page.getByRole("button", { name: /12:00–12:40/ }).click();
+  await page.getByRole("button", { name: /12:00–12:50/ }).click();
   await page
     .getByRole("combobox", { name: /Trainer for .* at 12:00/ })
     .selectOption({ index: 1 });
@@ -4210,9 +4215,9 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   }
   const initialCard = page
     .locator(".time-choice")
-    .filter({ has: page.getByRole("button", { name: /^12:00–12:40/ }) });
+    .filter({ has: page.getByRole("button", { name: /^12:00–12:50/ }) });
   const initialHeight = (await initialCard.boundingBox())!.height;
-  await page.getByRole("button", { name: /12:00–12:40/ }).click();
+  await page.getByRole("button", { name: /12:00–12:50/ }).click();
   await expect(
     page
       .getByRole("button", {
@@ -4242,7 +4247,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await noon.selectOption(`${date}|12:00|demo|daniel`);
   await expect(noon).toBeVisible();
   await expect(noon).toHaveValue(`${date}|12:00|demo|daniel`);
-  const selected = page.getByRole("button", { name: /^12:00–12:40/ });
+  const selected = page.getByRole("button", { name: /^12:00–12:50/ });
   const selectedCard = (await choice.boundingBox())!;
   const trainer = (await noon.boundingBox())!;
   const price = (await selected.locator(".time-rate").boundingBox())!;
@@ -4260,7 +4265,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     0,
   );
   if (mobile) {
-    const next = page.getByRole("button", { name: /^12:50–13:30/ });
+    const next = page.getByRole("button", { name: /^13:00–13:50/ });
     const selectedBox = await selected.boundingBox();
     const nextBox = await next.boundingBox();
     expect(selectedBox!.height).toBeCloseTo(nextBox!.height, 0);
@@ -4272,10 +4277,10 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     );
     await page.emulateMedia({ reducedMotion: "no-preference" });
   }
-  await page.getByRole("button", { name: /15:20–16:00/ }).click();
+  await page.getByRole("button", { name: /15:00–15:50/ }).click();
   await page
-    .getByRole("combobox", { name: `Trainer for ${date} at 15:20` })
-    .selectOption(`${date}|15:20|demo|daniel`);
+    .getByRole("combobox", { name: `Trainer for ${date} at 15:00` })
+    .selectOption(`${date}|15:00|demo|daniel`);
   await openBookingPanel(page, "trainers");
   const cards = page.getByRole("region", { name: "Your instructors" });
   await expect(cards.getByRole("article")).toHaveCount(1);
@@ -4319,10 +4324,10 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     await expect(trainerBadge).toHaveCSS("animation-name", "none");
     await page.emulateMedia({ reducedMotion: "no-preference" });
   }
-  await page.getByRole("button", { name: /12:00–12:40/ }).click();
+  await page.getByRole("button", { name: /12:00–12:50/ }).click();
   await expect(noon).toHaveValue(`${date}|12:00|demo|daniel`);
   await expect(
-    page.getByRole("button", { name: /12:00–12:40/ }),
+    page.getByRole("button", { name: /12:00–12:50/ }),
   ).toHaveAttribute("aria-pressed", "true");
   await page
     .getByRole("button", {
@@ -4331,12 +4336,12 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     })
     .click();
   await expect(noon).toHaveCount(0);
-  const deselectedSlot = page.getByRole("button", { name: /12:00–12:40/ });
+  const deselectedSlot = page.getByRole("button", { name: /12:00–12:50/ });
   await expect(deselectedSlot).toHaveAttribute("aria-pressed", "false");
   await expect(
     page.locator(".time-choice").filter({ has: deselectedSlot }),
   ).toHaveCSS("outline-style", "none");
-  await page.getByRole("button", { name: /12:00–12:40/ }).click();
+  await page.getByRole("button", { name: /12:00–12:50/ }).click();
   await noon.selectOption(`${date}|12:00|demo|faisal`);
   await openBookingPanel(page, "trainers");
   await expect(cards.getByRole("article")).toHaveCount(2);
@@ -4361,24 +4366,24 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     cards.getByRole("article", { name: "Daniel Tan", exact: true }),
   ).toContainText("Demonstration profile. Guides players through ball control");
   await page.reload();
-  await expect(page.getByRole("button", { name: /12:00–12:40/ })).toContainText(
+  await expect(page.getByRole("button", { name: /12:00–12:50/ })).toContainText(
     "Trainer: Faisal Shahril",
   );
   await expect(noon).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /15:20–16:00/ })).toContainText(
+  await expect(page.getByRole("button", { name: /15:00–15:50/ })).toContainText(
     "Trainer: Daniel Tan",
   );
   await openBookingPanel(page, "trainers");
   await expect(cards.getByRole("article")).toHaveCount(2);
   await closeBookingPanel(page);
-  const selectedAfternoon = page.getByRole("button", { name: /^15:20–16:00/ });
+  const selectedAfternoon = page.getByRole("button", { name: /^15:00–15:50/ });
   await selectedAfternoon.click();
   await expect(selectedAfternoon).toHaveAttribute("aria-expanded", "true");
   await expect(
-    page.getByRole("combobox", { name: `Trainer for ${date} at 15:20` }),
-  ).toHaveValue(`${date}|15:20|demo|daniel`);
+    page.getByRole("combobox", { name: `Trainer for ${date} at 15:00` }),
+  ).toHaveValue(`${date}|15:00|demo|daniel`);
   const removeAfternoon = page.getByRole("button", {
-    name: `Remove selected session ${date} at 15:20`,
+    name: `Remove selected session ${date} at 15:00`,
     exact: true,
   });
   await expect(removeAfternoon).toHaveCSS(
@@ -4422,7 +4427,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await closeBookingPanel(page);
   if (page.viewportSize()!.width > 700) {
     await page.setViewportSize({ width: 1366, height: 768 });
-    for (const start of ["12:50", "13:40", "15:20", "17:00"]) {
+    for (const start of ["13:00", "14:00", "15:00", "16:00"]) {
       await page
         .getByRole("button", { name: new RegExp(`^${start}–`) })
         .click();
@@ -4499,7 +4504,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
       "overflow-y",
       "visible",
     );
-    await cart.getByRole("button", { name: `Remove ${date} at 17:00` }).click();
+    await cart.getByRole("button", { name: `Remove ${date} at 16:00` }).click();
     await expect(cartRows).toHaveCount(4);
     for (const row of await cartRows.all()) {
       await expect(row).toHaveCSS("padding", "12px");

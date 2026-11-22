@@ -1172,7 +1172,8 @@ function ProtectedConfirmationBody({
                   const start = wall.slice(11, 16);
                   return (
                     <li key={`${session.startMs}:${index}`}>
-                      {dateLabel(wall.slice(0, 10))}, {start}–{endTime(start)}.
+                      {dateLabel(wall.slice(0, 10))}, {start}–
+                      {endTime(start, session.durationMinutes ?? 40)}.
                     </li>
                   );
                 })}

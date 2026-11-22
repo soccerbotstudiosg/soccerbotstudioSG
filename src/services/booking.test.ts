@@ -77,13 +77,13 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe("booking contract", () => {
-  it("uses one shared studio with 40-minute sessions every 50 minutes", () => {
+  it("uses one shared studio with 50-minute sessions every hour", () => {
     expect(STUDIOS).toHaveLength(1);
-    expect(START_INTERVAL_MINUTES).toBe(50);
+    expect(START_INTERVAL_MINUTES).toBe(60);
     expect(SESSION_STARTS.slice(0, 3).map(clock)).toEqual([
       "12:00",
-      "12:50",
-      "13:40",
+      "13:00",
+      "14:00",
     ]);
   });
   it("does not admit duplicate, overlapping, stale or off-grid slots", () => {
@@ -94,7 +94,7 @@ describe("booking contract", () => {
     expect(selectionErrors([{ ...slot, date: "2020-01-01" }])).not.toEqual([]);
   });
   it("allows five sessions and rejects a sixth", () => {
-    const slots = ["12:00", "12:50", "13:40", "14:30", "15:20", "16:10"].map(
+    const slots = ["12:00", "13:00", "14:00", "15:00", "16:00", "17:00"].map(
       (start) => ({ date: tomorrow(), start }),
     );
     expect(selectionErrors(slots.slice(0, 5))).toEqual([]);
@@ -285,21 +285,20 @@ describe("opening hours and demo instructor rotation", () => {
     const slots = service.availability(tomorrow());
     expect([...new Set(slots.map((slot) => slot.start))]).toEqual([
       "12:00",
-      "12:50",
-      "13:40",
-      "14:30",
-      "15:20",
-      "16:10",
+      "13:00",
+      "14:00",
+      "15:00",
+      "16:00",
       "17:00",
-      "17:50",
-      "18:40",
+      "18:00",
+      "19:00",
     ]);
     for (const [start, instructor] of [
       ["12:00", "faisal"],
-      ["14:30", "faisal"],
-      ["15:20", "daniel"],
-      ["17:50", "daniel"],
-      ["18:40", "instructor3"],
+      ["14:00", "faisal"],
+      ["15:00", "daniel"],
+      ["17:00", "daniel"],
+      ["19:00", "instructor3"],
     ]) {
       expect(demoSession({ date: tomorrow(), start })?.instructor).toBe(
         instructor,
@@ -311,8 +310,8 @@ describe("opening hours and demo instructor rotation", () => {
     for (const [time, allowed] of [
       ["11:59:59.999", false],
       ["12:00:00", true],
-      ["19:20:00", true],
-      ["19:20:00.001", false],
+      ["19:10:00", true],
+      ["19:10:00.001", false],
       ["20:00:00", false],
     ] as const) {
       expect(withinOpeningHours(Date.parse(`2026-10-16T${time}+08:00`))).toBe(
@@ -321,10 +320,11 @@ describe("opening hours and demo instructor rotation", () => {
     }
     for (const [time, allowed] of [
       ["12:00:00", true],
-      ["12:50:00", true],
-      ["18:40:00", true],
+      ["13:00:00", true],
+      ["12:50:00", false],
+      ["19:00:00", true],
       ["14:40:00", false],
-      ["19:20:00", false],
+      ["19:10:00", false],
       ["12:00:00.001", false],
     ] as const) {
       const startMs = Date.parse(`2026-10-16T${time}+08:00`);
@@ -357,45 +357,40 @@ describe("opening hours and demo instructor rotation", () => {
     ).toThrow();
   });
 
-  it("discloses crossing rotations while retaining the starting instructor for the whole session", () => {
+  it("hourly sessions finish before the next rotation and retain their assigned instructor", () => {
     const slots = service.availability(tomorrow());
     expect(
       slots
         .filter((slot) => slot.rotationAt)
         .map(({ start, rotationAt }) => [start, rotationAt]),
-    ).toEqual([
-      ["14:30", "15:00"],
-      ["14:30", "15:00"],
-      ["17:50", "18:00"],
-      ["17:50", "18:00"],
-    ]);
+    ).toEqual([]);
     expect(
-      slots.find((slot) => slot.start === "18:40")?.rotationAt,
+      slots.find((slot) => slot.start === "19:00")?.rotationAt,
     ).toBeUndefined();
     const date = Array.from({ length: 7 }, (_, i) =>
       addDays(tomorrow(), i),
     ).find((date) => new Date(`${date}T12:00:00Z`).getUTCDay() === 2)!;
     const draft = {
       ...validDraft(),
-      slots: [demoSession({ date, start: "14:30" })!],
+      slots: [demoSession({ date, start: "14:00" })!],
     };
     expect(
-      service.availability(date).find((slot) => slot.start === "14:30")
+      service.availability(date).find((slot) => slot.start === "14:00")
         ?.available,
     ).toBe(true);
     const attempt = service.checkout(draft, null);
     const checking = service.pay(attempt, "success");
     const paid = service.resolve(checking, checking.checkUntil);
     expect(paid.booking?.slots[0].instructor).toBe("faisal");
-    expect(paid.booking?.slots[0].start).toBe("14:30");
+    expect(paid.booking?.slots[0].start).toBe("14:00");
   });
-  it("accepts different session instructors and rejects stale assignments or missing rotation disclosures", () => {
+  it("accepts different session instructors and rejects stale assignments or incorrect rotation disclosures", () => {
     const date = Array.from({ length: 7 }, (_, i) =>
       addDays(tomorrow(), i),
     ).find((date) => new Date(`${date}T12:00:00Z`).getUTCDay() === 2)!;
     const slots = [
-      demoSession({ date, start: "14:30" })!,
-      demoSession({ date, start: "15:20" })!,
+      demoSession({ date, start: "14:00" })!,
+      demoSession({ date, start: "15:00" })!,
       demoSession({ date: addDays(date, 1), start: "12:00" })!,
     ];
     const attempt = service.pay(
@@ -420,7 +415,7 @@ describe("opening hours and demo instructor rotation", () => {
     ).toThrow(/Session no longer available/);
     expect(() =>
       service.checkout(
-        { ...validDraft(), slots: [{ ...slots[0], rotationAt: undefined }] },
+        { ...validDraft(), slots: [{ ...slots[0], rotationAt: "15:00" }] },
         null,
       ),
     ).toThrow(/Session no longer available/);

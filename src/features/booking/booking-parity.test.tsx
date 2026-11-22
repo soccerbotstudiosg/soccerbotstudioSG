@@ -298,7 +298,7 @@ test("live session preserves demo pricing and inline player controls using provi
             id: "12",
             name: "Real session",
             active: true,
-            durationMinutes: 40,
+            durationMinutes: 50,
             recurring: false,
             priceMinor: 8800,
             currency: "SGD",
@@ -938,7 +938,7 @@ test("reservation conflict removes its session locally and returns to calendar w
     return (
       <>
         <button
-          onClick={() => state.update({ slots: [{ ...slot, start: "12:50" }] })}
+          onClick={() => state.update({ slots: [{ ...slot, start: "13:00" }] })}
         >
           Choose replacement
         </button>
@@ -1095,7 +1095,7 @@ test("cached calendar offers obey opening hours and the four-hour cutoff without
                   "11:59",
                   "12:00",
                   "14:40",
-                  "18:40",
+                  "19:00",
                   "19:20",
                   "19:21",
                 ].map((time) => ({
@@ -1138,9 +1138,9 @@ test("cached calendar offers obey opening hours and the four-hour cutoff without
   }
   const view = render(<Probe now={initial} />);
   await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(1));
-  expect(screen.getByTestId("eligible")).toHaveTextContent("12:00,18:40");
+  expect(screen.getByTestId("eligible")).toHaveTextContent("12:00,19:00");
   view.rerender(<Probe now={initial + 1} />);
-  expect(screen.getByTestId("eligible")).toHaveTextContent(/^18:40$/);
+  expect(screen.getByTestId("eligible")).toHaveTextContent(/^19:00$/);
   expect(publicCalendar).toHaveBeenCalledTimes(1);
 });
 

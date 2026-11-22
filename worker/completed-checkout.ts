@@ -1,4 +1,7 @@
-import { START_INTERVAL_MINUTES } from "../src/domain/booking-policy";
+import {
+  CHANGEOVER_MINUTES,
+  START_INTERVAL_MINUTES,
+} from "../src/domain/booking-policy";
 import { authenticate, type Access } from "./access";
 import { checkoutContext } from "./confirmation";
 import { ApiError } from "./policy";
@@ -57,8 +60,10 @@ export async function completedCheckoutRollover(
     sessions.some((next) =>
       proof.summary.sessions.some(
         (previous) =>
-          Math.abs(previous.startMs - next.startMs) <
-          START_INTERVAL_MINUTES * 60000,
+          previous.startMs < next.startMs + START_INTERVAL_MINUTES * 60000 &&
+          next.startMs <
+            previous.startMs +
+              ((previous.durationMinutes ?? 40) + CHANGEOVER_MINUTES) * 60000,
       ),
     )
   )

@@ -94,6 +94,7 @@ const contextSchema = z.strictObject({
       .array(
         z.strictObject({
           startMs: instant,
+          durationMinutes: z.union([z.literal(40), z.literal(50)]).optional(),
           players: z.number().int().min(1).max(MAX_PLAYERS),
         }),
       )
@@ -243,6 +244,7 @@ export function bookingFromReceipt<
     return {
       date: wall.slice(0, 10),
       start: wall.slice(11, 16),
+      durationMinutes: offer.durationMinutes ?? 40,
       instructor: offer.instructorId,
       studio: LOCATION.building,
       native: {

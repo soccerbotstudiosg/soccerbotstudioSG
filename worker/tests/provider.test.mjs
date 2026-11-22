@@ -2657,7 +2657,7 @@ test("inspection window serves session catalogue and cached times without granti
           2: {
             id: 2,
             name: "Synthetic Session",
-            duration: "40",
+            duration: "50",
             is_active: "1",
             is_public: "1",
             is_recurring: "0",
@@ -2793,7 +2793,7 @@ test("inspection window serves session catalogue and cached times without granti
 
 test("ongoing customer access survives campaign closure and preserves fresh consent and booking replay guards", async () => {
   const date = new Date(Date.now() + 4 * 86400000).toISOString().slice(0, 10);
-  const startMs = Date.parse(date + "T12:50:00+08:00");
+  const startMs = Date.parse(date + "T13:00:00+08:00");
   const samples = JSON.parse(
     readFileSync("worker/tests/native-fixtures.json", "utf8"),
   ).responses;
@@ -2803,16 +2803,18 @@ test("ongoing customer access survives campaign closure and preserves fresh cons
   for (const row of [booking, creation.bookings[0]]) {
     row.event_id = "2";
     row.unit_id = "2";
-    row.start_date_time = date + " 12:50:00";
-    row.end_date_time = date + " 13:40:00";
+    row.start_date_time = date + " 13:00:00";
+    row.end_date_time = date + " 14:00:00";
   }
+  booking.event_duration = "50";
   creation.bookings[0].client_hash = "synthetic-client-hash";
   for (const value of [invoice, creation.invoice]) {
     const row = value.lines[0].bookings[0];
+    row.duration = 50;
     row.service_id = 2;
     row.provider_id = 2;
-    row.start_datetime = date + " 12:50:00";
-    row.end_datetime = date + " 13:40:00";
+    row.start_datetime = date + " 13:00:00";
+    row.end_datetime = date + " 14:00:00";
   }
   invoice.due_datetime = new Date(Date.now() + 1200000)
     .toISOString()
@@ -2857,14 +2859,14 @@ test("ongoing customer access survives campaign closure and preserves fresh cons
           day.setUTCDate(day.getUTCDate() + 1)
         ) {
           const key = day.toISOString().slice(0, 10);
-          matrix[key] = key === date && available ? ["12:50:00"] : [];
+          matrix[key] = key === date && available ? ["13:00:00"] : [];
         }
       const results = {
         getEventList: {
           2: {
             id: 2,
             name: "Synthetic Session",
-            duration: "40",
+            duration: "50",
             is_active: "1",
             is_public: "1",
             is_recurring: "0",
@@ -2882,7 +2884,7 @@ test("ongoing customer access survives campaign closure and preserves fresh cons
             {
               [String(body.params[3])]: starts.map((start) => [
                 start,
-                new Date(Date.parse(`${date}T${start}Z`) + 50 * 60000)
+                new Date(Date.parse(`${date}T${start}Z`) + 60 * 60000)
                   .toISOString()
                   .slice(11, 19),
               ]),
@@ -2948,7 +2950,7 @@ test("ongoing customer access survives campaign closure and preserves fresh cons
         serviceName: "Synthetic Session",
         instructorId: "2",
         instructorName: "Synthetic Trainer",
-        startMs: Date.parse(date + "T12:50:00+08:00"),
+        startMs: Date.parse(date + "T13:00:00+08:00"),
         priceMinor: 8800,
         currency: "SGD",
       },
@@ -4139,7 +4141,7 @@ test("ongoing checkout admits the priced weekend service with the customer lead-
           cursor.setUTCDate(cursor.getUTCDate() + 1)
         ) {
           const key = cursor.toISOString().slice(0, 10);
-          matrix[key] = key === date ? ["12:50:00"] : [];
+          matrix[key] = key === date ? ["13:00:00"] : [];
         }
       const results = {
         getEventList: Object.fromEntries(
@@ -4148,7 +4150,7 @@ test("ongoing checkout admits the priced weekend service with the customer lead-
             {
               id,
               name: "Synthetic Session " + id,
-              duration: "40",
+              duration: "50",
               is_active: "1",
               is_public: "1",
               is_recurring: "0",
@@ -4167,7 +4169,7 @@ test("ongoing checkout admits the priced weekend service with the customer lead-
             {
               [String(body.params[3])]: starts.map((start) => [
                 start,
-                new Date(Date.parse(`${date}T${start}Z`) + 50 * 60000)
+                new Date(Date.parse(`${date}T${start}Z`) + 60 * 60000)
                   .toISOString()
                   .slice(11, 19),
               ]),
@@ -4208,7 +4210,7 @@ test("ongoing checkout admits the priced weekend service with the customer lead-
           {
             serviceId: "3",
             instructorId: "2",
-            startMs: Date.parse(date + "T12:50:00+08:00"),
+            startMs: Date.parse(date + "T13:00:00+08:00"),
             players: 2,
             totalMinor: 10800,
           },

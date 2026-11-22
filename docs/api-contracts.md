@@ -174,7 +174,7 @@ The public customer catalogue accepts the supported `developer` and `production`
 - The response is date → provider ID → arrays of free intervals.
 - A bounded read-only developer-account probe on5 November2026 returned named boundaries (`{"from":"14:00:00","to":"16:00:00"}`); the official reference illustrates two-item `[from,to]` arrays.
 - Both strict forms normalize into the same wall-clock boundaries.
-- This probe establishes the provider representation, not production capacity acceptance. `studioStartsFromIntervals` merges touching/overlapping free intervals, never bridges a gap, and emits only BR-001 grid starts whose complete50 minutes fit within one continuous free interval.
+- This probe establishes the provider representation, not production capacity acceptance. `studioStartsFromIntervals` merges touching/overlapping free intervals, never bridges a gap, and emits only BR-001 grid starts whose complete 60 minutes fit within one continuous free interval.
 - Each trainer/day is bounded to288 free intervals; endpoints use HH:mm:ss, with24:00:00 accepted only as an end boundary by interval ordering.
 - Malformed boundaries, reversed intervals or a foreign trainer reject the read.
 - Explicit empty intervals mean unavailable and can form a valid cached month.
@@ -197,7 +197,7 @@ This adapter follows the [official SimplyBook API contract](https://simplybook.m
 - Shared pending reads, 60-second freshness, account/revision isolation and invalidation fencing remain enforced.
 - These short provider-read caches are separate from the shared display snapshots (30-minute original lifetime, approximately 15-minute scheduled refresh).
 - Journalled booking dispatch removes only overlapping studio offers from the display snapshot.
-- A pre-dispatch selection rejection conservatively removes overlapping50-minute studio offers across trainers and invalidates that date in the short read cache; price or transient-provider errors do not imply occupancy.
+- A pre-dispatch selection rejection conservatively removes overlapping 60-minute studio offers across trainers and invalidates that date in the short read cache; price or transient-provider errors do not imply occupancy.
 - Fresh authoritative day responses update that day without rebuilding the month or extending its lifetime.
 - Cache maintenance cannot change a durable financial result.
 - These are operational bounds, not unlimited roster capacity; a 31-day month permits at most 32 trainers by request count, and offer/payload/freshness limits can be tighter.

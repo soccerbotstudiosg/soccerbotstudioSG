@@ -303,12 +303,12 @@ test("native availability carries provider identities labels and reviewed prices
 
 test("native availability preserves every trainer choice beyond the old hundred-offer limit", async () => {
   const offers = Array.from({ length: 20 }, (_, trainer) =>
-    Array.from({ length: 9 }, (_, slot) => ({
+    Array.from({ length: 8 }, (_, slot) => ({
       serviceId: "3",
       serviceName: "Client session",
       instructorId: String(trainer + 1),
       instructorName: `Trainer ${trainer + 1}`,
-      startMs: Date.parse("2026-10-15T12:00:00+08:00") + slot * 50 * 60000,
+      startMs: Date.parse("2026-10-15T12:00:00+08:00") + slot * 60 * 60000,
       priceMinor: 10800,
       currency: "SGD",
     })),
@@ -321,7 +321,7 @@ test("native availability preserves every trainer choice beyond the old hundred-
     players: 1,
     serviceId: "3",
   });
-  expect(result).toHaveLength(180);
+  expect(result).toHaveLength(160);
   expect(new Set(result.map((slot) => slot.instructor)).size).toBe(20);
   expect(result.every((slot) => slot.native?.priceMinor === 10800)).toBe(true);
 });

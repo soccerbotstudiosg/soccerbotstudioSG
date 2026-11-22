@@ -13,7 +13,7 @@ const catalogue = () => ({
       id: "8",
       name: "Updated name",
       active: true,
-      durationMinutes: 40,
+      durationMinutes: 50,
       recurring: false,
       priceMinor: 9100,
       currency: "SGD",

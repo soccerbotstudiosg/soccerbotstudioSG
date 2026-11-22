@@ -13,10 +13,10 @@ import {
   verifyHitpayRequest,
 } from "./hitpay-contract";
 import { hitpayRequest } from "./provider-transport";
-import { associationSchema } from "./journal";
+import { bookedMinutes, associationSchema } from "./journal";
 import type { NativeScope } from "./native-adapter";
 import { LOCATION } from "../src/domain/catalog";
-import { SESSION_MINUTES } from "../src/domain/booking-policy";
+
 import { nativeAvailabilitySchema } from "../src/domain/native-checkout";
 
 /** Format retained display metadata within HitPay's 255-character purpose limit. */
@@ -81,7 +81,7 @@ export function hitpayPurpose(
   });
   const entries = sessions.map(
     (session, index) =>
-      `${date.format(session.startMs)} ${time.format(session.startMs)}–${time.format(session.startMs + SESSION_MINUTES * 60000)}${matched[index] ? ` Trainer: ${clean(matched[index].instructorName)}` : ""}${players.length > 1 ? ` (${session.players} players)` : ""}`,
+      `${date.format(session.startMs)} ${time.format(session.startMs)}–${time.format(session.startMs + bookedMinutes(session) * 60000)}${matched[index] ? ` Trainer: ${clean(matched[index].instructorName)}` : ""}${players.length > 1 ? ` (${session.players} players)` : ""}`,
   );
   for (let count = entries.length; count >= 0; count--) {
     const remaining = entries.length - count;

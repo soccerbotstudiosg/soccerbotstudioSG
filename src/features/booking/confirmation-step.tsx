@@ -27,7 +27,7 @@ function bookingConfirmationMessage(booking: Booking) {
     ...orderedSlots(booking.slots).flatMap((slot, index) => [
       ...(booking.slots.length > 1 ? [`Session ${index + 1}`] : []),
       `Date: ${dateLabel(slot.date)}`,
-      `Time: ${slot.start}–${endTime(slot.start)} SGT`,
+      `Time: ${slot.start}–${endTime(slot.start, slot.durationMinutes)} SGT`,
       ...(slot.native?.serviceName
         ? [`Session: ${slot.native.serviceName}`]
         : []),

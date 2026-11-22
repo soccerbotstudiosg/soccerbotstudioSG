@@ -70,7 +70,7 @@ test("load provider refuses duplicate slot effects and limits synthetic dispatch
         2,
         14,
         "2026-11-04",
-        "12:10:00",
+        "12:00:00",
         { email: "synthetic@example.test" },
         {},
         1,
