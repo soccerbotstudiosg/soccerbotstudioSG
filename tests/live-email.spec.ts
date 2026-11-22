@@ -5366,6 +5366,30 @@ test("editing contact details after Back preserves the submitted checkout", asyn
   try {
     await guestDetails(page, mechanism);
     await reviewResponse(page);
+    await page.evaluate(() => {
+      const state = window as Window & {
+        quickBackWarnings?: string[];
+        stopQuickBackObservation?: () => void;
+      };
+      state.quickBackWarnings = [];
+      const observer = new MutationObserver((records) => {
+        for (const record of records) {
+          for (const node of record.addedNodes) {
+            if (!(node instanceof Element)) continue;
+            const notices = [
+              ...(node.matches(".alert, .calendar-recovery-notice")
+                ? [node]
+                : []),
+              ...node.querySelectorAll(".alert, .calendar-recovery-notice"),
+            ];
+            for (const notice of notices)
+              state.quickBackWarnings!.push(notice.textContent ?? "");
+          }
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      state.stopQuickBackObservation = () => observer.disconnect();
+    });
     const id = await quickBack(page);
     const original = await heldCheckout(mechanism, id);
     const intent = JSON.parse(original.intent_json);
@@ -5383,6 +5407,15 @@ test("editing contact details after Back preserves the submitted checkout", asyn
     });
     await expect(resumed).toHaveAttribute("href", original.checkout_url);
     await expect(resumed).toHaveAttribute("data-payment-continuation", id);
+    const transientWarnings = await page.evaluate(() => {
+      const state = window as Window & {
+        quickBackWarnings?: string[];
+        stopQuickBackObservation?: () => void;
+      };
+      state.stopQuickBackObservation?.();
+      return state.quickBackWarnings;
+    });
+    expect(transientWarnings).toEqual([]);
     expect(await heldCheckout(mechanism, id)).toEqual(original);
     expect(
       mechanism.calls.filter((c) => c.body?.method === "book"),

@@ -1,3 +1,7 @@
+import {
+  rememberBookingAccessNotice,
+  clearBookingAccessNotice,
+} from "@/services/profile-access";
 vi.mock("@/services/email-domain", () => ({
   checkEmailDomain: vi.fn(async () => "valid"),
 }));
@@ -3613,6 +3617,8 @@ it("archived expiry replay preserves replacements and requires current original 
     "uncertain",
     "paid",
     "denied",
+    "aborted",
+    "access revoked",
     "departed",
     "different",
     "released",
@@ -3660,11 +3666,33 @@ it("archived expiry replay preserves replacements and requires current original 
       calendar: undefined,
       availability: vi.fn(async () => []),
       restore: async () => null,
+      checkout: vi.fn<BookingService["checkout"]>(async () => {
+        throw new Error("Synthetic stop after replacement checkout starts");
+      }),
     };
     const identity = { ...demoCustomerIdentity, mode: "live" as const };
+    function ChooseReplacement() {
+      const { update } = useBooking();
+      return (
+        <button
+          onClick={() =>
+            update({
+              ...editable,
+              slots: [{ ...replacement, start: "14:00" }],
+              accepted: true,
+            })
+          }
+        >
+          Choose replacement
+        </button>
+      );
+    }
+    let recovering = false;
     const tree = () => (
       <BookingProvider bookingService={service} identityService={identity}>
         <Seed />
+        <ChooseReplacement />
+        {recovering && <ConfirmationPage />}
       </BookingProvider>
     );
     const view = render(tree());
@@ -3688,19 +3716,47 @@ it("archived expiry replay preserves replacements and requires current original 
         saveLiveDraft(editable, true, otherId);
         markSubmittedCheckout(otherId, true);
       }
-      await act(async () =>
-        release.resolve(
-          outcome === "denied"
-            ? new Response(null, { status: 409 })
-            : Response.json({ expired: true }),
-        ),
-      );
+      if (outcome === "access revoked") rememberBookingAccessNotice("session");
+      if (outcome === "aborted") {
+        await act(async () => {
+          release.reject(new DOMException("Request timed out", "AbortError"));
+        });
+      } else
+        await act(async () =>
+          release.resolve(
+            outcome === "denied" || outcome === "access revoked"
+              ? new Response(null, {
+                  status: outcome === "access revoked" ? 401 : 409,
+                })
+              : Response.json({ expired: true }),
+          ),
+        );
     }
     expect(submittedCheckoutId()).toBe(
       outcome === "released" ? null : outcome === "different" ? otherId : id,
     );
     expect(loadLiveDraft().slots).toEqual([replacement]);
-    expect(navigation.replace).not.toHaveBeenCalled();
+    if (outcome === "denied" || outcome === "aborted") {
+      expect(navigation.replace).toHaveBeenCalledWith(
+        `/confirmation/?attempt=${id}`,
+      );
+      expire.mockImplementation(async () => Response.json({ expired: true }));
+      navigation.path = "/confirmation/";
+      recovering = true;
+      view.rerender(tree());
+      await waitFor(() => expect(submittedCheckoutId()).toBeNull());
+      expect(navigation.replace).toHaveBeenCalledWith("/book/time/");
+      recovering = false;
+      navigation.path = "/book/time/";
+      view.rerender(tree());
+      fireEvent.click(screen.getByText("Choose replacement"));
+      await act(async () => {
+        fireEvent.click(screen.getByText("Repeat checkout"));
+      });
+      expect(service.checkout).toHaveBeenCalledTimes(1);
+    } else expect(navigation.replace).not.toHaveBeenCalled();
+    navigation.replace.mockClear();
+    clearBookingAccessNotice();
     view.unmount();
     context.mockRestore();
   }

@@ -2,11 +2,13 @@
 
 ## Active outcome
 
-Align the booking site and Worker with the production 50-minute sessions and hourly starts. Preserve the original duration for existing booking records. On mobile the Studio Back link shows its arrow.
+Standardize notification emails and enforce protected recovery when an archived expired checkout cannot yet be released. The next booking must reach checkout after authoritative release.
 
 ## Next actions
 
-Both staging SimplyBook services now have 50-minute sessions and a 10-minute buffer. Verify the website staging deployment and physical checkout. Verification run 44913232623 reported a desktop sticky-button intersection ratio of 0.9999999403953552. Its viewport assertion now accepts one float32 rounding step. The earlier tablet unpaid-expiry failure in run 44901684062 passed in the master regression on run 44913116190.
+The failed archived release now redirects into protected recovery instead of silently enabling an editable booking. Component coverage exercises failed and aborted releases, successful recovery and a subsequent checkout dispatch. Publish PR #112 and complete its full CI and staging acceptance. PR #113 booking codes merged separately and requires manual staging acceptance.
+
+The reported Quick Back red notice flash remains unconfirmed by a captured DOM sequence. Existing browser coverage asserts the eventual continuation link and does not establish absence of a transient warning. Preserve this as an outstanding physical acceptance item.
 
 ## Ordered work after this slice
 
