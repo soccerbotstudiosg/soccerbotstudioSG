@@ -205,3 +205,7 @@ The help action is **Ask the studio to contact me**.
 
 - During foreground checkout, the loader announces the operation and shows “Please do not close or refresh.” Background checks let visitors continue using Calendar.
 - For an unpaid link, a verified receipt or an expired payment window, see [Continue to pay, expiry and confirmation](#continue-to-pay-expiry-and-confirmation).
+
+### Archived checkout release recovery
+
+If restoration finds no current booking but this tab retains an expired submitted checkout, protected release must succeed before the tab starts another checkout. A failed or timed-out release returns to the existing protected recovery screen, which owns retries and payment checks. Successful release clears only the matching checkout correlation and returns to Calendar for a new selection.

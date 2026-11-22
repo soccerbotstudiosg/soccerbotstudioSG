@@ -1904,7 +1904,17 @@ export function BookingProvider({
               await rejectRecoveredSelection(id, context.selectionRejection);
           }
       } catch {
-        /* Unknown reads cannot discard a pending attempt. */
+        // An archived checkout still owns its submission lock until protected
+        // recovery verifies release. Keep its retry UI mounted after a failed read.
+        if (
+          !signal.aborted &&
+          liveCheckoutAttemptId() === id &&
+          submittedCheckoutId() === id &&
+          !latest.current.attempt
+        ) {
+          setProtectedConflictRedirect(id);
+          router.replace(`/confirmation/?attempt=${encodeURIComponent(id)}`);
+        }
       } finally {
         if (restoredExpiryRead.current === expiryRead)
           restoredExpiryRead.current = null;
