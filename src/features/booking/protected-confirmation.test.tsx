@@ -1802,7 +1802,7 @@ it("shows payment received feedback with details while current booking evidence 
   );
 });
 
-it("revisiting a saved confirmation enriches its invoice without replaying confirmation or export actions", async () => {
+it("a saved confirmation shows its invoice then its late booking code within the same read budget", async () => {
   const now = Date.now(),
     saved = receiptFixture(now - 120000);
   let receiptReads = 0;
@@ -1837,7 +1837,12 @@ it("revisiting a saved confirmation enriches its invoice without replaying confi
                 bookingIds: ["701"],
                 invoiceId: "901",
                 ...(++receiptReads > 1 && finalAvailable
-                  ? { invoiceNumber: "FINAL-DOCUMENT-7" }
+                  ? {
+                      invoiceNumber: "FINAL-DOCUMENT-7",
+                      ...(receiptReads > 2
+                        ? { bookingCodes: ["SBS-TEST-7"] }
+                        : {}),
+                    }
                   : {}),
               },
             })
@@ -1857,6 +1862,15 @@ it("revisiting a saved confirmation enriches its invoice without replaying confi
   await act(async () => {
     await vi.advanceTimersByTimeAsync(10000);
   });
+  expect(
+    screen.getByRole("heading", { name: "Booking Confirmed" }),
+  ).toBeVisible();
+  expect(screen.queryByText("SBS-TEST-7")).toBeNull();
+  expect(screen.getByText("FINAL-DOCUMENT-7")).toBeVisible();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(10000);
+  });
+  expect(screen.getByText("SBS-TEST-7")).toBeVisible();
   expect(screen.getByText("FINAL-DOCUMENT-7")).toHaveClass(
     "confirmation-invoice-value",
   );
@@ -1869,7 +1883,7 @@ it("revisiting a saved confirmation enriches its invoice without replaying confi
   await act(async () => {
     await vi.advanceTimersByTimeAsync(60000);
   });
-  expect(receiptReads).toBe(2);
+  expect(receiptReads).toBe(3);
   expect(
     screen.queryByRole("button", {
       name: /Add to calendar|Download booking details/,
@@ -1877,6 +1891,7 @@ it("revisiting a saved confirmation enriches its invoice without replaying confi
   ).toBeNull();
   expect(fetch.mock.calls.map(([url]) => url.split("/").at(-1))).toEqual([
     "checkout",
+    "receipt",
     "receipt",
     "receipt",
   ]);

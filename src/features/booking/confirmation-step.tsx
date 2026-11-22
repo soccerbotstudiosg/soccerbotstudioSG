@@ -271,6 +271,27 @@ export function BookingConfirmation({
           )}
           {!pending &&
             !preview &&
+            booking.providerReferences?.bookingCodes?.map((code, index) => {
+              if (!code) return null;
+              const slot = booking.slots[index];
+              return (
+                <p
+                  key={booking.providerReferences!.bookingIds[index]}
+                  className="reference"
+                  aria-live="polite"
+                >
+                  Booking code
+                  {booking.slots.length > 1 && slot
+                    ? ` (${dateLabel(slot.date)}, ${slot.start})`
+                    : ""}{" "}
+                  <strong className="text-ink confirmation-invoice-value">
+                    {code}
+                  </strong>
+                </p>
+              );
+            })}
+          {!pending &&
+            !preview &&
             (booking.providerReferences?.invoiceNumber || invoicePending) && (
               <p className="reference" aria-live="polite" aria-atomic="true">
                 Invoice number{" "}

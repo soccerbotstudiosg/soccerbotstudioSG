@@ -185,7 +185,10 @@ test("native supplied unpaid and paid shapes use stable invoice identity and can
   const unpaid = await call("normalize", input(false));
   assert.equal(unpaid.status, 200);
   assert.equal(unpaid.result.decision.reason, "payment_pending");
-  const paid = await call("normalize");
+  const coded = input();
+  coded.booking.code = "SBS-TEST";
+  const paid = await call("normalize", coded);
+  assert.equal(paid.result.observation.bookings[0].bookingCode, "SBS-TEST");
   assert.equal(paid.status, 200);
   assert.equal(paid.result.decision.status, "confirmed");
   assert.equal(

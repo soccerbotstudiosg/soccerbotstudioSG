@@ -1,3 +1,4 @@
+import { bookingCodeSchema } from "../src/domain/provider-references";
 import { retainedInvoiceNumber } from "./invoice-document";
 import { z } from "zod";
 import { ApiError } from "./policy";
@@ -59,14 +60,32 @@ export async function bookingDetailsData(
   // The original unpaid number and final document are display-only metadata.
   let candidate: unknown;
   let paidInvoice = false;
+  let bookingCodes: (string | null)[] = [];
   try {
-    const invoice = JSON.parse(row.observation_json || "null")?.invoice;
+    const observation = JSON.parse(row.observation_json || "null");
+    const invoice = observation?.invoice;
     if (
       invoice?.invoiceId === association.invoiceId &&
       invoice.status === "paid"
     ) {
       paidInvoice = true;
       candidate = invoice.documentNumber;
+      if (Array.isArray(observation.bookings)) {
+        const codes = new Map<string, string>();
+        for (const booking of observation.bookings) {
+          const code = bookingCodeSchema.safeParse(booking?.bookingCode);
+          if (
+            code.success &&
+            booking.status === "confirmed" &&
+            booking.invoiceId === association.invoiceId &&
+            booking.attemptId === row.id
+          )
+            codes.set(booking.session.bookingId, code.data);
+        }
+        bookingCodes = association.bookingIds.map(
+          (id) => codes.get(id) ?? null,
+        );
+      }
     }
   } catch {
     // Invalid display metadata must not block otherwise verified confirmation.
@@ -83,6 +102,7 @@ export async function bookingDetailsData(
   return bookingDetailsSchema.parse({
     providerReferences: {
       bookingIds: association.bookingIds,
+      ...(bookingCodes.some(Boolean) ? { bookingCodes } : {}),
       invoiceId: association.invoiceId,
       ...(invoiceNumber ? { invoiceNumber } : {}),
     },
