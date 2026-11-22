@@ -1416,6 +1416,7 @@ test("receipt export rechecks ownership paid evidence and revocation without pro
 
   const evidence = await observation(a);
   evidence.invoice.documentNumber = "INV-SYNTHETIC-42";
+  evidence.bookings[0].bookingCode = "CODE-SYNTHETIC-42";
   await db
     .prepare(
       "UPDATE attempts SET association_json=?,observation_json=? WHERE id=?",
@@ -1474,11 +1475,13 @@ test("receipt export rechecks ownership paid evidence and revocation without pro
     bookingIds: ["booking-1"],
     invoiceId: "invoice-1",
     invoiceNumber: "INV-SYNTHETIC-42",
+    bookingCodes: ["CODE-SYNTHETIC-42"],
   });
   assert.equal(receipt.sessions[0].serviceName, "Native Session");
   assert.equal(JSON.stringify(receipt).includes("capability"), false);
   // Fresh proof can enrich display metadata without replaying financial recovery.
   const order = structuredClone(evidence);
+  delete order.bookings[0].bookingCode;
   order.invoice.documentNumber = "ORDER-SYNTHETIC-42";
   await db
     .prepare(
@@ -1504,6 +1507,9 @@ test("receipt export rechecks ownership paid evidence and revocation without pro
   assert.equal(enrichedResponse.status, 200);
   const enriched = await enrichedResponse.json();
   assert.equal(enriched.refreshes, 1);
+  assert.deepEqual(enriched.receipt.providerReferences.bookingCodes, [
+    "CODE-SYNTHETIC-42",
+  ]);
   assert.equal(
     enriched.receipt.providerReferences.invoiceNumber,
     "INV-SYNTHETIC-42",

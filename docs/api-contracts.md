@@ -784,3 +784,5 @@ Background sign-out changes presentation immediately but retains server authorit
 Absolute asset/policy links use the configured application origin. Images use the actual venue/wordmark; email clients may suppress images or advanced backgrounds, while live text remains readable. Synthetic dispatch tests verify HTML, fallback text, dynamic names and escaping; CI does not establish real inbox rendering.
 
 Migration0051 must precede this Worker deployment. Existing enquiry/help rows retain version0/plain-text payloads, including their original greeting; newly inserted rows select version1. The immutable version prevents a retry from changing content under the original provider key. Completed historical rows remain no-send.
+
+The authorized confirmation receipt may include display-only SimplyBook appointment codes in `providerReferences.bookingCodes`, indexed in the same order as `bookingIds` and sessions. A null entry means the provider has not supplied that session’s code. Older receipts can omit the field. Codes and the invoice number share the existing bounded receipt refresh and do not establish payment or booking status.

@@ -1,4 +1,4 @@
-import { invoiceNumberSchema } from "./provider-references";
+import { bookingCodeSchema, invoiceNumberSchema } from "./provider-references";
 import { z } from "zod";
 
 // Internal normalized evidence, not provider response schemas or authentication.
@@ -71,6 +71,7 @@ const observationBinding = {
   observedAtMs: instant,
 };
 const bookingSchema = z.strictObject({
+  bookingCode: bookingCodeSchema.optional(),
   ...observationBinding,
   invoiceId: identifier,
   session,
