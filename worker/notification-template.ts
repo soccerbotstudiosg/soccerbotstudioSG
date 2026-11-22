@@ -31,15 +31,14 @@ export function notificationHtml(message: Message) {
   const origin = new URL(message.origin).origin;
   const link = (label: string, url: string) =>
     `<a href="${escape(url)}" style="color:#76d3ff;text-decoration:underline">${escape(label)}</a>`;
+  const wordmark = `<img src="${origin}/assets/email-wordmark.png" width="160" alt="SoccerBotStudio Singapore" style="display:block;width:160px;max-width:100%;height:auto">`;
   const rows = (message.fields ?? [])
     .map(
       ([label, value]) =>
-        `<tr><td style="padding:0 0 14px"><strong style="font-size:12px;color:#55627a">${escape(label)}</strong><br><span style="white-space:pre-wrap;overflow-wrap:anywhere">${escape(value || "Not provided")}</span></td></tr>`,
+        `<tr><td style="padding:0 0 10px;color:#fff"><strong>${escape(label)}</strong><br><span style="white-space:pre-wrap;overflow-wrap:anywhere">${escape(value || "Not provided")}</span></td></tr>`,
     )
     .join("");
-  const heroAttributes = message.code
-    ? 'style="padding:0 6% 20px;background:#050a2f"'
-    : `class="email-hero" background="${origin}/assets/6cd9490f80ba.jpg" style="padding:180px 6% 32px;background-color:#050a2f;background-image:linear-gradient(to bottom,transparent 100px,#050a2f 380px),url('${origin}/assets/6cd9490f80ba.jpg');background-size:100% 440px,100% auto;background-position:center top,center -70px;background-repeat:no-repeat"`;
+  const hero = `${origin}/assets/6cd9490f80ba.jpg`;
   const footerPairs = [
     ["SoccerBotStudio Singapore", LOCATION.building],
     [
@@ -56,7 +55,37 @@ export function notificationHtml(message: Message) {
     ],
     ["", link("WhatsApp us", BOOKING_SUPPORT.whatsappUrl)],
   ];
-  return `<!doctype html><html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(message.heading)}</title><style>@font-face{font-family:Roboto;src:url("${origin}/assets/9d867fc3ef40.woff2") format("woff2");font-weight:400}@font-face{font-family:Roboto;src:url("${origin}/assets/f2c3487396a2.woff2") format("woff2");font-weight:900;font-style:italic}@media only screen and (max-width:480px){.message-inner{padding:20px 14px!important}.message-title{font-size:20px!important}.email-hero{padding-top:110px!important}.email-code{font-size:44px!important;letter-spacing:3px!important}}</style></head><body style="margin:0;background:#edf0f7;font-family:Roboto,Arial,Helvetica,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center"><table role="presentation" width="640" cellspacing="0" cellpadding="0" style="width:100%;max-width:640px;background:#050a2f;color:#fff"><tr><td align="center" style="padding:12px;background:#050a2f"><img src="${origin}/assets/email-wordmark.png" width="160" alt="SoccerBotStudio Singapore" style="display:block;width:160px;max-width:65%;height:auto;mix-blend-mode:screen"></td></tr><tr><td ${heroAttributes}><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#102741"><tr><td class="message-inner" style="padding:${message.code ? "16px" : "28px 24px"}"><h1 class="message-title" style="margin:0 0 ${message.code ? "10px" : "18px"};color:#46acdc;font-size:26px;font-weight:900;font-style:italic;line-height:1.15">${escape(message.heading)}</h1><p style="margin:0 0 ${message.code ? "10px" : "18px"}">${escape(message.name?.trim() ? `Hello ${message.name.trim()},` : "Hello human,")}</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fff;color:#10152f;border-radius:16px"><tr><td style="padding:${message.code ? "16px" : "24px"};font-size:15px;line-height:1.6"><p style="margin:0 0 ${message.code ? "8px" : "20px"}">${escape(message.introduction)}</p>${message.code ? `<p class="email-code" style="margin:8px 0;text-align:center;font-size:44px;line-height:1.2;letter-spacing:5px;font-weight:800;color:#000;font-variant-numeric:tabular-nums">${escape(message.code)}</p>` : ""}<table role="presentation" width="100%" cellspacing="0" cellpadding="0">${rows}</table></td></tr></table><p style="font-size:13px;line-height:1.6;margin:20px 0">${escape(message.note)}</p>${message.link ? `<p>${link(message.link.label, message.link.url)}</p>` : ""}<p style="font-size:13px;line-height:1.5">The SoccerBotStudio Singapore team</p></td></tr><tr><td style="padding:24px;background:#050a2f"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="font-size:11px;line-height:1.4;color:#dce1f1"><tr><td colspan="2" align="center" style="padding-bottom:14px"><img src="${origin}/assets/email-wordmark.png" width="160" alt="SoccerBotStudio Singapore" style="display:block;max-width:100%;height:auto;mix-blend-mode:screen"></td></tr>${footerPairs.map(([left, right]) => `<tr><td width="50%" valign="top" style="padding:3px 8px 3px 0">${left}</td><td width="50%" valign="top" align="right" style="padding:3px 0 3px 8px">${right}</td></tr>`).join("")}<tr><td colspan="2" align="center" style="padding-top:14px">© SoccerBotStudio Singapore</td></tr></table></td></tr></table></td></tr></table></td></tr></table></body></html>`;
+  return `<!doctype html><html lang="en" dir="ltr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(message.heading)}</title>
+<style>@media only screen and (max-width:480px){
+  .email-hero{padding:48px 12px 0!important}.email-body{padding:0 12px!important}
+  .email-title{font-size:22px!important}.email-footer{padding:18px 12px!important}
+}</style></head>
+<body style="margin:0;background:#f7f8fa;font-family:Roboto,Arial,Helvetica,sans-serif">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center">
+<table role="presentation" width="640" cellspacing="0" cellpadding="0" bgcolor="#10032b" style="width:100%;max-width:640px;background:#10032b;color:#fff">
+<tr><td align="center" style="padding:12px">${wordmark}</td></tr>
+<tr><td class="email-hero" background="${hero}" style="padding:176px 10% 0;background-color:#10032b;background-image:url('${hero}');background-position:center 48%;background-size:cover">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="#162441"><tr><td style="padding:15px 12px 10px">
+    <h1 class="email-title" style="margin:0;color:#46b6ea;font-size:24px;font-weight:700;font-style:italic;line-height:1.2">${escape(message.heading)}</h1>
+  </td></tr></table>
+</td></tr>
+<tr><td class="email-body" style="padding:0 10%">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="#162441"><tr><td style="padding:10px 12px 16px;color:#fff;font-size:15px;line-height:1.45">
+    <p style="margin:0 0 16px">${escape(message.name?.trim() ? `Hello ${message.name.trim()},` : "Hello human,")}</p>
+    <p style="margin:0 0 12px">${escape(message.introduction)}</p>
+    ${message.code ? `<p class="email-code" style="margin:12px 0;padding:12px;background:#f0eff7;color:#10032b;border-left:3px solid #10032b;border-radius:0 8px 8px 0;text-align:center;font-size:44px;line-height:1.2;letter-spacing:4px;font-weight:800">${escape(message.code)}</p>` : ""}
+    ${rows ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="font-size:15px;line-height:1.45">${rows}</table>` : ""}
+    <p style="margin:14px 0 0">${escape(message.note)}</p>
+    ${message.link ? `<p style="margin:8px 0 0">${link(message.link.label, message.link.url)}</p>` : ""}
+    <p style="margin:12px 0 0">The SoccerBotStudio Singapore team</p>
+  </td></tr></table>
+</td></tr>
+<tr><td class="email-footer" style="padding:24px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="font-size:12px;line-height:1.45;color:#fff">
+<tr><td colspan="2" align="center" style="padding-bottom:14px">${wordmark}</td></tr>
+${footerPairs.map(([left, right]) => `<tr><td width="50%" valign="top" style="padding:3px 8px 3px 0">${left}</td><td width="50%" valign="top" align="right" style="padding:3px 0 3px 8px">${right}</td></tr>`).join("")}
+<tr><td colspan="2" align="center" style="padding-top:14px">© SoccerBotStudio Singapore</td></tr>
+</table></td></tr></table></td></tr></table></body></html>`;
 }
 
 /** Render verification without revealing an unverified account name. */

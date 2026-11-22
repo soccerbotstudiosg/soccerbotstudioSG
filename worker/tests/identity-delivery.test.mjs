@@ -227,13 +227,12 @@ test("delivery public routes use fixed sender recipient idempotency and single-u
   );
   const code = sent.body.text.match(/code is (\d{6})/)[1];
   assert.match(sent.body.html, /Hello human,/);
-  assert.match(sent.body.html, /padding:12px;background:#050a2f/);
-  assert.match(sent.body.html, /padding:24px;background:#050a2f/);
-  assert.doesNotMatch(sent.body.html, /background:#173e62/);
+  assert.match(sent.body.html, /class="email-body"/);
+  assert.match(sent.body.html, /class="email-footer"/);
   assert.ok(sent.body.html.includes(code));
   assert.match(sent.body.html, /Your verification code/);
-  assert.doesNotMatch(sent.body.html, /class="email-hero"/);
-  assert.doesNotMatch(sent.body.html, /background="[^"]+6cd9490f80ba/);
+  assert.match(sent.body.html, /class="email-hero"/);
+  assert.match(sent.body.html, /background="[^"]+6cd9490f80ba/);
   assert.match(sent.body.html, /email-wordmark.png" width="160"/);
   assert.match(sent.body.html, /class="email-code"[^>]*font-size:44px/);
 
