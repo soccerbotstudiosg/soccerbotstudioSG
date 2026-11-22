@@ -1,3 +1,7 @@
+import {
+  rememberBookingAccessNotice,
+  clearBookingAccessNotice,
+} from "@/services/profile-access";
 vi.mock("@/services/email-domain", () => ({
   checkEmailDomain: vi.fn(async () => "valid"),
 }));
@@ -3614,6 +3618,7 @@ it("archived expiry replay preserves replacements and requires current original 
     "paid",
     "denied",
     "aborted",
+    "access revoked",
     "departed",
     "different",
     "released",
@@ -3711,6 +3716,7 @@ it("archived expiry replay preserves replacements and requires current original 
         saveLiveDraft(editable, true, otherId);
         markSubmittedCheckout(otherId, true);
       }
+      if (outcome === "access revoked") rememberBookingAccessNotice("session");
       if (outcome === "aborted") {
         await act(async () => {
           release.reject(new DOMException("Request timed out", "AbortError"));
@@ -3718,8 +3724,10 @@ it("archived expiry replay preserves replacements and requires current original 
       } else
         await act(async () =>
           release.resolve(
-            outcome === "denied"
-              ? new Response(null, { status: 409 })
+            outcome === "denied" || outcome === "access revoked"
+              ? new Response(null, {
+                  status: outcome === "access revoked" ? 401 : 409,
+                })
               : Response.json({ expired: true }),
           ),
         );
@@ -3748,6 +3756,7 @@ it("archived expiry replay preserves replacements and requires current original 
       expect(service.checkout).toHaveBeenCalledTimes(1);
     } else expect(navigation.replace).not.toHaveBeenCalled();
     navigation.replace.mockClear();
+    clearBookingAccessNotice();
     view.unmount();
     context.mockRestore();
   }

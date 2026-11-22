@@ -1908,6 +1908,8 @@ export function BookingProvider({
         // recovery verifies release. Keep its retry UI mounted after a failed read.
         if (
           !signal.aborted &&
+          profileAccessGeneration() === generation &&
+          !bookingAccessNotice() &&
           liveCheckoutAttemptId() === id &&
           submittedCheckoutId() === id &&
           !latest.current.attempt
