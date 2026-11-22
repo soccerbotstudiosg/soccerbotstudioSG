@@ -406,7 +406,8 @@ function ProtectedConfirmationBody({
           Math.max(0, invoiceDeadline - checkoutNow(invoiceClock, true)),
         )
       : undefined;
-    // Optional invoice enrichment shares the server's original checking window.
+    // Both display references share the original receipt budget.
+    const codesByBooking = new Map<string, string>();
     // Six paced reads bound work even when a provider never issues a document.
     const read = async () => {
       const refresh = reads++ > 0;
@@ -417,8 +418,21 @@ function ProtectedConfirmationBody({
           refresh,
         );
         if (controller.signal.aborted) return;
+        const refs = value.booking.providerReferences;
+        if (refs) {
+          refs.bookingIds.forEach((id, index) => {
+            const code = refs.bookingCodes?.[index];
+            if (code) codesByBooking.set(id, code);
+          });
+          refs.bookingCodes = refs.bookingIds.map(
+            (id) => codesByBooking.get(id) ?? null,
+          );
+        }
         setReceipt({ value, revision: sessionRevision });
-        if (value.booking.providerReferences?.invoiceNumber) {
+        if (
+          refs?.invoiceNumber &&
+          refs.bookingIds.every((_, index) => refs.bookingCodes?.[index])
+        ) {
           clearTimeout(deadlineTimer);
           finish();
           return;

@@ -1273,7 +1273,7 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "revisiting a saved confirmation enriches its invoice without replaying confirmation or export actions"
+    "title": "a saved confirmation shows its invoice then its late booking code within the same read budget"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",

@@ -1,4 +1,7 @@
-import { invoiceNumberSchema } from "../src/domain/provider-references";
+import {
+  bookingCodeSchema,
+  invoiceNumberSchema,
+} from "../src/domain/provider-references";
 import { CHANGEOVER_MINUTES } from "../src/domain/booking-policy";
 import type { ConfirmationInput } from "../src/domain/confirmation";
 import { z } from "zod";
@@ -579,7 +582,9 @@ function invoiceEvidence(raw: unknown, context: NativeReadContext) {
       "invoice.line.is_with_deposit_amount",
     );
     nativeArray(line.tickets, 0, "invoice.line.tickets");
+    const code = bookingCodeSchema.safeParse(nested.code);
     return {
+      bookingCode: code.data,
       bookingId,
       lineId: providerId(line.id, "invoice.line.id"),
       nestedConfirmed: flag(
@@ -925,13 +930,19 @@ export function normalizeNativePaymentResponse(
     rejectNative("invoice.line.booking.is_confirmed", "mismatch");
   return {
     invoice: normalized.invoice,
-    bookings: before.bookings.map((booking) => ({
-      ...booking,
-      observedAtMs: receipt(
-        context.invoiceObservedAtMs,
-        "context.invoiceObservedAtMs",
-      ),
-    })),
+    bookings: before.bookings.map((booking) => {
+      const code = normalized.lines.find(
+        (line) => line.bookingId === booking.session.bookingId,
+      )?.bookingCode;
+      return {
+        ...booking,
+        ...(code ? { bookingCode: code } : {}),
+        observedAtMs: receipt(
+          context.invoiceObservedAtMs,
+          "context.invoiceObservedAtMs",
+        ),
+      };
+    }),
   };
 }
 
@@ -1013,7 +1024,10 @@ export function normalizeNativeReads(
         record(invoiceValue).payment_processor
     )
       normalized.invoice.status = "unknown";
+    const bookingCode =
+      bookingCodeSchema.safeParse(booking.code).data ?? line.bookingCode;
     return {
+      ...(bookingCode ? { bookingCode } : {}),
       accountId: intent.accountId,
       environmentId: intent.environmentId,
       attemptId: context.attemptId,

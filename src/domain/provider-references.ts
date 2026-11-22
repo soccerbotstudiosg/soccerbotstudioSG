@@ -1,6 +1,6 @@
 import { z } from "zod";
 // Display metadata only; never an invoice identity or confirmation authority.
-export const invoiceNumberSchema = z
+const displayReferenceSchema = z
   .string()
   .trim()
   .min(1)
@@ -11,8 +11,11 @@ export const invoiceNumberSchema = z
       return code >= 32 && code !== 127;
     }),
   );
+export const invoiceNumberSchema = displayReferenceSchema;
+export const bookingCodeSchema = displayReferenceSchema;
 export const providerReferencesSchema = z.strictObject({
   bookingIds: z.array(z.string().min(1).max(128)).min(1).max(12),
+  bookingCodes: z.array(bookingCodeSchema.nullable()).min(1).max(12).optional(),
   invoiceNumber: invoiceNumberSchema.optional(),
   invoiceId: z.string().min(1).max(128),
 });
