@@ -174,7 +174,7 @@ export function ReviewStep({
         </span>
       </label>
       {profileSaveError && (
-        <div className="alert" role="alert">
+        <div className="alert review-feedback" role="alert">
           <p>{profileSaveError}</p>
           <button className="text-link" onClick={() => void saveContact()}>
             Try again
@@ -182,25 +182,25 @@ export function ReviewStep({
         </div>
       )}
       {error && error !== profileSaveError && (
-        <div className="alert mt-5" role="alert">
-          {error}
+        <div className="alert review-feedback" role="alert">
+          <p>{error}</p>
           {action.resumeAttemptId && (
             <Link
-              className="text-link ml-3"
+              className="text-link"
               href={`/confirmation/?attempt=${encodeURIComponent(action.resumeAttemptId)}`}
             >
               View existing checkout
             </Link>
           )}
           {!attempt?.held && (
-            <Link className="text-link ml-3" href="/book/time/">
+            <Link className="text-link" href="/book/time/">
               Review selections
             </Link>
           )}
         </div>
       )}
       {action.calendarRecovery && (
-        <p className="notice" role="status">
+        <p className="notice review-feedback" role="status">
           Checking your previous payment. You can proceed once we confirm the
           previous booking was released.
         </p>

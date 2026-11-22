@@ -2905,14 +2905,14 @@ async function uncertainHolding(
       // it does not renew the expired foreground wait or replay the write.
       const resolvedNotice = page.getByRole("alert").filter({
         hasText:
-          "Nothing was booked or charged. Your details are saved; please choose your sessions again.",
+          "Some sessions may no longer be available. Please check again.",
       });
       await page.reload();
       await Promise.all([observedResolution, verifiedCapacity]);
       await expect(page).toHaveURL(/\/book\/time\/$/);
       await expect(
         page.getByText(
-          "Nothing was booked or charged. Your details are saved; please choose your sessions again.",
+          "Some sessions may no longer be available. Please check again.",
           { exact: true },
         ),
       ).toBeVisible();
@@ -2962,7 +2962,7 @@ async function uncertainHolding(
       ).toBeVisible();
       await expect(
         page.getByText(
-          "Nothing was booked or charged. Your details are saved; please choose your sessions again.",
+          "Some sessions may no longer be available. Please check again.",
           { exact: true },
         ),
       ).toHaveCount(0);

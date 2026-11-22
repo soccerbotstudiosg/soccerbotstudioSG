@@ -4153,6 +4153,9 @@
   .booking-main > #details-form {
     margin-top: 24px;
   }
+  #details-form > .alert {
+    margin-block: 20px;
+  }
   .booking-main > .access-options {
     margin-top: var(--space-action-top);
   }
@@ -4886,15 +4889,10 @@
     position: relative;
     align-self: center;
     min-width: 0;
-    height: 26px;
     margin: 0 6px var(--slot-block) var(--slot-inline);
   }
   .trainer-choice select {
-    /* Use the card's surrounding padding for the native picker hit area. */
-    position: absolute;
-    inset-inline: 0;
-    top: 50%;
-    transform: translateY(-50%);
+    /* Reserve the full control height so card padding clears its focus ring. */
     display: block;
     width: 100%;
     min-width: 0;
@@ -4907,7 +4905,7 @@
     font-size: var(--text-body);
   }
   .time-choice .time-rate {
-    min-height: 26px;
+    min-height: 44px;
     align-items: center;
   }
   .times {
@@ -5461,6 +5459,16 @@
     border-top: 1px solid var(--color-line);
     padding-top: 16px;
     margin-top: 18px;
+  }
+  .review-feedback,
+  .security-check-notice {
+    margin-block: 20px;
+  }
+  .review-feedback {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
   .review-terms {
     margin-top: 23px;

@@ -2,6 +2,8 @@
 import { BookingHelp, RejectedEmailHelp } from "./booking-help";
 import {
   CHECKOUT_UNRESOLVED,
+  BOOKING_NOT_CREATED,
+  CONFLICT_NOTICE,
   CALENDAR_CHECKOUT_PAUSED,
 } from "@/domain/booking-messages";
 import { useMobileBooking } from "./booking-tools";
@@ -406,6 +408,8 @@ export function TimeStep({
       <p>
         {selectionNotice === CHECKOUT_UNRESOLVED ? (
           <strong>{CALENDAR_CHECKOUT_PAUSED}</strong>
+        ) : selectionNotice === BOOKING_NOT_CREATED ? (
+          CONFLICT_NOTICE
         ) : (
           selectionNotice
         )}

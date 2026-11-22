@@ -19,6 +19,10 @@ State the exact target and intended outcome: read-only inspection, installation 
 
 Verify the repository, branch/head, checkout path, PR/merge status, workflow event and actor against current evidence. Confirm which repository owns deployment and prevent the retired repository from remaining a second deployer. A display name, authenticated connector or ready token does not prove account/resource ownership. Verify numeric account IDs and resource IDs against the reviewed target; compare staging and production explicitly. Never copy credentials or replace resource identity merely to make a deployment pass.
 
+### Authorization and evidence checkpoint
+
+Prepare and verify the concrete candidate before seeking any genuinely missing approval. A request to check readiness, investigate or discuss rollback does not authorize merge or rollback. Reuse explicit authorization only for its identified candidate/scope. Immediately before merge, report known contradictory recovery evidence and which follow-up paths were not executed; do not let a green CI summary erase them. Verify staging deployment/health separately from an eligibility-only success, then record the owner's acceptance/exception and merge instruction. After merge, verify main CI and actual production deployment independently. If a later observation contradicts readiness, preserve it and correct the user-facing claim without inventing a root cause.
+
 ## 2. Trace source to the release artifact
 
 - Match the exact source revision, repository, target/configuration, successful verification run and attempt, expected job set, artifact identity/digest and release receipt. Read the actual eligibility logic; do not assume a skipped deployment failed or that a green PR deployed anything.

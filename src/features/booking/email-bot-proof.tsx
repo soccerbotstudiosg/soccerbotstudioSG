@@ -93,7 +93,7 @@ function BotProof({
   }, [ready, sitekey, onToken, purpose]);
   if (!sitekey)
     return (
-      <p className="notice warning" role="status">
+      <p className="notice warning security-check-notice" role="status">
         {unavailable}
       </p>
     );
@@ -109,7 +109,7 @@ function BotProof({
         }}
       />
       {failed && (
-        <p className="notice warning" role="status">
+        <p className="notice warning security-check-notice" role="status">
           Security check unavailable. Please refresh this page and try again.
         </p>
       )}

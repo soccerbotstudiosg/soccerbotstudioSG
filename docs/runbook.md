@@ -304,6 +304,12 @@ Acceptance: use an owner-authorized synthetic alert fixture, observe firing, del
 | D1/DO errors after release          | Migration ledger, foundation/account IDs, bindings and coordinator identity                              | Stop wrong-account deployment; diagnose last successful phase. Never reset foundation/data to satisfy preflight.                             |
 | Grafana empty                       | Export status/attachment, exact producer, sample/time range, datasource and exporter logs                | Follow section 4; do not conclude application health from no traces                                                                          |
 
+### Refunds and customer notifications
+
+For the current external HitPay route, an authorized financial operator locates the original successful transaction and matches it to the booking/invoice, approves the full or partial amount, issues the refund in HitPay, and verifies its status/reference. Update or cancel only the affected SimplyBook sessions separately and reconcile the invoice/credit note through supported account controls. Cancellation does not return money; a refund does not by itself cancel a session. No automatic refund-to-SimplyBook synchronization is implemented.
+
+Keep the booking cancellation message neutral about money. Send a separate refund confirmation only after verifying the provider result, including amount and correlation to the booking/invoice; distinguish initiated from completed. HitPay's sandbox customer refund email has been observed. Verify the account's email behavior before depending on it and avoid duplicate financial confirmations. A SimplyBook refund-email toggle alone cannot observe an external HitPay refund. Do not promise a PDF, native refund capability, or bank-credit date without provider evidence. See [provider evidence and API references](external-providers-config.md#payment-metadata-and-refund-evidence).
+
 ### Verified no-creation recovery
 
 Use this procedure only for the exact original attempt after [BR-008](business-rules.md#br-008) evidence establishes that no booking was created. Source implementation does not authorize an operator grant, production mutation or provider-side action. Migration0041 and the matching Worker must already be deployed through the normal approved path; no such deployment is claimed here.
