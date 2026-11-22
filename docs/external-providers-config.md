@@ -66,7 +66,7 @@ The Worker rotates encrypted admin refresh credentials. Verify account-specific 
 
 ### Notifications, access and maintenance
 
-The owner reported trainer notifications switched off during the recent setup conversation. This is owner-confirmed, not a fresh API inspection or proof that every customer/admin reminder channel is off. Review each relevant recipient/channel in SimplyBook notification settings before relying on suppression. Resend identity emails and SimplyBook booking/trainer notifications are separate systems.
+On 22 November the owner worked through customer booking/reminder/change/cancellation, trainer notifications and payment/invoice templates, and reported that the admin receives notifications for all providers. This supersedes the earlier report that trainer notifications were switched off. It is conversation evidence, not a fresh settings export or proof that every trigger/channel delivers. Verify each recipient, trigger and mobile rendering separately. Resend application emails and SimplyBook booking/trainer notifications remain separate systems.
 
 Use individual staff accounts and existing provider records. Role capabilities, seats and costs need owner verification; do not assume a named junior role exists or that trainers can edit only their own schedules. Follow [Admin UAT](uat/admin.md) and [Trainer UAT](uat/trainers.md).
 
@@ -154,6 +154,14 @@ Only names and storage locations are recorded here. Never include values, API re
 Presence is not proof of correctness, entitlement or successful provider authentication. Do not copy proxy placeholder values into provider settings. The owner previously chose a five-year API-user-key expiry; the exact issuance/expiry date was not captured here. Record it privately with renewal reminders and rotate before expiry rather than calculating a date from this document's review date.
 
 For each change: identify the environment and setting, explain why it changes, reconcile source guards and provider configuration, validate the relevant owner workflow, then update this reference with dated evidence. Use Progress for outstanding actions, not a second backlog here. Code/provider changes do not authorize bookings, payments, emails or destructive cleanup.
+
+## Payment metadata and refund evidence
+
+The current application verifies HitPay payment state and records external payment through SimplyBook `PUT /admin/invoices/{id}/accept-payment` using the configured `SIMPLYBOOK_EXTERNAL_PROCESSOR`. It does not retain/pass the actual card brand or payment method. HitPay's [charge-details API](https://docs.hitpayapp.com/apis/charges/get-charge-detail) documents method/card-brand metadata, but supported SimplyBook classification values and their display have not been verified. Do not substitute arbitrary Visa/PayNow labels into the payment-confirmation contract.
+
+The owner supplied a HitPay sandbox refund email on 22 November showing refunded status, amount, masked card details, date and reference. This verifies that test's notification; it does not establish all dashboard defaults, live delivery, a downloadable PDF or automatic SimplyBook synchronization. The [refund API](https://docs.hitpayapp.com/apis/refund/refund) exposes email controls. [SimplyBook documentation](https://help.simplybook.me/wiki/Accept_payments_custom_feature) places native refund confirmation under SBPay.me Pro; this does not establish refund support for externally recorded manual payments. Follow the [refund workflow](runbook.md#refunds-and-customer-notifications).
+
+The supplied invoice still showed the company login as the issuer name and a personal phone in the company block. Check SBPay company-profile fields and SimplyBook company information independently; customer billing contacts are separate. Invoice notes do not correct header metadata. Business name, studio phone/address, website, next invoice rendering and live HitPay merchant branding remain owner verification items. Do not commit customer identities or invoice records as fixtures.
 
 ## Booking support and notification drafts
 

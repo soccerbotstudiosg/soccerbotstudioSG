@@ -4244,6 +4244,20 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await expect(noon).toBeFocused();
   await expect(choice).toHaveCSS("outline-style", "none");
   await expect(noon).toHaveCSS("outline-style", "solid");
+  const focusExtent = await noon.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset);
+  });
+  const focusedCard = (await choice.boundingBox())!;
+  const focusedTrainer = (await noon.boundingBox())!;
+  expect(focusedTrainer.x - focusExtent).toBeGreaterThan(focusedCard.x);
+  expect(focusedTrainer.y - focusExtent).toBeGreaterThan(focusedCard.y);
+  expect(focusedTrainer.x + focusedTrainer.width + focusExtent).toBeLessThan(
+    focusedCard.x + focusedCard.width,
+  );
+  expect(focusedTrainer.y + focusedTrainer.height + focusExtent).toBeLessThan(
+    focusedCard.y + focusedCard.height,
+  );
   await noon.selectOption(`${date}|12:00|demo|daniel`);
   await expect(noon).toBeVisible();
   await expect(noon).toHaveValue(`${date}|12:00|demo|daniel`);

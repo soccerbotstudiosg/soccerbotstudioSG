@@ -89,6 +89,14 @@ Classify failures as application, test/fixture, environment, provider or unresol
 
 All three exact-final-head gates remain required: `verify / frontend`, `verify / backend`, `verify / live-email`. Recheck the head and complete outcomes before any authorized merge. Main verifies the merge independently; deployment and provider/device acceptance are separate. If browser execution is needed, push the candidate for CI under AGENTS and report it pending rather than claiming local browser acceptance.
 
+### Execution boundary and recovery evidence
+
+- State the last executed action and first failed assertion. A test that stops at routing has not tested re-entry, replacement payment dispatch or a permanent block. When requested, use a separate diagnostic continuation with its own result; never silently convert the original regression failure into a pass.
+- For expiry recovery, distinguish the visible route/notice, authoritative release, cleared original submission marker, accepted replacement request and actual distinct hosted-checkout navigation. A narrow component assertion or a loading screen proves only its boundary.
+- Before blaming production logic or declaring a test defective, compare failed and passing traces at the same transition: source/build, provider fixture, browser/channel, timestamps/deadline precision, status payloads, polling and visibility. Label hypotheses. A passing repeat or physical report does not explain the first failure.
+- Browser startup/module errors are environment failures. Record any runner/channel difference from CI. User-authorized repeated diagnostics preserve each run; stop them when asked and do not claim an interrupted run passed. Local synthetic browser evidence remains separate from real provider/physical acceptance.
+- For controls inside clipped cards, measure the complete focus ring (outline width plus offset) against all relevant card edges; the element's box alone misses clipping. Retain keyboard focus, minimum touch size, price alignment and stable collapsed/expanded geometry across existing device projects.
+
 ## 5. PR test-impact receipt and handover
 
 Add a concise table or paragraph to the existing PR body alongside its documentation-state receipt:
