@@ -2,7 +2,7 @@
 
 ## Active outcome
 
-Publish the shared booking UI spacing fixes and reconcile release, notification and regression evidence. Current branch: `fix/details-notice-spacing`, based on merged main `8fc342b`. This slice changes presentation and documentation only; checkout/recovery semantics remain unchanged.
+Publish the shared booking UI spacing fixes and reconcile release, notification and regression evidence. Current branch: `fix/details-notice-spacing`, based on merged main `8fc342b`. The Calendar no-creation return now displays the existing normal conflict message while retaining its distinct internal recovery state. This slice changes presentation and documentation only; checkout/recovery semantics remain unchanged.
 
 ## Release and verification state
 

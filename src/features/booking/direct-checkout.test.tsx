@@ -4026,7 +4026,7 @@ async function verifyNoCreationRecovery(
     ...(emailOutcome ? { reason: "contact_email_rejected" } : {}),
   };
   const notice =
-    "Nothing was booked or charged. Your details are saved; please choose your sessions again.";
+    "Some sessions may no longer be available. Please check again.";
 
   cleanup();
   sessionStorage.clear();
