@@ -2,6 +2,18 @@
 
 [Progress](../PROGRESS.md) records the current candidate and its next gate. This history records milestones, decisions, regressions and their outcomes. The [full record through PR 107](https://github.com/soccerbotstudiosg/soccerbotstudioSG/blob/70f300dd2763e417e46255eb4ebf060f61dc8036/docs/journey.md) preserves the original receipts, intermediate experiments, copy reviews and superseded plans.
 
+## 23 November 2026 — iPad keyboard visibility follow-up
+
+Owner confirmed the production smoke test of PR #116, put remaining SEO/keywords/copy work on hold and returned to the unresolved physical iPad keyboard-dismissal issue. Owner considers the earlier staging settings failure nonblocking; no underlying cause is asserted here.
+
+Inspection found `SiteShell`'s 25% viewport-reduction threshold could miss a smaller keyboard on a tall display. A synthetic 1200→960→1200 viewport regression failed before repair (zero correction calls; expected an obscured field to move below the header). The fix tracks contraction/restoration with a one-pixel subpixel tolerance, retaining the existing hidden-field geometry check, manual-scroll cancellation and zoom/orientation safeguards. Added visible-field toolbar restoration coverage; original cancellation/late-scroll cases remain. Both site-shell tests passed after repair, as did source integrity, focused ESLint and Prettier. Test titles/counts and inventories are unchanged. Actual Safari event timing and physical iPad acceptance remain pending; this identifies a reproducible code gap, not proof of the owner's device event sequence. No booking/payment/provider contracts changed. Local privacy-table edits remain preserved and unpushed.
+
+## 23 November 2026 — PR #116 staging/merge and privacy table formatting
+
+PR #116's combined head `e495a6ae6612db40c83a978bbe99af76fd8adebb` passed CI run 45169346521. Staging deployment 45172450953 initially uploaded successfully but failed on missing `SOURCE_REVISION` in the immediate settings read. Subsequent health/settings reads confirmed the exact candidate; attempt 2 passed with deployment artifact 14817762286. Owner then authorized merge; squash commit is `896abd1bf9468163ef573afe83b44350fc02a225`. This records staging and merge, not physical-device or production acceptance.
+
+The owner next supplied a privacy-policy screenshot showing centered labels and crowded table cells. Local styling in `src/app/globals.css` adds left/top alignment, a bounded label column, responsive padding, row separators and a shaded header, retaining semantic markup and every policy word. Source integrity, Prettier and diff checks passed. Existing legal-page browser tests remain unchanged; visual verification is owner/CI pending. No booking, provider, dependency, metadata or policy-content changes; corresponding contracts and operational owners remain unchanged.
+
 ## Initial milestone overview
 
 The original nine phases and 44 subiterations remain below. This is the retained delivery plan, not a blanket completion claim. [Progress](../PROGRESS.md) records current evidence, failures and remaining acceptance; later dated decisions can supersede original implementation choices without deleting milestone IDs.

@@ -196,6 +196,25 @@ test("nested booking 404 bypasses departure prompts and restores the guard only 
   fireEvent.scroll(window);
   flush();
   expect(scroll).not.toHaveBeenCalled();
+  // A portrait iPad keyboard can occupy less than a quarter of the viewport.
+  // Toolbar-only resizing must also leave an already visible field alone.
+  top = 160;
+  fireEvent.focusIn(field);
+  resize(fullHeight - 40);
+  resize(fullHeight);
+  expect(scroll).not.toHaveBeenCalled();
+  vi.stubGlobal("innerHeight", 1200);
+  resize(1200);
+  top = 40;
+  fireEvent.focusIn(field);
+  resize(960);
+  expect(scroll).not.toHaveBeenCalled();
+  resize(1200);
+  expect(scroll).toHaveBeenCalledExactlyOnceWith({
+    top: -76,
+    behavior: "instant",
+  });
+  expect(top).toBe(116);
   keyboardView.unmount();
   vi.unstubAllGlobals();
 });

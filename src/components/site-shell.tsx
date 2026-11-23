@@ -130,7 +130,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
         return;
       }
       fullHeight = Math.max(fullHeight, viewport.height);
-      const reduced = viewport.height < fullHeight * 0.75;
+      // iPad keyboards need not cover 25% of a tall viewport. Track an edited
+      // viewport's contraction/restoration instead; ignore subpixel rounding.
+      // Toolbar restoration is safe too: correct() only reveals hidden fields.
+      const reduced = viewport.height < fullHeight - 1;
       if (reduced && field) keyboardOpen = true;
       if (!reduced && keyboardOpen) {
         keyboardOpen = false;

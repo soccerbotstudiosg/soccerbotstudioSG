@@ -2,17 +2,18 @@
 
 ## Active outcome
 
-Stage PR #116 with merged #115 dependencies. Owner authorized staging, not merging #116. Main dependency merge is 219379179ab66953fa67ca7a8079b1550d71f08a; #115 passed manual staging verification/deployment and received an explicit manual-smoke waiver limited to #115.
+Repair the unresolved physical iPad field visibility issue after keyboard dismissal. SEO, keywords, Studio rewording and performance work are on hold at the owner's request. Preserve the unpushed privacy-table formatting change on `fix/privacy-table-layout`, based on main `896abd1`.
 
 ## Candidate and evidence
 
-PR #116 contains booking-code copy, public SEO/audit corrections, Contact address/hours and standard Send enquiry styling. Studio rewording remains deferred. Previous head 64f004f passed CI; incorporation of #115 requires new exact-head CI and actual staging deployment/health. The dependency merge changes no application payment/recovery logic. Documentation conflicts were reconciled while preserving both histories. Shared test repairs merged unchanged. Local baseline node_modules is preserved; upgraded dependency execution belongs to CI.
+`SiteShell` previously detected a keyboard only when the viewport lost more than 25% of its height. A focused regression with a 1200px viewport shrinking to 960px reproduced a hidden field with no correction. Tracking contraction/restoration with a one-pixel rounding tolerance repairs that case; correction still requires a connected edited field hidden above the sticky navigation and respects zoom/orientation and intentional scrolling boundaries. The existing component test now covers the smaller contraction and visible-field toolbar restoration without changing test titles or inventories.
+
+Both site-shell component tests, source integrity, focused ESLint and Prettier passed using the preserved local baseline toolchain. This is simulated evidence, not a physical iPad fix confirmation. Owner reports production smoke testing of PR #116 passed; this local change and the privacy table are not deployed. The owner closed the staging-settings investigation; its original failed receipt remains in Journey without assigning an unproven cause.
 
 ## Next actions
 
-- Publish the combined candidate, mark #116 ready, and inspect all required gates and automatic staging health for the exact head.
-- Obtain owner acceptance and explicit merge authorization after staging. The #115 smoke waiver does not apply to #116.
-- GSC/GA4, live redirects, Lighthouse and deferred marketing copy remain separate.
+- Owner authorized consolidation and staging on 23 November. Publish the combined candidate with full exact-head CI and verify actual staging deployment/health; owner verifies keyboard dismissal on actual iPad code/email, booking and enquiry fields.
+- Preserve the local privacy-table formatting while SEO and copy work remain on hold.
 
 ## Ordered work after this slice
 
