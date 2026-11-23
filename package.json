@@ -29,7 +29,7 @@
     "test:load:overload": "node scripts/run-load.mjs --overload"
   },
   "dependencies": {
-    "libphonenumber-js": "1.13.16",
+    "libphonenumber-js": "1.13.17",
     "next": "16.4.6",
     "react": "19.3.1",
     "react-dom": "19.3.1",
@@ -40,7 +40,7 @@
     "@tailwindcss/postcss": "4.3.5",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
-    "@testing-library/user-event": "14.6.10",
+    "@testing-library/user-event": "14.6.13",
     "@types/node": "24.19.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
@@ -50,11 +50,11 @@
     "eslint-config-next": "16.4.6",
     "jsdom": "30.1.1",
     "miniflare": "5.20261023.0-beta",
-    "postcss": "8.5.32",
+    "postcss": "8.5.33",
     "prettier": "3.10.1",
     "tailwindcss": "4.3.5",
     "typescript": "6.0.3",
-    "vitest": "5.1.0",
+    "vitest": "5.1.1",
     "wrangler": "4.153.0",
     "yaml": "2.9.1"
   },

@@ -1841,7 +1841,11 @@ test("scheduled display warming survives idle entry and booking refresh never de
       "minute cron cannot repeat the fifteen-minute warm-up",
     );
     // Retain the booking's month even if the fixture crosses a month boundary.
-    await m.mf.dispatchFetch(m.origin + "/api/calendar/" + m.date.slice(0, 7));
+    const bookingMonthResponse = await m.mf.dispatchFetch(
+      m.origin + "/api/calendar/" + m.date.slice(0, 7),
+    );
+    assert.equal(bookingMonthResponse.status, 200);
+    const bookingMonth = await bookingMonthResponse.json();
     const c = await customer(m);
     const response = await m.mf.dispatchFetch(
       m.origin + `/api/booking/checkout/${c.input.key}`,
@@ -1894,7 +1898,11 @@ test("scheduled display warming survives idle entry and booking refresh never de
       readsAfterCheckout,
       "another calendar visit serves the edited snapshot without rebuilding the month",
     );
-    assert.equal(updatedCalendar.observedAtMs, calendar.observedAtMs);
+    assert.equal(updatedCalendar.observedAtMs, bookingMonth.observedAtMs);
+    assert.equal(
+      updatedCalendar.displayExpiresAtMs,
+      bookingMonth.displayExpiresAtMs,
+    );
     assert.deepEqual(m.unexpected, []);
   } finally {
     await m.close();
@@ -1943,10 +1951,14 @@ test("warming reuses fresh customer range reads while prebuilding the other two 
     assert.equal(warmedFuture.status, 200);
     const future = await warmedFuture.json();
     assert.ok(future.dates.length > 0);
-    assert.ok(future.dates.every((day) => day.offers.length === 0));
+    const bookingInFutureMonth = m.date.startsWith(future.month);
+    const offeredDates = future.dates
+      .filter((day) => day.offers.length > 0)
+      .map((day) => day.date);
+    assert.deepEqual(offeredDates, bookingInFutureMonth ? [m.date] : []);
     assert.deepEqual(warmedCoverage[1], {
       month: future.month,
-      state: "empty",
+      state: bookingInFutureMonth ? "available" : "empty",
       observedAtMs: future.observedAtMs,
       displayExpiresAtMs: future.displayExpiresAtMs,
     });
