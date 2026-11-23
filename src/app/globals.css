@@ -564,14 +564,6 @@
     box-shadow: none;
     transform: none;
   }
-  .enquiry-page .booking-primary-action > .button:not(:disabled) {
-    background: var(--color-logo-blue);
-    border-color: var(--color-logo-blue);
-    color: var(--color-navy);
-  }
-  .enquiry-page .booking-primary-action > .button::before {
-    display: none;
-  }
   .button.secondary {
     color: var(--color-action);
     background: var(--color-surface);

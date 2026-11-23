@@ -10,11 +10,17 @@ The owner accepts Home after the narrow expiry display/poll timing race, includi
 
 Public metadata/canonicals, sitemap/robots, business structured data and the refund alias redirect are consolidated with the existing copy-button change. Production and staging export checks and previous focused/full non-browser checks passed before publication; reuse unchanged evidence. Unused-code audit found no safe pre-existing runtime/asset deletion. Unknown node_modules symlinks are preserved.
 
+## Audit follow-up for publication
+
+Owner approved publishing Doraemon's SEO corrections with the local Contact changes on #116. Address and shared daily hours appear above the enquiry form, while the acknowledgement retains its position beneath the heading. Send enquiry inherits the standard Continue-button styling. Studio marketing rewording remains deferred.
+
+Public social and structured-data artwork now resolve to production-root URLs in every build, correcting the inherited production-host/demo-path mismatch. Metadata descriptions and structured data derive hours from shared constants. Export guards check complete robots policy, social metadata and exact opening days; the button assertion checks that its gradient is displayed. All 54 tooling tests and static checks passed; three enquiry tests passed for the retained Contact changes. Actual production-root, staging-root and demo-subpath builds/export checks passed. Exact-head CI remains required before acceptance.
+
 ## Next actions
 
-- PR #115 at f1fd818 passed all three required gates in run 45114863922. PR #116 at c2d293e passed master regression, Worker groups and live-email browser shards, but run 45114863987 failed frontend/backend browser checks on obsolete homepage metadata assertions. The subsequent ac2c065 run 45119353558 passed backend/live-email gates but frontend failed because the image expectation incorrectly omitted the subpath used by that build. Restore the deployment-aware image expectation while retaining the production page canonical, then inspect new exact-head CI. Original failures remain evidence; staging and merge remain pending.
-- Keep dependency acceptance and customer browser support distinct. PR #115 uses Node 24.19.0; optional wasm32 prerelease transitive packages are outside verified native Linux coverage.
-- Stage the final candidates through the required procedure and obtain owner acceptance before any separately authorized merge. SEO/GA4/GSC setup, live host redirect inspection and measured Lighthouse scores remain separate.
+- PR #115 at f1fd818 passed all required gates in run 45114863922. The previous #116 head e817e26 passed all required gates in run 45122514350; the new audit follow-up requires its own CI. Earlier failures are retained in Journey.
+- Publish this consolidated batch on #116, inspect exact-head CI, and follow staging/owner acceptance before any separately authorized merge. No merge or deployment is authorized here.
+- Keep dependency acceptance distinct from unverified optional WASM platforms. GSC/GA4, live redirects, Lighthouse and physical/visual acceptance remain separate.
 
 ## Ordered work after this slice
 

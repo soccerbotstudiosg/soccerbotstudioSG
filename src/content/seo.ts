@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import productionTarget from "../../deployment/production.json";
+import { OPENING_MINUTE, CLOSING_MINUTE } from "@/domain/booking-policy";
+import { clock, openingTime } from "@/domain/dates";
 import { CONTACT, LOCATION } from "@/domain/catalog";
 import { logo, socialPreview } from "./media";
 import { siteBasePath } from "./site-path";
@@ -9,6 +11,7 @@ export const publicIndexing =
   process.env.RELEASE_TARGET === "production" &&
   process.env.NEXT_PUBLIC_BOOKING_MODE === "live" &&
   siteBasePath === "";
+const openingWindow = `${openingTime(OPENING_MINUTE)}–${openingTime(CLOSING_MINUTE)}`;
 export const publicPages = {
   "/": {
     title: socialPreview.title,
@@ -16,13 +19,11 @@ export const publicPages = {
   },
   "/studio/": {
     title: "Media Pitch Studio at Henderson | SoccerBotStudio Singapore",
-    description:
-      "Explore our SoccerBot360 media pitch studio at Apex @ Henderson, Singapore. Performance, interactive football experiences and production. Open daily, 12–8 pm.",
+    description: `Explore our SoccerBot360 media pitch studio at Apex @ Henderson, Singapore. Performance, interactive football experiences and production. Open daily, ${openingWindow}.`,
   },
   "/enquiry/": {
     title: "Contact SoccerBotStudio Singapore",
-    description:
-      "Contact SoccerBotStudio Singapore for session enquiries, group visits, events and production bookings. Find us at Apex @ Henderson, daily from 12–8 pm.",
+    description: `Contact SoccerBotStudio Singapore for session enquiries, group visits, events and production bookings. Find us at Apex @ Henderson, daily from ${openingWindow}.`,
   },
   "/terms-of-service/": {
     title: "Terms and Conditions | SoccerBotStudio Singapore",
@@ -38,6 +39,14 @@ export const publicPages = {
 /** Build an absolute canonical on the production domain, without tracking parameters. */
 export function canonicalUrl(path: string) {
   return new URL(path, productionTarget.origin).href;
+}
+/** Resolve shared public artwork on production without the demo deployment prefix. */
+export function productionAssetUrl(path: string) {
+  const assetPath =
+    siteBasePath && path.startsWith(`${siteBasePath}/`)
+      ? path.slice(siteBasePath.length)
+      : path;
+  return canonicalUrl(assetPath);
 }
 /** Give each public page its own search and social identity. */
 export function publicMetadata(path: keyof typeof publicPages): Metadata {
@@ -56,7 +65,7 @@ export function publicMetadata(path: keyof typeof publicPages): Metadata {
       url: canonicalUrl(path),
       images: [
         {
-          url: canonicalUrl(socialPreview.src),
+          url: productionAssetUrl(socialPreview.src),
           width: socialPreview.width,
           height: socialPreview.height,
           alt: socialPreview.alt,
@@ -68,7 +77,7 @@ export function publicMetadata(path: keyof typeof publicPages): Metadata {
       title,
       description,
       images: [
-        { url: canonicalUrl(socialPreview.src), alt: socialPreview.alt },
+        { url: productionAssetUrl(socialPreview.src), alt: socialPreview.alt },
       ],
     },
   };
@@ -82,8 +91,8 @@ export const studioStructuredData = {
   url: canonicalUrl("/"),
   description: publicPages["/"].description,
   slogan: "Performance • Experience • Production",
-  logo: canonicalUrl(logo),
-  image: canonicalUrl(socialPreview.src),
+  logo: productionAssetUrl(logo),
+  image: productionAssetUrl(socialPreview.src),
   telephone: CONTACT.phone,
   email: CONTACT.email,
   sameAs: [CONTACT.instagram],
@@ -107,8 +116,8 @@ export const studioStructuredData = {
         "Sunday",
         "PublicHolidays",
       ],
-      opens: "12:00",
-      closes: "20:00",
+      opens: clock(OPENING_MINUTE),
+      closes: clock(CLOSING_MINUTE),
     },
   ],
 };

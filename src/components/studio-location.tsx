@@ -2,18 +2,13 @@
 import { useState } from "react";
 import { ADDRESS, LOCATION } from "@/domain/catalog";
 import { CLOSING_MINUTE, OPENING_MINUTE } from "@/domain/booking-policy";
+import { openingTime } from "@/domain/dates";
 import { StudioDirections } from "./studio-directions";
 import { Dialog } from "./dialog";
 import { Icon } from "./icon";
 const mapQuery = encodeURIComponent(
   `${LOCATION.building}, ${LOCATION.street}, ${LOCATION.postal}`,
 );
-/** Format the shared daily opening window for the location popup. */
-function openingTime(minutes: number) {
-  const hour = Math.floor(minutes / 60);
-  const remainder = minutes % 60;
-  return `${hour % 12 || 12}${remainder ? `:${String(remainder).padStart(2, "0")}` : ""}${hour >= 12 ? "pm" : "am"}`;
-}
 /** Present the studio address and on-demand location dialog. */
 export function StudioLocation() {
   const [open, setOpen] = useState(false);

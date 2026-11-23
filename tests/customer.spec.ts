@@ -1815,10 +1815,21 @@ test("enquiry remains available without external submission or a mock assistant"
     0,
   );
   await expect(enquiryAction).toBeEnabled();
-  await expect(enquiryAction).toHaveCSS(
-    "background-color",
-    "rgb(70, 172, 220)",
-  );
+  await expect(enquiryAction).toHaveCSS("background-color", "rgb(5, 10, 47)");
+  await expect(enquiryAction).toHaveCSS("color", "rgb(255, 255, 255)");
+  const enquiryGradient = await enquiryAction.evaluate((node) => {
+    const style = getComputedStyle(node, "::before");
+    return {
+      image: style.backgroundImage,
+      display: style.display,
+      content: style.content,
+      visibility: style.visibility,
+    };
+  });
+  expect(enquiryGradient.image).toContain("linear-gradient");
+  expect(enquiryGradient.display).not.toBe("none");
+  expect(enquiryGradient.content).toBe('""');
+  expect(enquiryGradient.visibility).toBe("visible");
   await page.getByLabel("Your requirements").focus();
   await page.getByLabel("Your requirements").blur();
   await expect(page.locator("#enquiry-message-error")).toHaveText(
@@ -2616,10 +2627,7 @@ test("first visit offers the Player App with only store links and dismissal pers
   );
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",
-    new URL(
-      sitePath("/assets/soccerbot-social-preview.jpg"),
-      "https://soccerbotsg.com",
-    ).href,
+    "https://soccerbotsg.com/assets/soccerbot-social-preview.jpg",
   );
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
     "content",
