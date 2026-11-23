@@ -18,7 +18,7 @@ Versions configured on this branch, generated from the manifests and lockfile. T
 | @tailwindcss/postcss        | 4.3.5             |
 | @testing-library/jest-dom   | 7.0.1             |
 | @testing-library/react      | 16.3.3            |
-| @testing-library/user-event | 14.6.10           |
+| @testing-library/user-event | 14.6.13           |
 | @types/node                 | 24.19.1           |
 | @types/react                | 19.3.0            |
 | @types/react-dom            | 19.3.0            |
@@ -27,16 +27,16 @@ Versions configured on this branch, generated from the manifests and lockfile. T
 | eslint                      | 9.39.5            |
 | eslint-config-next          | 16.4.6            |
 | jsdom                       | 30.1.1            |
-| libphonenumber-js           | 1.13.16           |
+| libphonenumber-js           | 1.13.17           |
 | miniflare                   | 5.20261023.0-beta |
 | next                        | 16.4.6            |
-| postcss                     | 8.5.32            |
+| postcss                     | 8.5.33            |
 | prettier                    | 3.10.1            |
 | react                       | 19.3.1            |
 | react-dom                   | 19.3.1            |
 | tailwindcss                 | 4.3.5             |
 | typescript                  | 6.0.3             |
-| vitest                      | 5.1.0             |
+| vitest                      | 5.1.1             |
 | wrangler                    | 4.153.0           |
 | yaml                        | 2.9.1             |
 | zod                         | 4.6.7             |
@@ -46,7 +46,7 @@ Versions configured on this branch, generated from the manifests and lockfile. T
 Includes transitive dependencies and optional platform packages. A locked package is not necessarily installed on every platform or included in the deployed application. Paths distinguish multiple versions of the same package.
 
 <details>
-<summary>All 604 locked package entries</summary>
+<summary>All 608 locked package entries</summary>
 
 | Lockfile path                                                                     | Version           | Development | Optional |
 | --------------------------------------------------------------------------------- | ----------------- | ----------- | -------- |
@@ -170,7 +170,7 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/@jridgewell/resolve-uri                                              | 3.1.2             | yes         | no       |
 | node_modules/@jridgewell/sourcemap-codec                                          | 1.6.0             | yes         | no       |
 | node_modules/@jridgewell/trace-mapping                                            | 0.3.31            | yes         | no       |
-| node_modules/@napi-rs/wasm-runtime                                                | 1.2.4             | yes         | yes      |
+| node_modules/@napi-rs/wasm-runtime                                                | 1.2.6             | yes         | yes      |
 | node_modules/@next/env                                                            | 16.4.6            | no          | no       |
 | node_modules/@next/eslint-plugin-next                                             | 16.4.6            | yes         | no       |
 | node_modules/@next/eslint-plugin-next/node_modules/@eslint-community/eslint-utils | 4.9.1             | yes         | no       |
@@ -193,22 +193,26 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/@poppinss/dumper                                                     | 0.6.5             | yes         | no       |
 | node_modules/@poppinss/dumper/node_modules/supports-color                         | 10.2.2            | yes         | no       |
 | node_modules/@poppinss/exception                                                  | 1.2.3             | yes         | no       |
-| node_modules/@rolldown/binding-android-arm-eabi                                   | 1.2.16            | yes         | yes      |
-| node_modules/@rolldown/binding-android-arm64                                      | 1.2.16            | yes         | yes      |
-| node_modules/@rolldown/binding-darwin-arm64                                       | 1.2.16            | yes         | yes      |
-| node_modules/@rolldown/binding-darwin-x64                                         | 1.2.16            | yes         | yes      |
-| node_modules/@rolldown/binding-freebsd-x64                                        | 1.2.16            | yes         | yes      |
-| node_modules/@rolldown/binding-linux-arm-gnueabihf                                | 1.2.16            | yes         | yes      |
-| node_modules/@rolldown/binding-linux-arm64-gnu                                    | 1.2.16            | yes         | yes      |
-| node_modules/@rolldown/binding-linux-arm64-musl                                   | 1.2.16            | yes         | yes      |
-| node_modules/@rolldown/binding-linux-ppc64-gnu                                    | 1.2.16            | yes         | yes      |
-| node_modules/@rolldown/binding-linux-s390x-gnu                                    | 1.2.16            | yes         | yes      |
-| node_modules/@rolldown/binding-linux-x64-gnu                                      | 1.2.16            | yes         | yes      |
-| node_modules/@rolldown/binding-linux-x64-musl                                     | 1.2.16            | yes         | yes      |
-| node_modules/@rolldown/binding-openharmony-arm64                                  | 1.2.16            | yes         | yes      |
-| node_modules/@rolldown/binding-win32-arm64-msvc                                   | 1.2.16            | yes         | yes      |
-| node_modules/@rolldown/binding-win32-x64-msvc                                     | 1.2.16            | yes         | yes      |
-| node_modules/@rolldown/pluginutils                                                | 1.0.1             | yes         | no       |
+| node_modules/@rolldown/binding-android-arm-eabi                                   | 1.2.19            | yes         | yes      |
+| node_modules/@rolldown/binding-android-arm64                                      | 1.2.19            | yes         | yes      |
+| node_modules/@rolldown/binding-darwin-arm64                                       | 1.2.19            | yes         | yes      |
+| node_modules/@rolldown/binding-darwin-x64                                         | 1.2.19            | yes         | yes      |
+| node_modules/@rolldown/binding-freebsd-x64                                        | 1.2.19            | yes         | yes      |
+| node_modules/@rolldown/binding-linux-arm-gnueabihf                                | 1.2.19            | yes         | yes      |
+| node_modules/@rolldown/binding-linux-arm64-gnu                                    | 1.2.19            | yes         | yes      |
+| node_modules/@rolldown/binding-linux-arm64-musl                                   | 1.2.19            | yes         | yes      |
+| node_modules/@rolldown/binding-linux-ppc64-gnu                                    | 1.2.19            | yes         | yes      |
+| node_modules/@rolldown/binding-linux-s390x-gnu                                    | 1.2.19            | yes         | yes      |
+| node_modules/@rolldown/binding-linux-x64-gnu                                      | 1.2.19            | yes         | yes      |
+| node_modules/@rolldown/binding-linux-x64-musl                                     | 1.2.19            | yes         | yes      |
+| node_modules/@rolldown/binding-openharmony-arm64                                  | 1.2.19            | yes         | yes      |
+| node_modules/@rolldown/binding-wasm32-wasi                                        | 1.2.19            | yes         | yes      |
+| node_modules/@rolldown/binding-wasm32-wasi/node_modules/@emnapi/core              | 2.0.0-beta.2      | yes         | yes      |
+| node_modules/@rolldown/binding-wasm32-wasi/node_modules/@emnapi/runtime           | 2.0.0-beta.2      | yes         | yes      |
+| node_modules/@rolldown/binding-wasm32-wasi/node_modules/@emnapi/wasi-threads      | 2.2.0             | yes         | yes      |
+| node_modules/@rolldown/binding-win32-arm64-msvc                                   | 1.2.19            | yes         | yes      |
+| node_modules/@rolldown/binding-win32-x64-msvc                                     | 1.2.19            | yes         | yes      |
+| node_modules/@rolldown/pluginutils                                                | 1.1.1             | yes         | no       |
 | node_modules/@rtsao/scc                                                           | 1.1.0             | yes         | no       |
 | node_modules/@sindresorhus/is                                                     | 7.2.0             | yes         | no       |
 | node_modules/@speed-highlight/core                                                | 1.2.24            | yes         | no       |
@@ -239,7 +243,7 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/@testing-library/jest-dom                                            | 7.0.1             | yes         | no       |
 | node_modules/@testing-library/jest-dom/node_modules/dom-accessibility-api         | 0.6.3             | yes         | no       |
 | node_modules/@testing-library/react                                               | 16.3.3            | yes         | no       |
-| node_modules/@testing-library/user-event                                          | 14.6.10           | yes         | no       |
+| node_modules/@testing-library/user-event                                          | 14.6.13           | yes         | no       |
 | node_modules/@tybys/wasm-util                                                     | 0.10.4            | yes         | yes      |
 | node_modules/@types/aria-query                                                    | 5.0.4             | yes         | no       |
 | node_modules/@types/chai                                                          | 5.2.3             | yes         | no       |
@@ -288,8 +292,8 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/@unrs/resolver-binding-win32-arm64-msvc                              | 1.12.2            | yes         | yes      |
 | node_modules/@unrs/resolver-binding-win32-ia32-msvc                               | 1.12.2            | yes         | yes      |
 | node_modules/@unrs/resolver-binding-win32-x64-msvc                                | 1.12.2            | yes         | yes      |
-| node_modules/@vitest/mocker                                                       | 5.1.0             | yes         | no       |
-| node_modules/@vitest/spy                                                          | 5.1.0             | yes         | no       |
+| node_modules/@vitest/mocker                                                       | 5.1.1             | yes         | no       |
+| node_modules/@vitest/spy                                                          | 5.1.1             | yes         | no       |
 | node_modules/acorn                                                                | 8.18.0            | yes         | no       |
 | node_modules/acorn-jsx                                                            | 5.3.2             | yes         | no       |
 | node_modules/ajv                                                                  | 6.15.0            | yes         | no       |
@@ -481,7 +485,7 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/language-subtag-registry                                             | 0.3.23            | yes         | no       |
 | node_modules/language-tags                                                        | 1.0.9             | yes         | no       |
 | node_modules/levn                                                                 | 0.4.1             | yes         | no       |
-| node_modules/libphonenumber-js                                                    | 1.13.16           | no          | no       |
+| node_modules/libphonenumber-js                                                    | 1.13.17           | no          | no       |
 | node_modules/lightningcss                                                         | 1.33.0            | yes         | no       |
 | node_modules/lightningcss-android-arm64                                           | 1.33.0            | yes         | yes      |
 | node_modules/lightningcss-darwin-arm64                                            | 1.33.0            | yes         | yes      |
@@ -543,7 +547,7 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/playwright                                                           | 1.64.1            | no          | no       |
 | node_modules/playwright-core                                                      | 1.64.1            | no          | no       |
 | node_modules/possible-typed-array-names                                           | 1.1.0             | yes         | no       |
-| node_modules/postcss                                                              | 8.5.32            | yes         | no       |
+| node_modules/postcss                                                              | 8.5.33            | yes         | no       |
 | node_modules/prelude-ls                                                           | 1.2.1             | yes         | no       |
 | node_modules/prettier                                                             | 3.10.1            | yes         | no       |
 | node_modules/pretty-format                                                        | 27.5.1            | yes         | no       |
@@ -563,7 +567,7 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/resolve-from                                                         | 4.0.0             | yes         | no       |
 | node_modules/resolve-pkg-maps                                                     | 1.0.0             | yes         | no       |
 | node_modules/reusify                                                              | 1.1.0             | yes         | no       |
-| node_modules/rolldown                                                             | 1.2.16            | yes         | no       |
+| node_modules/rolldown                                                             | 1.2.19            | yes         | no       |
 | node_modules/run-parallel                                                         | 1.2.0             | yes         | no       |
 | node_modules/safe-array-concat                                                    | 1.1.4             | yes         | no       |
 | node_modules/safe-push-apply                                                      | 1.0.0             | yes         | no       |
@@ -627,9 +631,9 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/unrs-resolver                                                        | 1.12.2            | yes         | no       |
 | node_modules/update-browserslist-db                                               | 1.3.3             | yes         | no       |
 | node_modules/uri-js                                                               | 4.4.1             | yes         | no       |
-| node_modules/vite                                                                 | 8.3.6             | yes         | no       |
+| node_modules/vite                                                                 | 8.3.8             | yes         | no       |
 | node_modules/vite/node_modules/picomatch                                          | 4.0.7             | yes         | no       |
-| node_modules/vitest                                                               | 5.1.0             | yes         | no       |
+| node_modules/vitest                                                               | 5.1.1             | yes         | no       |
 | node_modules/vitest/node_modules/picomatch                                        | 4.0.7             | yes         | no       |
 | node_modules/w3c-xmlserializer                                                    | 6.0.0             | yes         | no       |
 | node_modules/webidl-conversions                                                   | 8.0.1             | yes         | no       |

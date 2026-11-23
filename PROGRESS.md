@@ -2,25 +2,17 @@
 
 ## Active outcome
 
-Owner authorized consolidating and publishing local work into the existing PRs. PR #116 owns booking-code copy, public SEO and shared regression repairs. PR #115 remains the separate routine dependency update with the same shared repairs and its dependency assessment. No merge or deployment is authorized by this cleanup.
+Stage PR #116 with merged #115 dependencies. Owner authorized staging, not merging #116. Main dependency merge is 219379179ab66953fa67ca7a8079b1550d71f08a; #115 passed manual staging verification/deployment and received an explicit manual-smoke waiver limited to #115.
 
-## Current scope and evidence
+## Candidate and evidence
 
-The owner accepts Home after the narrow expiry display/poll timing race, including no red notice on Calendar re-entry. Recorded synthetic Home → Book now enforced the old expiry and opened a distinct checkout. Recovery application code is unchanged. The master test now follows both accepted paths and retains the financial, conflict and replacement-checkout assertions. Calendar warming tests no longer assume the fixture stays in the current month; both repaired cases passed locally. See Journey for preserved original failures and recorded diagnostics.
-
-Public metadata/canonicals, sitemap/robots, business structured data and the refund alias redirect are consolidated with the existing copy-button change. Production and staging export checks and previous focused/full non-browser checks passed before publication; reuse unchanged evidence. Unused-code audit found no safe pre-existing runtime/asset deletion. Unknown node_modules symlinks are preserved.
-
-## Audit follow-up for publication
-
-Owner approved publishing Doraemon's SEO corrections with the local Contact changes on #116. Address and shared daily hours appear above the enquiry form, while the acknowledgement retains its position beneath the heading. Send enquiry inherits the standard Continue-button styling. Studio marketing rewording remains deferred.
-
-Public social and structured-data artwork now resolve to production-root URLs in every build, correcting the inherited production-host/demo-path mismatch. Metadata descriptions and structured data derive hours from shared constants. Export guards check complete robots policy, social metadata and exact opening days; the button assertion checks that its gradient is displayed. All 54 tooling tests and static checks passed; three enquiry tests passed for the retained Contact changes. Actual production-root, staging-root and demo-subpath builds/export checks passed. Exact-head CI remains required before acceptance.
+PR #116 contains booking-code copy, public SEO/audit corrections, Contact address/hours and standard Send enquiry styling. Studio rewording remains deferred. Previous head 64f004f passed CI; incorporation of #115 requires new exact-head CI and actual staging deployment/health. The dependency merge changes no application payment/recovery logic. Documentation conflicts were reconciled while preserving both histories. Shared test repairs merged unchanged. Local baseline node_modules is preserved; upgraded dependency execution belongs to CI.
 
 ## Next actions
 
-- PR #115 at f1fd818 passed all required gates in run 45114863922. The previous #116 head e817e26 passed all required gates in run 45122514350; the new audit follow-up requires its own CI. Earlier failures are retained in Journey.
-- Publish this consolidated batch on #116, inspect exact-head CI, and follow staging/owner acceptance before any separately authorized merge. No merge or deployment is authorized here.
-- Keep dependency acceptance distinct from unverified optional WASM platforms. GSC/GA4, live redirects, Lighthouse and physical/visual acceptance remain separate.
+- Publish the combined candidate, mark #116 ready, and inspect all required gates and automatic staging health for the exact head.
+- Obtain owner acceptance and explicit merge authorization after staging. The #115 smoke waiver does not apply to #116.
+- GSC/GA4, live redirects, Lighthouse and deferred marketing copy remain separate.
 
 ## Ordered work after this slice
 
