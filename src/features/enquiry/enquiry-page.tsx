@@ -8,8 +8,9 @@ import { EMAIL_MAX_LENGTH } from "@/domain/contact";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Icon } from "@/components/icon";
-import { ENQUIRY_TYPES } from "@/domain/catalog";
-import { todaySG } from "@/domain/dates";
+import { OPENING_MINUTE, CLOSING_MINUTE } from "@/domain/booking-policy";
+import { ADDRESS, ENQUIRY_TYPES } from "@/domain/catalog";
+import { openingTime, todaySG } from "@/domain/dates";
 import { services } from "@/services";
 import { customerMessage, type Enquiry } from "@/services/contracts";
 const blank: Enquiry = {
@@ -161,6 +162,13 @@ export function EnquiryPage() {
             : "Preview · No enquiry sent."}
         </div>
       )}
+      <div className="mt-5 space-y-2">
+        <address className="not-italic font-semibold">{ADDRESS}</address>
+        <p>
+          Open daily · {openingTime(OPENING_MINUTE)}–
+          {openingTime(CLOSING_MINUTE)}
+        </p>
+      </div>
       <form
         className="surface mt-8 enquiry-form"
         aria-busy={!ready || busy}

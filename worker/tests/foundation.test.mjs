@@ -273,6 +273,19 @@ test("production static entry serves only its canonical HTTPS origin and safe me
     assert.deepEqual(JSON.parse(result.body), { error: "origin_denied" });
     assert.deepEqual(result.queries, []);
   }
+  for (const path of [
+    "/refund-policy",
+    "/refund-policy/",
+    "/refund-policy/index.html",
+  ]) {
+    const redirect = await call({ path, vars });
+    assert.equal(redirect.status, 308);
+    assert.equal(
+      redirect.headers.location,
+      "https://soccerbot.test/terms-of-service/",
+    );
+    assert.deepEqual(redirect.queries, []);
+  }
   const post = await call({ path: "/", method: "POST", vars });
   assert.equal(post.status, 405);
   assert.deepEqual(post.queries, []);

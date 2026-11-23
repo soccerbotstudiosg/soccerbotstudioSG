@@ -5,6 +5,7 @@ import { PageRefreshBoundary } from "@/components/page-refresh";
 import { documentNavigationScript } from "@/components/document-navigation";
 import { SiteShell } from "@/components/site-shell";
 import { sitePath } from "@/content/site-path";
+import { productionAssetUrl } from "@/content/seo";
 import { socialPreview } from "@/content/media";
 import productionTarget from "../../deployment/production.json";
 import "./globals.css";
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
     description: shareDescription,
     images: [
       {
-        url: shareImage.src,
+        url: productionAssetUrl(shareImage.src),
         type: "image/jpeg",
         width: shareImage.width,
         height: shareImage.height,
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: shareTitle,
     description: shareDescription,
-    images: [{ url: shareImage.src, alt: shareImage.alt }],
+    images: [{ url: productionAssetUrl(shareImage.src), alt: shareImage.alt }],
   },
   title: {
     default: "Book Now | SOCCERBOTSTUDIO Singapore",

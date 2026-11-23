@@ -126,6 +126,46 @@ test("confirmed booking copies a formatted paid summary and reports clipboard fa
     ].join("\n"),
   );
   expect(message).not.toContain("synthetic-confirmation");
+  // Codes follow original receipt indices even when sessions are sorted for copy.
+  const multiple: Booking = {
+    ...booking,
+    slots: [booking.slots[0], { ...booking.slots[0], start: "12:00" }],
+    providerReferences: {
+      bookingIds: ["internal-late", "internal-early"],
+      bookingCodes: ["SBS-LATE", null],
+      invoiceId: "internal-invoice",
+      invoiceNumber: "SI-TEST",
+    },
+  };
+  view.rerender(<BookingConfirmation booking={multiple} onAgain={() => {}} />);
+  await act(async () => {
+    fireEvent.click(button);
+  });
+  const partial = writeText.mock.lastCall![0] as string;
+  expect(partial).toContain("Invoice: SI-TEST");
+  expect(partial.split("Session 2")[0]).not.toContain("Booking code:");
+  expect(partial.split("Session 2")[1]).toContain("Booking code: SBS-LATE");
+  expect(partial).not.toMatch(/internal-|null|undefined/);
+  view.rerender(
+    <BookingConfirmation
+      booking={{
+        ...multiple,
+        providerReferences: {
+          ...multiple.providerReferences!,
+          bookingCodes: ["SBS-LATE", "SBS-EARLY"],
+        },
+      }}
+      onAgain={() => {}}
+    />,
+  );
+  await act(async () => {
+    fireEvent.click(button);
+  });
+  const updated = writeText.mock.lastCall![0] as string;
+  expect(updated.split("Session 2")[0]).toContain("Booking code: SBS-EARLY");
+  expect(updated.split("Session 2")[1]).toContain("Booking code: SBS-LATE");
+  view.rerender(<BookingConfirmation booking={booking} onAgain={() => {}} />);
+
   await act(async () => {
     vi.advanceTimersByTime(2999);
   });

@@ -16,6 +16,10 @@ test("enquiry waits for hydration then preserves entered details through submiss
     renderToString(<EnquiryPage />),
     "text/html",
   );
+  expect(markup.querySelector("address")?.textContent).toBe(
+    "201 Henderson Road, #05-01 Apex @ Henderson, Singapore 159545",
+  );
+  expect(markup.body.textContent).toContain("Open daily · 12pm–8pm");
   container.append(...markup.body.childNodes);
   document.body.append(container);
   const name = screen.getByLabelText("Full name", { exact: false });

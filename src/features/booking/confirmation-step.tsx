@@ -24,16 +24,21 @@ function bookingConfirmationMessage(booking: Booking) {
       ? [`Invoice: ${booking.providerReferences.invoiceNumber}`]
       : []),
     "",
-    ...orderedSlots(booking.slots).flatMap((slot, index) => [
-      ...(booking.slots.length > 1 ? [`Session ${index + 1}`] : []),
-      `Date: ${dateLabel(slot.date)}`,
-      `Time: ${slot.start}–${endTime(slot.start, slot.durationMinutes)} SGT`,
-      ...(slot.native?.serviceName
-        ? [`Session: ${slot.native.serviceName}`]
-        : []),
-      `Trainer: ${sessionInstructorName(slot)}`,
-      "",
-    ]),
+    ...orderedSlots(booking.slots).flatMap((slot, index) => {
+      const code =
+        booking.providerReferences?.bookingCodes?.[booking.slots.indexOf(slot)];
+      return [
+        ...(booking.slots.length > 1 ? [`Session ${index + 1}`] : []),
+        `Date: ${dateLabel(slot.date)}`,
+        `Time: ${slot.start}–${endTime(slot.start, slot.durationMinutes)} SGT`,
+        ...(slot.native?.serviceName
+          ? [`Session: ${slot.native.serviceName}`]
+          : []),
+        `Trainer: ${sessionInstructorName(slot)}`,
+        ...(code ? [`Booking code: ${code}`] : []),
+        "",
+      ];
+    }),
     `Players: ${booking.draft.players}`,
     "",
     "Location",

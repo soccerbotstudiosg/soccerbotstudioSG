@@ -70,3 +70,10 @@ export function money(cents: number) {
     maximumFractionDigits: 2,
   }).format(cents / 100);
 }
+
+/** Format minutes after midnight as a compact customer-facing opening time. */
+export function openingTime(minutes: number) {
+  const hour = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return `${hour % 12 || 12}${remainder ? `:${String(remainder).padStart(2, "0")}` : ""}${hour >= 12 ? "pm" : "am"}`;
+}

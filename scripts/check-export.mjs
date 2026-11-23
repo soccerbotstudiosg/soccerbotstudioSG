@@ -9,6 +9,7 @@ import { resolve, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createHash } from "node:crypto";
 import { JSDOM } from "jsdom";
+import { checkSeoExport } from "./check-seo.mjs";
 import { parse, walk } from "css-tree";
 import { siteBasePath } from "../src/content/site-path.ts";
 import { documentNavigationScript } from "../src/components/document-navigation.ts";
@@ -161,7 +162,9 @@ export function checkExport(directory, basePath) {
   }
   if (!scripts || !styles || !images || fonts < 4)
     throw new Error("Export is missing scripts, styles, imagery or fonts");
+  const seo = checkSeoExport(root, basePath);
   return {
+    seo,
     basePath,
     routes: required.length,
     scripts,
