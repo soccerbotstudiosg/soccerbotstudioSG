@@ -2388,6 +2388,11 @@ async function guestDetails(
     ...(batch ? [mechanism.startMs + 3600000] : []),
   ];
   await enterSessionDetails(page, mechanism, starts);
+  await fillGuestContact(page);
+}
+
+/** Fill synthetic guest details after either fresh entry or expiry recovery. */
+async function fillGuestContact(page: Page) {
   await page.getByLabel("Full name", { exact: false }).fill("Synthetic Guest");
   await page
     .getByRole("textbox", { name: /^Email address/ })
@@ -5642,10 +5647,30 @@ test("one browser recovers rejected email, unpaid expiry, overlapping tabs and t
       "data-payment-continuation",
       firstId,
     );
-    await expect(alert(page)).toContainText("Your payment window has ended", {
-      timeout: 95000,
-    });
+    // The owner accepts Home when the bounded expiry display wait ends before
+    // a fresh status poll. Re-entry must still enforce release and allow checkout.
+    const expiryDestination = await Promise.race([
+      page
+        .waitForURL("http://127.0.0.1:4173/", { timeout: 95000 })
+        .then(() => "home"),
+      expect(alert(page))
+        .toContainText("Your payment window has ended", { timeout: 95000 })
+        .then(() => "calendar"),
+    ]);
+    if (expiryDestination === "home") {
+      await page
+        .getByRole("banner")
+        .getByRole("link", { name: "Book now", exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: "Continue as guest", exact: true })
+        .click();
+      await page
+        .getByRole("link", { name: "Choose sessions", exact: true })
+        .click();
+    }
     await expect(page).toHaveURL(/\/book\/time\/$/);
+    if (expiryDestination === "home") await expect(alert(page)).toHaveCount(0);
     await expect
       .poll(
         () =>
@@ -5668,6 +5693,7 @@ test("one browser recovers rejected email, unpaid expiry, overlapping tabs and t
       ...winner.starts,
       ...remaining.starts,
     ]);
+    if (expiryDestination === "home") await fillGuestContact(page);
     await expect(
       page.getByRole("textbox", { name: /^Email address/ }),
     ).toHaveValue("synthetic@example.test");
