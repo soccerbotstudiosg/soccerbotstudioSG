@@ -12,7 +12,7 @@ Public metadata/canonicals, sitemap/robots, business structured data and the ref
 
 ## Next actions
 
-- Publish the consolidated candidates and inspect exact-head CI on #115/#116. The original failed runs remain evidence; a diagnostic continuation is not a passing original master run.
+- PR #115 at f1fd818 passed all three required gates in run 45114863922. PR #116 at c2d293e passed master regression, Worker groups and live-email browser shards, but run 45114863987 failed frontend/backend browser checks on obsolete homepage metadata assertions. Correct those assertions, including raw HTML escaping and production social URLs, then inspect new exact-head CI. Original failures remain evidence; staging and merge remain pending.
 - Keep dependency acceptance and customer browser support distinct. PR #115 uses Node 24.19.0; optional wasm32 prerelease transitive packages are outside verified native Linux coverage.
 - Stage the final candidates through the required procedure and obtain owner acceptance before any separately authorized merge. SEO/GA4/GSC setup, live host redirect inspection and measured Lighthouse scores remain separate.
 

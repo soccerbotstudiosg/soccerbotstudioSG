@@ -2587,21 +2587,21 @@ test("first visit offers the Player App with only store links and dismissal pers
     name: "Get the Soccerbot360 Player App",
   });
   await expect(page).toHaveTitle(
-    "Interactive Football Experience | SOCCERBOTSTUDIO Singapore",
+    "SoccerBotStudio Singapore | Football & Media Pitch Studio",
   );
   await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute(
     "content",
-    "Interactive Football Experience | SOCCERBOTSTUDIO Singapore",
+    "SoccerBotStudio Singapore | Football & Media Pitch Studio",
   );
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
     "content",
-    new URL(sitePath("/"), "https://soccerbotsg.com").href,
+    "https://soccerbotsg.com/",
   );
   const crawlerPage = await page.request.get(sitePath("/"));
   expect(crawlerPage.ok()).toBe(true);
   const initialHead = (await crawlerPage.text()).split("</head>")[0];
   expect(initialHead).toContain(
-    "<title>Interactive Football Experience | SOCCERBOTSTUDIO Singapore</title>",
+    "<title>SoccerBotStudio Singapore | Football &amp; Media Pitch Studio</title>",
   );
   expect(initialHead).toContain('property="og:title"');
   expect(initialHead).toContain('name="twitter:title"');
@@ -2612,14 +2612,11 @@ test("first visit offers the Player App with only store links and dismissal pers
   expect(previewImage.headers()["content-type"]).toContain("image/jpeg");
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
     "content",
-    "Interactive Football Experience | SOCCERBOTSTUDIO Singapore",
+    "SoccerBotStudio Singapore | Football & Media Pitch Studio",
   );
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",
-    new URL(
-      sitePath("/assets/soccerbot-social-preview.jpg"),
-      "https://soccerbotsg.com",
-    ).href,
+    "https://soccerbotsg.com/assets/soccerbot-social-preview.jpg",
   );
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
     "content",
@@ -2627,7 +2624,7 @@ test("first visit offers the Player App with only store links and dismissal pers
   );
   await expect(page.locator('meta[property="og:description"]')).toHaveAttribute(
     "content",
-    "Discover immersive football games and interactive training at SOCCERBOTSTUDIO Singapore. Performance · Experience · Production.",
+    "Discover SoccerBotStudio Singapore at Henderson—a SoccerBot360 media pitch studio bringing together football performance, interactive experiences and production.",
   );
   await expect(
     page.locator('link[rel="icon"][type="image/svg+xml"]'),
