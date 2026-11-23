@@ -2,20 +2,17 @@
 
 ## Active outcome
 
-Publish the shared booking UI spacing fixes and reconcile release, notification and regression evidence. Current branch: `fix/details-notice-spacing`, based on merged main `8fc342b`. The Calendar no-creation return now displays the existing normal conflict message while retaining its distinct internal recovery state. This slice changes presentation and documentation only; checkout/recovery semantics remain unchanged.
+Include provider booking codes in the final confirmation copy action. Branch `fix/confirmation-copy-booking-code` starts from merged #114 (`d7af7dd`). Preserve session/code pairing when sorting, omit unavailable codes and use later-arriving codes on subsequent copies. Payment/recovery decisions are unchanged.
 
 ## Release and verification state
 
-PRs #110–#113 are merged. PR #112 passed exact-head CI and staging health at `ba8b1e7`; merged main `8fc342b` subsequently passed [production verification](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/44988441426) and [production deployment](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/44989993649). Production deploy logs identify that revision. A later direct health request from this workspace returned HTTP 403, so it supplies no independent current-health evidence.
-
-Owner-authorized recorded Chromium diagnostics used the same application tree as #112 with isolated providers. Quick Back passed its transient-warning assertion. One master run reached Home instead of the expected expiry notice and stopped before attempting a replacement checkout. Subsequent runs returned to Calendar, with full runs reaching later checkouts. The failed Home path followed by Book now and a new checkout was never verified. Its cause remains unresolved; the owner stopped further Home-route testing. Do not resume those repeats without a new request. See [retained evidence](docs/journey.md#22-november-2026--release-reconciliation-and-retained-diagnostic-limits).
+PR #114 merged after exact-head CI and staging health verified `09320ab`. Its production status requires the main release receipt; merge is not deployment evidence. Earlier expiry diagnostic limits remain in [Journey](docs/journey.md#22-november-2026--release-reconciliation-and-retained-diagnostic-limits); owner-stopped Home-route repeats remain stopped.
 
 ## Next actions
 
-- Validate and publish the notice-spacing and trainer focus-clearance candidate as a draft PR. Exact-head CI, staging deployment/health and owner acceptance precede any separately authorized merge.
-- Inspect desktop/mobile trainer focus clearance, stable card height before/after opening the picker, and Details/Review/security/recovery notices on staging. Browser geometry coverage now includes the complete focus outline rather than just the select box.
-- Keep reported physical successes distinct from a completed signed master-regression receipt. No claim of permanent checkout blocking or complete recovery acceptance follows from the stopped Home run.
-- Provider-managed notification templates were configured by the owner; actual delivery/rendering per trigger remains separately verified. A supplied HitPay sandbox refund email is evidence for that test only. Refund workflow and remaining metadata checks are in [provider configuration](docs/external-providers-config.md) and [runbook](docs/runbook.md#refunds-and-customer-notifications).
+- Publish the clipboard change with focused component verification; exact-head CI and staging/owner acceptance precede a separately authorized merge.
+- Keep dependency PR #115 separate: the initial frontend gate stopped at the missing dependency assessment; compatibility review remains pending.
+- SEO audit found site-wide noindex in the shared layout and missing sitemap generation; no SEO/GA4/GSC implementation is included here.
 
 ## Ordered work after this slice
 

@@ -275,3 +275,7 @@ Production SimplyBook services 3 and 4 now have 50 minutes of play and 10 minute
 - Updated repository testing, documentation and deployment skills require precise execution boundaries, separate route/release/new-checkout evidence, classification of fixture and environment failures, and explicit staging/merge authorization. These instruction changes reduce known process risks; they cannot guarantee no recurrence or automatically enforce acceptance.
 
 The owner’s manual reschedule/conflicting-checkout test correctly prevented checkout but showed generic no-creation copy. Calendar now renders the existing normal conflict message for this terminal no-creation notice, including reload. Its internal reason, persistence, release checks and affected-session list remain unchanged; pending/uncertain, email-rejection and predispatch cooldown messages retain their own handling. Existing no-creation route/reload tests assert the shared customer copy.
+
+## 23 November 2026 — confirmation copy booking codes
+
+The confirmation clipboard summary now includes each available provider booking code beside its session, preserving receipt-index association when sorting sessions. Missing codes do not delay copying; a subsequent copy uses later-arriving codes. Invoice display and booking/payment authority are unchanged. The existing clipboard test covers partial codes, reversed session order and late receipt updates.
