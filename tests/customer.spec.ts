@@ -2616,7 +2616,10 @@ test("first visit offers the Player App with only store links and dismissal pers
   );
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",
-    "https://soccerbotsg.com/assets/soccerbot-social-preview.jpg",
+    new URL(
+      sitePath("/assets/soccerbot-social-preview.jpg"),
+      "https://soccerbotsg.com",
+    ).href,
   );
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
     "content",
