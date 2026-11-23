@@ -7,6 +7,7 @@ import { SiteShell, useErrorPage } from "./site-shell";
 const navigation = vi.hoisted(() => ({
   path: "/book/session/yes",
   push: vi.fn(),
+  back: vi.fn(),
 }));
 const booking = vi.hoisted(() => ({
   attempt: null,
@@ -15,7 +16,7 @@ const booking = vi.hoisted(() => ({
 }));
 vi.mock("next/navigation", () => ({
   usePathname: () => navigation.path,
-  useRouter: () => ({ push: navigation.push }),
+  useRouter: () => ({ push: navigation.push, back: navigation.back }),
 }));
 vi.mock("@/features/booking/provider", () => ({ useBooking: () => booking }));
 vi.mock("next/link", () => ({
@@ -40,7 +41,7 @@ function Standalone({ children }: { children: ReactNode }) {
   useErrorPage();
   return children;
 }
-test("nested booking 404 bypasses departure prompts and restores the guard only on valid booking pages", () => {
+test("site navigation preserves public return state, booking guards and keyboard visibility", () => {
   const follow = vi.fn();
   const home = (
     <Link
@@ -216,6 +217,74 @@ test("nested booking 404 bypasses departure prompts and restores the guard only 
   });
   expect(top).toBe(116);
   keyboardView.unmount();
+  vi.unstubAllGlobals();
+  const originalState = window.history.state;
+  window.history.replaceState({}, "");
+  navigation.path = "/studio/";
+  const publicView = render(
+    <SiteShell>
+      <p>Public content</p>
+    </SiteShell>,
+  );
+  navigation.push.mockClear();
+  fireEvent.click(screen.getByRole("link", { name: "Back" }));
+  expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/");
+  for (const route of [
+    "/",
+    "/book/review/",
+    "/confirmation/",
+    "/enquiry/",
+    "/terms-of-service/",
+    "/privacy-policy/",
+  ]) {
+    navigation.path = route;
+    publicView.rerender(
+      <SiteShell>
+        <p>Public content</p>
+      </SiteShell>,
+    );
+    expect(document.querySelectorAll(".site-signature")).toHaveLength(
+      route.startsWith("/book/") || route === "/confirmation/" ? 0 : 1,
+    );
+  }
+  const historyLength = vi
+    .spyOn(window.history, "length", "get")
+    .mockReturnValue(2);
+  fireEvent.click(screen.getByRole("link", { name: "Back" }));
+  expect(navigation.back).toHaveBeenCalledOnce();
+  publicView.unmount();
+  // Reload retains the current entry's return state.
+  const reloadView = render(
+    <SiteShell>
+      <p>Public content</p>
+    </SiteShell>,
+  );
+  fireEvent.click(screen.getByRole("link", { name: "Back" }));
+  expect(navigation.back).toHaveBeenCalledTimes(2);
+  reloadView.unmount();
+  // A noopener legal tab still has a same-origin referrer and a single entry.
+  window.history.replaceState({}, "");
+  historyLength.mockReturnValue(1);
+  const referrer = vi
+    .spyOn(document, "referrer", "get")
+    .mockReturnValue(`${window.location.origin}/book/review/`);
+  const close = vi.spyOn(window, "close").mockImplementation(() => {});
+  vi.stubGlobal("closed", true);
+  const tabView = render(
+    <SiteShell>
+      <p>Public content</p>
+    </SiteShell>,
+  );
+  navigation.push.mockClear();
+  fireEvent.click(screen.getByRole("link", { name: "Back" }));
+  expect(close).toHaveBeenCalledOnce();
+  expect(navigation.push).not.toHaveBeenCalled();
+  expect(navigation.back).toHaveBeenCalledTimes(2);
+  tabView.unmount();
+  close.mockRestore();
+  referrer.mockRestore();
+  historyLength.mockRestore();
+  window.history.replaceState(originalState, "");
   vi.unstubAllGlobals();
 });
 

@@ -1,15 +1,19 @@
 "use client";
+import { Icon } from "@/components/icon";
 import { focusFormError } from "@/components/form-focus";
 import { BookingPrimaryAction } from "@/features/booking/booking-primary-action";
 import { PhoneInput } from "@/features/booking/phone-input";
 import { EnquiryBotProof } from "@/features/booking/email-bot-proof";
 import { enquiryErrors } from "@/domain/enquiry";
 import { EMAIL_MAX_LENGTH } from "@/domain/contact";
-import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Icon } from "@/components/icon";
 import { OPENING_MINUTE, CLOSING_MINUTE } from "@/domain/booking-policy";
-import { ADDRESS, ENQUIRY_TYPES } from "@/domain/catalog";
+import {
+  ADDRESS,
+  CONTACT,
+  BOOKING_SUPPORT,
+  ENQUIRY_TYPES,
+} from "@/domain/catalog";
 import { openingTime, todaySG } from "@/domain/dates";
 import { services } from "@/services";
 import { customerMessage, type Enquiry } from "@/services/contracts";
@@ -143,10 +147,6 @@ export function EnquiryPage() {
   );
   return (
     <div className="enquiry-page mx-auto min-h-[65vh] max-w-4xl px-5 py-10 sm:px-10">
-      <Link className="back mb-8" href="/">
-        <Icon name="back" />
-        Home
-      </Link>
       <div className="booking-heading-row">
         <h1 className="page-title">Contact the studio</h1>
       </div>
@@ -162,12 +162,31 @@ export function EnquiryPage() {
             : "Preview · No enquiry sent."}
         </div>
       )}
-      <div className="mt-5 space-y-2">
+      <div className="enquiry-contact-details">
         <address className="not-italic font-semibold">{ADDRESS}</address>
         <p>
           Open daily · {openingTime(OPENING_MINUTE)}–
           {openingTime(CLOSING_MINUTE)}
         </p>
+        <div className="enquiry-contact-links">
+          <a className="text-link" href={`mailto:${CONTACT.email}`}>
+            {CONTACT.email}
+          </a>
+          <span>
+            <a className="text-link" href={`tel:${CONTACT.phone}`}>
+              {CONTACT.phoneDisplay}
+            </a>{" "}
+            ·{" "}
+            <a
+              className="text-link"
+              href={BOOKING_SUPPORT.whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              WhatsApp
+            </a>
+          </span>
+        </div>
       </div>
       <form
         className="surface mt-8 enquiry-form"

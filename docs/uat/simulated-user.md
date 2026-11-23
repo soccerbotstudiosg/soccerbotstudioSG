@@ -220,6 +220,10 @@ Record the route, visible notice, original attempt, release result and replaceme
 
 ## Device and communication checks
 
+- On Home, Studio, Enquire, Terms and Privacy, scroll to verify the shared slogan stays in the sticky header. Booking/confirmation pages must have none. Mobile Back shows only a chevron with accessible name Back; desktop includes its text.
+- Enter each inner public page directly and press Back to reach Home. Navigate between public pages and return through their history, including after refresh. From Review, open Terms with consent both unchecked and checked; its Back control must close that tab without changing the original Review selections/consent. Verify browser-specific tab-close behaviour on the physical device.
+- On Enquire, verify the email, phone and WhatsApp links above the form alongside address/hours, with no separate grey Home control.
+
 - On an actual iPad, hide the keyboard on code, email, booking and enquiry fields. Check that the edited control remains below the sticky header. Verify date/time hints and native country selection without a search keyboard.
 - Select and change a trainer using touch, pointer and keyboard on desktop and mobile. Measure the card before and after selection, check the price and selected value, and confirm the entire focus outline clears the card border, then remove and clear all.
 - Verify mobile hero height, touch banners, the Studio Back control and the location guide. Check reduced motion, keyboard focus and a single site back-to-top control.

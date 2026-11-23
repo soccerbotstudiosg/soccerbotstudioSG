@@ -68,6 +68,8 @@ The [business rules](business-rules.md#br-008) own read limits and release autho
 
 ## Public pages and enquiry
 
+- Home, Studio, Enquire, Terms and Privacy share a sticky slogan banner. Booking and confirmation routes have no slogan banner. Inner public pages have a Back control (chevron only on mobile): return through same-tab site history, close a single-entry tab opened from this site when the browser allows it, otherwise fall back Home. Review consent links retain a separate tab and the original Review state.
+- Enquire displays email, telephone/WhatsApp, address and hours above the form; its old shaped Home button is removed.
 - Home and Studio use linked photo sections. Touch layouts alternate images and text. Full-page navigation retains the shared loader. The back-to-top control sits at bottom right and disappears at the top.
 - The location popup gives the address, opening hours, lift diagram, food-court directions and Google Maps link. Visitors coming from the food court at #03-18 take the lift to Level 5, turn left and follow the route to #05-01.
 - Enquiry validates after blur or attempted submission. Send enquiry focuses the first invalid field. Live success requires both staff and customer messages to be accepted by the delivery provider. Preview shows its own no-send acknowledgement.

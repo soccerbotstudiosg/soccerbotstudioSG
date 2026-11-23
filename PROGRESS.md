@@ -2,18 +2,20 @@
 
 ## Active outcome
 
-Repair the unresolved physical iPad field visibility issue after keyboard dismissal. SEO, keywords, Studio rewording and performance work are on hold at the owner's request. Preserve the unpushed privacy-table formatting change on `fix/privacy-table-layout`, based on main `896abd1`.
+Extend existing PR #117 with standardized public banners, stateful Back navigation and Enquire contact details. Owner authorized implementation, guard/test review, push and staging; no merge authorization. Broader SEO/keywords/Studio wording remain on hold.
 
 ## Candidate and evidence
 
-`SiteShell` previously detected a keyboard only when the viewport lost more than 25% of its height. A focused regression with a 1200px viewport shrinking to 960px reproduced a hidden field with no correction. Tracking contraction/restoration with a one-pixel rounding tolerance repairs that case; correction still requires a connected edited field hidden above the sticky navigation and respects zoom/orientation and intentional scrolling boundaries. The existing component test now covers the smaller contraction and visible-field toolbar restoration without changing test titles or inventories.
+Base #117 revision `8fd840d` passed CI 45185950219 and staging 45189676019, but the owner reports the physical iPad issue remains unresolved. Keep that limitation explicit; the local threshold regression is not physical acceptance. Privacy-table formatting remains included.
 
-Both site-shell component tests, source integrity, focused ESLint and Prettier passed using the preserved local baseline toolchain. This is simulated evidence, not a physical iPad fix confirmation. Owner reports production smoke testing of PR #116 passed; this local change and the privacy table are not deployed. The owner closed the staging-settings investigation; its original failed receipt remains in Journey without assigning an unproven cause.
+The current delta moves the slogan into the shared sticky header only for Home, Studio, Enquire, Terms and Privacy. Inner public pages use their history entry for Back, retain it across refresh, and close a single-entry tab opened from the same origin when allowed; direct visits fall back Home. Mobile shows only the chevron. Booking/confirmation routes remain without slogans. Enquire removes its shaped Home link and displays shared email/phone/WhatsApp constants beside its existing address and hours.
+
+Component assertions cover public return history, reload, direct entry, separate-tab close, absence from booking, and contact links. Browser coverage now exercises the legal tab's own Back control and preserved Review consent rather than closing the tab through Playwright. Selectors and the renamed component-test inventory are reconciled without changing case counts. Five focused component cases, 33 source-guard rejection cases, source/inventory checks, policy, typecheck, focused lint and formatting passed on the local baseline toolchain. Fresh exact-head CI/staging remain pending; prior staging is superseded once published.
 
 ## Next actions
 
-- Owner authorized consolidation and staging on 23 November. Publish the combined candidate with full exact-head CI and verify actual staging deployment/health; owner verifies keyboard dismissal on actual iPad code/email, booking and enquiry fields.
-- Preserve the local privacy-table formatting while SEO and copy work remain on hold.
+- Complete affected checks, publish to #117 and verify exact-head CI plus actual staging deployment/health.
+- Owner checks public navigation, sticky banner/contact layout and privacy table on desktop/mobile. iPad keyboard dismissal remains a separate unresolved issue.
 
 ## Ordered work after this slice
 

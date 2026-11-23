@@ -2,6 +2,12 @@
 
 [Progress](../PROGRESS.md) records the current candidate and its next gate. This history records milestones, decisions, regressions and their outcomes. The [full record through PR 107](https://github.com/soccerbotstudiosg/soccerbotstudioSG/blob/70f300dd2763e417e46255eb4ebf060f61dc8036/docs/journey.md) preserves the original receipts, intermediate experiments, copy reviews and superseded plans.
 
+## 23 November 2026 — PR #117 public navigation standardization
+
+The first #117 candidate `8fd840d` passed full CI 45185950219 and staging deployment 45189676019 (artifact 14825481644, Worker version d32d700e-5c88-4f60-a462-496a5b94ff33). Owner then reported the physical iPad field problem still present. It remains unresolved despite the narrower simulated threshold regression passing.
+
+Owner authorized extending #117 with one sticky slogan on five public pages, stateful Back (mobile chevron only), direct-entry Home fallback, closing a separately opened legal tab to reveal untouched Review, and direct contact links above Enquire's form. Existing public canonicals remain unchanged; booking/confirmation are excluded from banners. Return metadata is local history presentation state, not booking authority. The production Worker uses no-referrer; same-origin-only referrer overrides on the Review legal link and shared public links let a separately opened same-site tab identify its origin without exposing it to external sites or restoring opener access. Browser-controlled closing remains subject to browser permission, with Home fallback if refused. The existing legal-tab test now clicks its Back control and waits for closure while checking original consent; public navigation/component checks and dependent inventory are updated together. Early focused checks caught a removed-but-still-used Icon import, a missing router.back mock and an obsolete Enquire Home assertion; these were corrected in their owners before publication. Five focused component tests, 33 source-guard tests, source/inventory and policy checks, typecheck, focused lint, formatting and diff checks passed. No provider/payment contracts or dependency versions changed. Physical/device acceptance of this new candidate is pending.
+
 ## 23 November 2026 — iPad keyboard visibility follow-up
 
 Owner confirmed the production smoke test of PR #116, put remaining SEO/keywords/copy work on hold and returned to the unresolved physical iPad keyboard-dismissal issue. Owner considers the earlier staging settings failure nonblocking; no underlying cause is asserted here.

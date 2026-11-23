@@ -167,6 +167,7 @@ export function ReviewStep({
             data-booking-continuation
             target="_blank"
             rel="noopener"
+            referrerPolicy="same-origin"
           >
             Terms and Conditions
           </Link>

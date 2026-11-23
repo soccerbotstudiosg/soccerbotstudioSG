@@ -105,7 +105,7 @@
   },
   {
     "file": "src/components/site-shell.test.tsx",
-    "title": "nested booking 404 bypasses departure prompts and restores the guard only on valid booking pages"
+    "title": "site navigation preserves public return state, booking guards and keyboard visibility"
   },
   {
     "file": "src/components/site-shell.test.tsx",

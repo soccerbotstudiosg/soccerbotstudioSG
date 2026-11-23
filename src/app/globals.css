@@ -1140,8 +1140,7 @@
     isolation: isolate;
     overflow: hidden;
   }
-  .arena-signature,
-  .studio-signature {
+  .site-signature {
     margin: 0;
     padding: 17px 24px;
     text-align: center;
@@ -1154,15 +1153,13 @@
     background: #050a2f;
     border-top: 1px solid #26374f;
     border-bottom: 1px solid #26374f;
-  }
-  .studio-signature {
     position: relative;
     padding-inline: 88px;
     min-height: 48px;
     display: grid;
     align-items: center;
   }
-  .studio-back {
+  .public-back {
     position: absolute;
     left: 16px;
     top: 50%;
@@ -1171,6 +1168,8 @@
     align-items: center;
     gap: 4px;
     min-height: 44px;
+    min-width: 44px;
+    justify-content: center;
     line-height: 1;
     white-space: nowrap;
     color: var(--color-on-brand);
@@ -1178,14 +1177,14 @@
     letter-spacing: normal;
     text-transform: none;
   }
-  .studio-back .icon {
+  .public-back .icon {
     width: 18px;
     height: 18px;
   }
-  .studio-back:hover {
+  .public-back:hover {
     color: var(--color-logo-blue);
   }
-  .studio-back:focus-visible {
+  .public-back:focus-visible {
     outline: 2px solid var(--color-focus);
     outline-offset: 3px;
   }
@@ -1986,6 +1985,18 @@
     to {
       opacity: 1;
     }
+  }
+  .enquiry-contact-details {
+    display: grid;
+    gap: 8px;
+    margin-top: 20px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+  }
+  .enquiry-contact-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
   }
   .legal-document {
     --color-brand: #242424;
@@ -3036,18 +3047,13 @@
     }
   }
   @media (max-width: 700px) {
-    .arena-signature,
-    .studio-signature {
-      padding: 14px 16px;
+    .site-signature {
+      padding: 14px 72px;
       font-size: 0.5625rem;
-      letter-spacing: var(--tracking-ui-label);
-    }
-    .studio-back > span {
-      display: none;
-    }
-    .studio-signature {
-      padding-inline: 72px;
       letter-spacing: 0.1em;
+    }
+    .public-back > span {
+      display: none;
     }
     .official-logo {
       width: 145px;
@@ -3070,7 +3076,7 @@
     .booking-stage {
       min-height: calc(100svh - var(--site-header-height, 148px));
       display: grid;
-      grid-template-rows: auto 1fr;
+      grid-template-rows: 1fr;
     }
     .arena-body {
       display: grid;

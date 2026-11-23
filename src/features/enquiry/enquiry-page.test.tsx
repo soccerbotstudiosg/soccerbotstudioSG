@@ -20,6 +20,20 @@ test("enquiry waits for hydration then preserves entered details through submiss
     "201 Henderson Road, #05-01 Apex @ Henderson, Singapore 159545",
   );
   expect(markup.body.textContent).toContain("Open daily · 12pm–8pm");
+  expect(
+    markup.querySelector(
+      '.enquiry-contact-links a[href="mailto:contact@soccerbotsg.com"]',
+    ),
+  ).not.toBeNull();
+  expect(
+    markup.querySelector('.enquiry-contact-links a[href="tel:+6590143819"]'),
+  ).not.toBeNull();
+  expect(
+    markup.querySelector(
+      '.enquiry-contact-links a[href="https://wa.me/6590143819"]',
+    ),
+  ).not.toBeNull();
+  expect(markup.querySelector(".enquiry-page > .back")).toBeNull();
   container.append(...markup.body.childNodes);
   document.body.append(container);
   const name = screen.getByLabelText("Full name", { exact: false });
@@ -118,10 +132,7 @@ test("enquiry reveals errors after blur or submission and blocks invalid service
   render(<EnquiryPage />);
   expect(screen.getByRole("button", { name: "Send enquiry" })).toBeEnabled();
   const submit = vi.spyOn(services.enquiry, "submit");
-  expect(screen.getByRole("link", { name: /^Home$/ })).toHaveAttribute(
-    "href",
-    "/",
-  );
+  expect(screen.queryByRole("link", { name: /^Home$/ })).toBeNull();
   expect(
     screen.getByRole("heading", { name: /^Contact the studio$/ }),
   ).toBeVisible();

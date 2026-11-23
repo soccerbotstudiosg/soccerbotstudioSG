@@ -7,6 +7,7 @@ import {
   useLayoutEffect,
   useEffect,
   useState,
+  useRef,
   type ReactNode,
 } from "react";
 import { ADDRESS, BOOKING_SUPPORT, CONTACT, LOCATION } from "@/domain/catalog";
@@ -46,6 +47,54 @@ export function SiteShell({ children }: { children: ReactNode }) {
   if (leavingFrom && pathname !== leavingFrom) setLeavingFrom(null);
   if (dialog && (errorPage || dialog.from !== pathname)) setDialog(null);
   const confirmation = /^\/confirmation\/?$/.test(pathname);
+  const publicPage =
+    /^\/(?:studio|enquiry|terms-of-service|privacy-policy)?\/?$/.test(pathname);
+  const home = pathname === "/";
+  const previousPath = useRef(pathname);
+  useLayoutEffect(() => {
+    if (publicPage && !home) {
+      const saved = window.history.state?.soccerbotPublicBack;
+      if (saved?.path !== pathname) {
+        const referrer = document.referrer
+          ? new URL(document.referrer).origin === window.location.origin
+          : false;
+        window.history.replaceState(
+          {
+            ...window.history.state,
+            soccerbotPublicBack: {
+              path: pathname,
+              internal: previousPath.current !== pathname || referrer,
+            },
+          },
+          "",
+        );
+      }
+    }
+    previousPath.current = pathname;
+  }, [pathname, publicPage, home]);
+  /** Return within this tab, close a separately opened site tab, or fall back home. */
+  function publicBack(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
+    event.preventDefault();
+    const saved = window.history.state?.soccerbotPublicBack;
+    if (saved?.path === pathname && saved.internal) {
+      if (window.history.length > 1) {
+        router.back();
+        return;
+      }
+      window.close();
+      if (window.closed) return;
+    }
+    enter("/");
+  }
+
   useEffect(() => {
     const header = document.querySelector(".site-header");
     if (!header) return;
@@ -266,6 +315,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <BookingLink
               href="/studio/"
               className="nav-studio"
+              referrerPolicy="same-origin"
               aria-current={pathname === "/studio/" ? "page" : undefined}
             >
               The studio
@@ -275,12 +325,19 @@ export function SiteShell({ children }: { children: ReactNode }) {
             </BookingLink>
           </div>
         </nav>
-        {(pathname === "/studio/" || pathname === "/studio") && (
-          <div className="studio-signature">
-            <BookingLink href="/" className="studio-back" aria-label="Back">
-              <Icon name="back" />
-              <span>Back</span>
-            </BookingLink>
+        {publicPage && !errorPage && (
+          <div className="site-signature">
+            {!home && (
+              <Link
+                href="/"
+                className="public-back"
+                aria-label="Back"
+                onClick={publicBack}
+              >
+                <Icon name="back" />
+                <span>Back</span>
+              </Link>
+            )}
             <span>Performance · Experience · Production</span>
           </div>
         )}
@@ -307,8 +364,12 @@ export function SiteShell({ children }: { children: ReactNode }) {
                   Services
                 </h2>
                 <div className="footer-contact-detail footer-direct-links">
-                  <Link href="/terms-of-service/">Terms and Condition</Link>
-                  <Link href="/privacy-policy/">Privacy Policy</Link>
+                  <Link href="/terms-of-service/" referrerPolicy="same-origin">
+                    Terms and Condition
+                  </Link>
+                  <Link href="/privacy-policy/" referrerPolicy="same-origin">
+                    Privacy Policy
+                  </Link>
                 </div>
               </div>
             </section>
