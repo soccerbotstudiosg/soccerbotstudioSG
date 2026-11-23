@@ -2,17 +2,19 @@
 
 ## Active outcome
 
-Include provider booking codes in the final confirmation copy action. Branch `fix/confirmation-copy-booking-code` starts from merged #114 (`d7af7dd`). Preserve session/code pairing when sorting, omit unavailable codes and use later-arriving codes on subsequent copies. Payment/recovery decisions are unchanged.
+Owner authorized consolidating and publishing local work into the existing PRs. PR #116 owns booking-code copy, public SEO and shared regression repairs. PR #115 remains the separate routine dependency update with the same shared repairs and its dependency assessment. No merge or deployment is authorized by this cleanup.
 
-## Release and verification state
+## Current scope and evidence
 
-PR #114 merged after exact-head CI and staging health verified `09320ab`. Its production status requires the main release receipt; merge is not deployment evidence. Earlier expiry diagnostic limits remain in [Journey](docs/journey.md#22-november-2026--release-reconciliation-and-retained-diagnostic-limits); owner-stopped Home-route repeats remain stopped.
+The owner accepts Home after the narrow expiry display/poll timing race, including no red notice on Calendar re-entry. Recorded synthetic Home → Book now enforced the old expiry and opened a distinct checkout. Recovery application code is unchanged. The master test now follows both accepted paths and retains the financial, conflict and replacement-checkout assertions. Calendar warming tests no longer assume the fixture stays in the current month; both repaired cases passed locally. See Journey for preserved original failures and recorded diagnostics.
+
+Public metadata/canonicals, sitemap/robots, business structured data and the refund alias redirect are consolidated with the existing copy-button change. Production and staging export checks and previous focused/full non-browser checks passed before publication; reuse unchanged evidence. Unused-code audit found no safe pre-existing runtime/asset deletion. Unknown node_modules symlinks are preserved.
 
 ## Next actions
 
-- Publish the clipboard change with focused component verification; exact-head CI and staging/owner acceptance precede a separately authorized merge.
-- Keep dependency PR #115 separate: the initial frontend gate stopped at the missing dependency assessment; compatibility review remains pending.
-- SEO audit found site-wide noindex in the shared layout and missing sitemap generation; no SEO/GA4/GSC implementation is included here.
+- Publish the consolidated candidates and inspect exact-head CI on #115/#116. The original failed runs remain evidence; a diagnostic continuation is not a passing original master run.
+- Keep dependency acceptance and customer browser support distinct. PR #115 uses Node 24.19.0; optional wasm32 prerelease transitive packages are outside verified native Linux coverage.
+- Stage the final candidates through the required procedure and obtain owner acceptance before any separately authorized merge. SEO/GA4/GSC setup, live host redirect inspection and measured Lighthouse scores remain separate.
 
 ## Ordered work after this slice
 

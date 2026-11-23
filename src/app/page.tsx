@@ -1,18 +1,17 @@
+import { publicMetadata, studioStructuredData } from "@/content/seo";
 import { SESSION_MINUTES } from "@/domain/booking-policy";
-import { sitePath } from "@/content/site-path";
 import { Arena } from "@/components/arena";
 import { PromotionPanel, PromotionBanner } from "@/components/promotion-panel";
-import { homeMedia, socialPreview } from "@/content/media";
+import { homeMedia } from "@/content/media";
 import { SessionPrice } from "@/features/booking/session-price";
-export const metadata = {
-  title: { absolute: socialPreview.title },
-  description: socialPreview.description,
-  alternates: { canonical: sitePath("/") },
-};
+export const metadata = publicMetadata("/");
 /** Present compact introductions that reveal detail before following existing destinations. */
 export default function Home() {
   return (
     <div className="promotion-journey">
+      <script type="application/ld+json">
+        {JSON.stringify(studioStructuredData).replace(/</g, "\\u003c")}
+      </script>
       <Arena />
       <div className="promotion-stack">
         <PromotionPanel

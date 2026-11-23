@@ -13,6 +13,7 @@ import { spawnSync } from "node:child_process";
 import YAML from "yaml";
 import { checkPolicy, policyInputs } from "./check-policy.mjs";
 import { checkExport } from "./check-export.mjs";
+import { checkSeoExport } from "./check-seo.mjs";
 import { exportServer } from "./serve-export.mjs";
 
 for (const [name, mutate] of [
@@ -176,6 +177,71 @@ function fixture(t, basePath) {
   );
   for (const n of [1, 2, 3, 4])
     write(`assets/font${n}.woff2`, "synthetic font");
+  const publicPaths = [
+    "/",
+    "/studio/",
+    "/enquiry/",
+    "/terms-of-service/",
+    "/privacy-policy/",
+  ];
+  const indexable =
+    process.env.RELEASE_TARGET === "production" &&
+    process.env.NEXT_PUBLIC_BOOKING_MODE === "live" &&
+    basePath === "";
+  const htmlFiles = [
+    "index.html",
+    "404.html",
+    "studio/index.html",
+    "enquiry/index.html",
+    "confirmation/index.html",
+    "terms-of-service/index.html",
+    "privacy-policy/index.html",
+    "refund-policy/index.html",
+    ...[
+      "account",
+      "session",
+      "time",
+      "details",
+      "review",
+      "payment",
+      "confirmation",
+    ].map((step) => `book/${step}/index.html`),
+  ];
+  for (const file of htmlFiles) {
+    const route =
+      file === "index.html" ? "/" : `/${file.replace(/index\.html$/, "")}`;
+    const publicPage =
+      publicPaths.includes(route) || route === "/refund-policy/";
+    const canonical =
+      "https://soccerbotsg.com" +
+      (route === "/refund-policy/" ? "/terms-of-service/" : route);
+    const metadata =
+      `<meta name="robots" content="${indexable && publicPage ? "index, follow" : "noindex, nofollow"}">` +
+      (publicPage
+        ? `<title>${route}</title><meta name="description" content="Description ${route}"><link rel="canonical" href="${canonical}"><meta property="og:url" content="${canonical}">`
+        : "");
+    const schema =
+      file === "index.html"
+        ? `<script type="application/ld+json">${JSON.stringify({ "@type": "SportsActivityLocation", url: "https://soccerbotsg.com/", telephone: "+6590143819", address: { postalCode: "159545" }, openingHoursSpecification: [{ opens: "12:00", closes: "20:00", dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "PublicHolidays"] }] })}</script>`
+        : "";
+    write(
+      file,
+      readFileSync(join(root, file), "utf8").replace(
+        "<head>",
+        "<head>" + metadata + schema,
+      ),
+    );
+  }
+  write(
+    "sitemap.xml",
+    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${indexable ? publicPaths.map((path) => `<url><loc>https://soccerbotsg.com${path}</loc></url>`).join("") : ""}</urlset>`,
+  );
+  write(
+    "robots.txt",
+    indexable
+      ? "User-Agent: *\nAllow: /\nDisallow: /api/\nSitemap: https://soccerbotsg.com/sitemap.xml\n"
+      : "User-Agent: *\nDisallow: /\n",
+  );
   return { root, write };
 }
 for (const basePath of ["", "/SoccerBotStudioSG"]) {
@@ -404,3 +470,53 @@ test("site paths support repository and root builds, refusing unreviewed prefixe
     if (expected) assert.equal(child.stdout.trim(), expected);
   }
 });
+
+// Mutations prove the artifact gate rejects indexing leaks and incorrect public identity.
+for (const [name, file, replace, error] of [
+  [
+    "missing public canonical",
+    "studio/index.html",
+    (text) => text.replace(/<link rel="canonical"[^>]*>/, ""),
+    /Canonical count/,
+  ],
+  [
+    "query-bearing canonical",
+    "studio/index.html",
+    (text) =>
+      text.replace(
+        'href="https://soccerbotsg.com/studio/"',
+        'href="https://soccerbotsg.com/studio/?tracking=test"',
+      ),
+    /Canonical URL/,
+  ],
+  [
+    "indexable customer receipt",
+    "confirmation/index.html",
+    (text) => text.replace("noindex, nofollow", "index, follow"),
+    /Incorrect robots/,
+  ],
+  [
+    "private sitemap URL",
+    "sitemap.xml",
+    (text) =>
+      text.replace(
+        "</urlset>",
+        "<url><loc>https://soccerbotsg.com/confirmation/?attempt=synthetic</loc></url></urlset>",
+      ),
+    /Sitemap index boundary/,
+  ],
+  [
+    "invalid business JSON",
+    "index.html",
+    (text) => text.replace('"SportsActivityLocation"', "INVALID"),
+    /JSON/,
+  ],
+])
+  test(`SEO export rejects ${name}`, (t) => {
+    const f = fixture(t, "/SoccerBotStudioSG");
+    f.write(file, replace(readFileSync(join(f.root, file), "utf8")));
+    assert.throws(
+      () => checkSeoExport(f.root, "/SoccerBotStudioSG", false),
+      error,
+    );
+  });

@@ -183,6 +183,10 @@ export default {
             if (request.method !== "GET" && request.method !== "HEAD")
               throw new ApiError(405, "method_not_allowed");
           }
+          if (/^\/refund-policy(?:\/|\/index\.html)?$/.test(url.pathname)) {
+            const destination = new URL("/terms-of-service/", env.APP_ORIGIN);
+            return Response.redirect(destination.href, 308);
+          }
           return env.ASSETS.fetch(request);
         }
         const configuration = policy(env);

@@ -10,6 +10,8 @@ Customer actions/messages are mapped in [Booking scenarios](../booking-flows.md)
 
 See [Technical behavior](technical-behavior.md) for named functions, observable behavior, guards, failures, recovery and evidence.
 
+Public SEO: [metadata and business identity](../../src/content/seo.ts), [robots](../../src/app/robots.ts), [sitemap](../../src/app/sitemap.ts) and [artifact validation](../../scripts/check-seo.mjs) own crawler-facing output; [configuration](../development.md#public-page-seo-artifacts) describes the build boundary.
+
 ## 1. Overview
 
 ```mermaid

@@ -135,9 +135,9 @@ export const studioHero = {
 };
 
 export const socialPreview = {
-  title: "Interactive Football Experience | SOCCERBOTSTUDIO Singapore",
+  title: "SoccerBotStudio Singapore | Football & Media Pitch Studio",
   description:
-    "Discover immersive football games and interactive training at SOCCERBOTSTUDIO Singapore. Performance · Experience · Production.",
+    "Discover SoccerBotStudio Singapore at Henderson—a SoccerBot360 media pitch studio bringing together football performance, interactive experiences and production.",
   src: sitePath("/assets/soccerbot-social-preview.jpg"),
   width: 1734,
   height: 907,

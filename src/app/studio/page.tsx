@@ -1,7 +1,8 @@
+import { publicMetadata } from "@/content/seo";
 import { studioMedia } from "@/content/media";
 import { StudioHeroVideo } from "@/components/studio-hero-video";
 import { PromotionPanel, PromotionBanner } from "@/components/promotion-panel";
-export const metadata = { title: "The studio" };
+export const metadata = publicMetadata("/studio/");
 /** Present informational studio cards followed by one full-banner booking destination. */
 export default function Studio() {
   return (

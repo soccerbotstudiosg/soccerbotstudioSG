@@ -62,6 +62,7 @@ The [business rules](business-rules.md#br-008) own read limits and release autho
 
 - Review and Confirmation share the arrival note, followed by four bullets in two columns. The copy action labels each session’s date, time, type, trainer and booking code when supplied. Codes stay paired with their original session when the summary is sorted; missing codes are omitted and later copies include codes received after confirmation. A single session has no numbered-list prefix.
 - The original confirmation access window applies across reload. Leaving an old confirmation never dismisses a newer unresolved checkout.
+- Owner-accepted expiry fallback (23 November 2026): when a fresh payment return has different saved session selections and the bounded display wait ends before the next status poll, it may return Home. Book now must enforce the original unpaid expiry release before a replacement checkout. In the recorded fallback, re-entry Calendar has no red expiry notice; this is accepted. Direct Calendar recovery retains its expiry notice. Home alone is not proof of a permanent booking block; verify re-entry and the distinct hosted checkout.
 - After a confirmed booking, the customer can return to Calendar and submit a new selection from Review without first choosing an exit on the previous receipt. Browser Back, Home and opening a receipt never submit a checkout.
 - For the exact expiry and post-payment clocks, see [BR-011 to BR-013](business-rules.md#br-011). For physical acceptance sequences see the [customer worksheet](uat/simulated-user.md).
 

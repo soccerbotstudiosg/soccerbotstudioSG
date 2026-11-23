@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-export const metadata: Metadata = { title: "Terms and Conditions" };
+import { publicMetadata } from "@/content/seo";
+export const metadata = publicMetadata("/terms-of-service/");
 /** Publish the supplied studio policy. */
 export default function Page() {
   return (

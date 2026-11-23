@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-export const metadata: Metadata = { title: "Privacy Policy" };
+import { publicMetadata } from "@/content/seo";
+export const metadata = publicMetadata("/privacy-policy/");
 /** Publish the supplied studio policy. */
 export default function Page() {
   return (
