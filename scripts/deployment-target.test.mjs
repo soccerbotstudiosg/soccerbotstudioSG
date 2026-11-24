@@ -317,11 +317,13 @@ test("target workflows isolate PR credentials and deploy through trusted main af
     "frontend",
     "live-email",
     "master-regression",
+    "summary",
     "worker",
     "worker-groups",
   ]);
   assert.equal(JSON.stringify(verify).includes("secrets."), false);
-  for (const job of Object.values(verify.jobs)) {
+  for (const [id, job] of Object.entries(verify.jobs)) {
+    if (id === "summary") continue;
     assert.equal(
       job.steps[0].with.ref,
       "${{ github.event.pull_request.head.sha || github.sha }}",
@@ -479,6 +481,7 @@ test("target workflows isolate PR credentials and deploy through trusted main af
     "eligibility",
     "production",
     "staging",
+    "summary",
   ]);
   assert.deepEqual(workflow.on.workflow_dispatch.inputs.target.options, [
     "staging",
@@ -502,7 +505,7 @@ test("target workflows isolate PR credentials and deploy through trusted main af
       "workflow_dispatch",
     ]);
     assert.deepEqual(workflow.on.workflow_run, {
-      workflows: ["Verify deployment target"],
+      workflows: ["CI - Application Verification"],
       types: ["completed"],
     });
     assert.ok(

@@ -2,6 +2,12 @@
 
 [Progress](../PROGRESS.md) records the current candidate and its next gate. This history records milestones, decisions, regressions and their outcomes. The [full record through PR 107](https://github.com/soccerbotstudiosg/soccerbotstudioSG/blob/70f300dd2763e417e46255eb4ebf060f61dc8036/docs/journey.md) preserves the original receipts, intermediate experiments, copy reviews and superseded plans.
 
+## 24 November 2026 — workflow names and runtime summaries
+
+Owner requested category/purpose names and runtime summaries on #117. Candidate names are CI - Application Verification, CI - Dependency Review and Cloudflare - Deploy Verified Release. Required gate job names and file paths remain unchanged. Deployment listens for the new verification name. Read-only always-run summary jobs explain scope and list exact candidate/target context and actual upstream outcomes; they do not mark skipped deployment as released or infer physical acceptance. Dedicated tests cover escaping, failure/skip reporting, complete upstream dependency coverage and matching workflow subscription, alongside existing deployment-boundary tests.
+
+Default-branch trigger semantics require manual exact-head staging during the rename transition because the old main controller still subscribes to the old workflow name. This limitation and the unchanged manual procedure are documented in Runbook. No merge or production activation is authorized by this work.
+
 ## 24 November 2026 — remaining Enquire test expectation reconciled
 
 Run 45330246686 on `b4c89e4` passed frontend, both backend browser shards, master booking regression and Worker verification. Live-email jobs 138230028851 and 138230028904 failed the same `tests/live-email.spec.ts:5250` assertion on desktop, phone and tablet: expected sticky, received static. The earlier change missed this independent live-mode spacing test. Updated its positioning assertion and comment to the owner's approved normal-flow behaviour; retained the 32–33px resting gap, proof margins and readiness checks. No application changes or test-count reductions. Fresh browser evidence must come from CI; original failures remain retained.
