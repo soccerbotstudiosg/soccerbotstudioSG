@@ -2,6 +2,12 @@
 
 [Progress](../PROGRESS.md) records the current candidate and its next gate. This history records milestones, decisions, regressions and their outcomes. The [full record through PR 107](https://github.com/soccerbotstudiosg/soccerbotstudioSG/blob/70f300dd2763e417e46255eb4ebf060f61dc8036/docs/journey.md) preserves the original receipts, intermediate experiments, copy reviews and superseded plans.
 
+## 24 November 2026 — Enquire action changed to normal flow
+
+CI 45313757117 on `7956c58` failed `tests/customer.spec.ts:1786` in phone-WebKit in frontend job 138175498544 and backend shard job 138177809736: Send enquiry had viewport ratio zero on initial entry. All 431 unit/component tests, master booking regression and Worker groups passed. The retained screenshot shows the taller contact panel filling the initial viewport; the form-contained sticky action cannot rise above its form. Original failure artifacts remain attached to the run.
+
+Owner explicitly chose a non-sticky Enquire action to avoid obscuring contact details. The focused follow-up keeps the button inside its existing form, sets only its action anchor to static and removes Enquire from bottom scroll padding reserved for sticky actions. Shared booking behaviour, submission, validation and diagnostic logic are unchanged. The existing browser case now requires static form-contained positioning, scrolls to the action, and retains full visibility and submission assertions. This is an approved behaviour change, not a retry/timeout relaxation. CI/device acceptance remains pending.
+
 ## 24 November 2026 — opt-in physical keyboard diagnostics
 
 Owner authorized a phone/iPad trace to distinguish native viewport restoration from the current SiteShell correction. Added a staging/development-only, explicit-query and Start-gated recorder with capped in-memory geometry/events, immediate/two-frame observations, actual recovery state/deltas and validation-focus markers. Stop removes listeners and enables Copy or selectable text; no field contents, identifiers, page URLs, network telemetry or persistent storage are collected. Recovery thresholds and scroll decisions are unchanged. This diagnostic is temporary until the physical comparison and repair are complete. The prior Enquire contact styling is consolidated into this candidate.

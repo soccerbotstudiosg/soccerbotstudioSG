@@ -3586,7 +3586,10 @@
     padding: var(--space-action-top) 0
       calc(var(--space-action-bottom) + env(safe-area-inset-bottom));
   }
-  html:has(:is(.booking-shell, .enquiry-page) .booking-primary-action) {
+  .enquiry-page .booking-action-anchor {
+    position: static;
+  }
+  html:has(.booking-shell .booking-primary-action) {
     scroll-padding-bottom: calc(
       80px + var(--space-action-bottom) + env(safe-area-inset-bottom)
     );

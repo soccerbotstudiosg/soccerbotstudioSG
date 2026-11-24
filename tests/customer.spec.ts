@@ -1783,6 +1783,12 @@ test("enquiry remains available without external submission or a mock assistant"
     page.locator(".enquiry-form legend .required-fields"),
   ).toHaveText("* Required fields");
   const enquiryAction = page.getByRole("button", { name: "Send enquiry" });
+  // Enquire's action belongs below its form; it must not float over contact details.
+  await expect(page.locator(".enquiry-form .booking-action-anchor")).toHaveCSS(
+    "position",
+    "static",
+  );
+  await enquiryAction.scrollIntoViewIfNeeded();
   await expect(enquiryAction).toBeInViewport({ ratio: 1 });
   await expect(
     page.locator(".enquiry-page .booking-primary-action"),
