@@ -2,6 +2,10 @@
 
 [Progress](../PROGRESS.md) records the current candidate and its next gate. This history records milestones, decisions, regressions and their outcomes. The [full record through PR 107](https://github.com/soccerbotstudiosg/soccerbotstudioSG/blob/70f300dd2763e417e46255eb4ebf060f61dc8036/docs/journey.md) preserves the original receipts, intermediate experiments, copy reviews and superseded plans.
 
+## 24 November 2026 — remaining Enquire test expectation reconciled
+
+Run 45330246686 on `b4c89e4` passed frontend, both backend browser shards, master booking regression and Worker verification. Live-email jobs 138230028851 and 138230028904 failed the same `tests/live-email.spec.ts:5250` assertion on desktop, phone and tablet: expected sticky, received static. The earlier change missed this independent live-mode spacing test. Updated its positioning assertion and comment to the owner's approved normal-flow behaviour; retained the 32–33px resting gap, proof margins and readiness checks. No application changes or test-count reductions. Fresh browser evidence must come from CI; original failures remain retained.
+
 ## 24 November 2026 — Enquire action changed to normal flow
 
 CI 45313757117 on `7956c58` failed `tests/customer.spec.ts:1786` in phone-WebKit in frontend job 138175498544 and backend shard job 138177809736: Send enquiry had viewport ratio zero on initial entry. All 431 unit/component tests, master booking regression and Worker groups passed. The retained screenshot shows the taller contact panel filling the initial viewport; the form-contained sticky action cannot rise above its form. Original failure artifacts remain attached to the run.
