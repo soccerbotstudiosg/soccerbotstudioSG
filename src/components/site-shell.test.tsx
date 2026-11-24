@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import * as keyboardTrace from "./keyboard-trace";
 import { sitePath } from "@/content/site-path";
 import { SiteShell, useErrorPage } from "./site-shell";
 const navigation = vi.hoisted(() => ({
@@ -104,6 +105,7 @@ test("site navigation preserves public return state, booking guards and keyboard
   expect(booking.leave).toHaveBeenCalledExactlyOnceWith();
   expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/");
   view.unmount();
+  const trace = vi.spyOn(keyboardTrace, "traceKeyboard");
   const viewport = Object.assign(new EventTarget(), {
     height: window.innerHeight,
     scale: 1,
@@ -122,11 +124,16 @@ test("site navigation preserves public return state, booking guards and keyboard
   });
   vi.stubGlobal("scrollBy", scroll);
   navigation.path = "/enquiry/";
+  window.history.replaceState({}, "", "/enquiry/?keyboardTrace=1");
   const keyboardView = render(
     <SiteShell>
       <input aria-label="Editing field" />
     </SiteShell>,
   );
+  expect(
+    screen.queryByRole("complementary", { name: "Keyboard diagnostics" }),
+  ).not.toBeInTheDocument();
+  window.history.replaceState({}, "", "/enquiry/");
   const field = screen.getByRole("textbox", { name: "Editing field" });
   vi.spyOn(field, "getBoundingClientRect").mockImplementation(() => ({
     top,
@@ -163,6 +170,11 @@ test("site navigation preserves public return state, booking guards and keyboard
     top: -76,
     behavior: "instant",
   });
+  expect(trace).toHaveBeenCalledWith(
+    "recovery:scroll",
+    expect.objectContaining({ closing: true, delta: -76 }),
+    field,
+  );
   expect(top).toBe(116);
   // Safari may finish its document scroll after the viewport resize has settled.
   top = 20;
@@ -216,6 +228,7 @@ test("site navigation preserves public return state, booking guards and keyboard
     behavior: "instant",
   });
   expect(top).toBe(116);
+  trace.mockRestore();
   keyboardView.unmount();
   vi.unstubAllGlobals();
   const originalState = window.history.state;

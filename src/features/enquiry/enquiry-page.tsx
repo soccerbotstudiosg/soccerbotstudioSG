@@ -9,7 +9,7 @@ import { EMAIL_MAX_LENGTH } from "@/domain/contact";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { OPENING_MINUTE, CLOSING_MINUTE } from "@/domain/booking-policy";
 import {
-  ADDRESS,
+  LOCATION,
   CONTACT,
   BOOKING_SUPPORT,
   ENQUIRY_TYPES,
@@ -162,32 +162,61 @@ export function EnquiryPage() {
             : "Preview · No enquiry sent."}
         </div>
       )}
-      <div className="enquiry-contact-details">
-        <address className="not-italic font-semibold">{ADDRESS}</address>
-        <p>
-          Open daily · {openingTime(OPENING_MINUTE)}–
-          {openingTime(CLOSING_MINUTE)}
-        </p>
-        <div className="enquiry-contact-links">
-          <a className="text-link" href={`mailto:${CONTACT.email}`}>
-            {CONTACT.email}
-          </a>
-          <span>
-            <a className="text-link" href={`tel:${CONTACT.phone}`}>
-              {CONTACT.phoneDisplay}
-            </a>{" "}
-            ·{" "}
-            <a
-              className="text-link"
-              href={BOOKING_SUPPORT.whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              WhatsApp
-            </a>
-          </span>
+      <section
+        className="enquiry-contact-details"
+        aria-label="Studio contact details"
+      >
+        <div className="enquiry-location-details">
+          <div>
+            <p className="enquiry-contact-label">Visit us</p>
+            <address>
+              <strong>{LOCATION.building}</strong>
+              <span>
+                {LOCATION.street}, {LOCATION.unit}
+              </span>
+              <span>{LOCATION.postal}</span>
+            </address>
+          </div>
+          <div className="enquiry-opening-hours">
+            <p className="enquiry-contact-label">Opening hours</p>
+            <p>
+              Open daily · {openingTime(OPENING_MINUTE)}–
+              {openingTime(CLOSING_MINUTE)}
+            </p>
+          </div>
         </div>
-      </div>
+        <div className="enquiry-contact-links">
+          <a href={`mailto:${CONTACT.email}`}>
+            <Icon name="mail" />
+            <span>
+              <span className="enquiry-contact-label">Email</span>
+              <span className="enquiry-contact-value">{CONTACT.email}</span>
+            </span>
+          </a>
+          <a href={`tel:${CONTACT.phone}`}>
+            <Icon name="phone" />
+            <span>
+              <span className="enquiry-contact-label">Call</span>
+              <span className="enquiry-contact-value">
+                {CONTACT.phoneDisplay}
+              </span>
+            </span>
+          </a>
+          <a
+            href={BOOKING_SUPPORT.whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Icon name="whatsapp" />
+            <span>
+              <span className="enquiry-contact-label">WhatsApp</span>
+              <span className="enquiry-contact-value">
+                {CONTACT.phoneDisplay}
+              </span>
+            </span>
+          </a>
+        </div>
+      </section>
       <form
         className="surface mt-8 enquiry-form"
         aria-busy={!ready || busy}

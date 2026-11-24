@@ -1,6 +1,8 @@
+import { traceKeyboard } from "./keyboard-trace";
 /** Focus a rejected field and reveal it below the current sticky navigation. */
 export function focusField(field: HTMLElement | null) {
   if (!field) return;
+  traceKeyboard("validation:focus", undefined, field);
   field.focus({ preventScroll: true });
   requestAnimationFrame(() => {
     if (!field.isConnected || document.activeElement !== field) return;
@@ -23,8 +25,10 @@ export function focusField(field: HTMLElement | null) {
     );
     const box = field.getBoundingClientRect();
     if (!box.height) return;
-    if (box.top < top || box.bottom > bottom - 16)
+    if (box.top < top || box.bottom > bottom - 16) {
+      traceKeyboard("validation:scroll", undefined, field);
       window.scrollBy({ top: box.top - top, behavior: "instant" });
+    }
   });
 }
 

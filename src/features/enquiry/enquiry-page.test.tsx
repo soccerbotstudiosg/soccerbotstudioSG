@@ -16,9 +16,11 @@ test("enquiry waits for hydration then preserves entered details through submiss
     renderToString(<EnquiryPage />),
     "text/html",
   );
-  expect(markup.querySelector("address")?.textContent).toBe(
-    "201 Henderson Road, #05-01 Apex @ Henderson, Singapore 159545",
-  );
+  const address = markup.querySelector("address")!;
+  expect(address.querySelector("strong")?.textContent).toBe("Apex @ Henderson");
+  expect(
+    Array.from(address.querySelectorAll("span"), (line) => line.textContent),
+  ).toEqual(["201 Henderson Road, #05-01", "Singapore 159545"]);
   expect(markup.body.textContent).toContain("Open daily · 12pm–8pm");
   expect(
     markup.querySelector(

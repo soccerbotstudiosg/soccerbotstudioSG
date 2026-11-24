@@ -2,6 +2,18 @@
 
 [Progress](../PROGRESS.md) records the current candidate and its next gate. This history records milestones, decisions, regressions and their outcomes. The [full record through PR 107](https://github.com/soccerbotstudiosg/soccerbotstudioSG/blob/70f300dd2763e417e46255eb4ebf060f61dc8036/docs/journey.md) preserves the original receipts, intermediate experiments, copy reviews and superseded plans.
 
+## 24 November 2026 — opt-in physical keyboard diagnostics
+
+Owner authorized a phone/iPad trace to distinguish native viewport restoration from the current SiteShell correction. Added a staging/development-only, explicit-query and Start-gated recorder with capped in-memory geometry/events, immediate/two-frame observations, actual recovery state/deltas and validation-focus markers. Stop removes listeners and enables Copy or selectable text; no field contents, identifiers, page URLs, network telemetry or persistent storage are collected. Recovery thresholds and scroll decisions are unchanged. This diagnostic is temporary until the physical comparison and repair are complete. The prior Enquire contact styling is consolidated into this candidate.
+
+Seven focused component tests passed initially. Lint caught synchronous effect state initialization; hydration-safe initialization replaces it. Final source/type/lint checks and exact-head CI/staging are recorded in the PR receipt. Physical iPad behaviour is still unresolved; synthetic recorder assertions do not establish device acceptance.
+
+## 23 November 2026 — Enquire contact presentation refinement
+
+Public navigation revision `78874d2` passed CI 45195810032 and staging 45199820016, including the browser-controlled Terms-tab Back test with original Review consent preserved. Staging health/settings confirmed Worker version 51ffa954-bc66-4f54-b85c-15ef1c8bba09, artifact 14832230969. No merge was authorized.
+
+Owner then requested consistent styling of the complete Enquire contact section, ultimately retaining all three Email/Call/WhatsApp actions and shared footer-style icons. The local refinement groups location and hours above a divided row of icon/label/value links, using existing brand colours, a multiline address from shared location constants and mobile stacking. The address assertion now checks its semantic lines. All three Enquire component cases, source/inventory integrity, focused lint and diff checks passed. Visual acceptance and publication of this refinement are pending; booking/navigation behaviour and canonical metadata are unchanged.
+
 ## 23 November 2026 — PR #117 public navigation standardization
 
 The first #117 candidate `8fd840d` passed full CI 45185950219 and staging deployment 45189676019 (artifact 14825481644, Worker version d32d700e-5c88-4f60-a462-496a5b94ff33). Owner then reported the physical iPad field problem still present. It remains unresolved despite the narrower simulated threshold regression passing.

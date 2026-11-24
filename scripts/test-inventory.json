@@ -68,6 +68,14 @@
     "title": "all four booking entry surfaces prepare fresh access on each return from home"
   },
   {
+    "file": "src/components/keyboard-trace.test.tsx",
+    "title": "keyboard recorder requires opt-in and Start and exports geometry without field contents"
+  },
+  {
+    "file": "src/components/keyboard-trace.test.tsx",
+    "title": "keyboard recorder bounds memory and offers a selectable trace when clipboard is unavailable"
+  },
+  {
     "file": "src/components/page-refresh.test.tsx",
     "title": "homepage revisits retain one neutral cover through image decoding without replaying first arrival"
   },

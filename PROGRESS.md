@@ -2,20 +2,19 @@
 
 ## Active outcome
 
-Extend existing PR #117 with standardized public banners, stateful Back navigation and Enquire contact details. Owner authorized implementation, guard/test review, push and staging; no merge authorization. Broader SEO/keywords/Studio wording remain on hold.
+Owner authorized an opt-in phone/iPad keyboard recorder and staging handoff on existing PR #117. The physical iPad dismissal issue remains unresolved; this slice gathers evidence without changing the current recovery algorithm. It includes the previously local Enquire contact presentation refinement (Email, Call and WhatsApp with shared icons and consistent hierarchy). No merge authorization.
 
 ## Candidate and evidence
 
-Base #117 revision `8fd840d` passed CI 45185950219 and staging 45189676019, but the owner reports the physical iPad issue remains unresolved. Keep that limitation explicit; the local threshold regression is not physical acceptance. Privacy-table formatting remains included.
+Base `78874d2` passed CI 45195810032 and staging 45199820016. The new diagnostic candidate is local pending publication. RootLayout enables the diagnostic component only for staging/development; the visitor must open `?keyboardTrace=1` and press Start. The recorder captures viewport/scroll geometry immediately and on subsequent animation frames, plus actual recovery/validation decisions. It never copies field values, DOM identifiers, text or page URLs, sends no telemetry and stores no persistent trace. Memory is capped at 1,200 events; Stop offers Copy and a selectable fallback. It is removed when the device comparison and repair are complete.
 
-The current delta moves the slogan into the shared sticky header only for Home, Studio, Enquire, Terms and Privacy. Inner public pages use their history entry for Back, retain it across refresh, and close a single-entry tab opened from the same origin when allowed; direct visits fall back Home. Mobile shows only the chevron. Booking/confirmation routes remain without slogans. Enquire removes its shaped Home link and displays shared email/phone/WhatsApp constants beside its existing address and hours.
-
-Component assertions cover public return history, reload, direct entry, separate-tab close, absence from booking, and contact links. Browser coverage now exercises the legal tab's own Back control and preserved Review consent rather than closing the tab through Playwright. Selectors and the renamed component-test inventory are reconciled without changing case counts. Five focused component cases, 33 source-guard rejection cases, source/inventory checks, policy, typecheck, focused lint and formatting passed on the local baseline toolchain. Fresh exact-head CI/staging remain pending; prior staging is superseded once published.
+Seven focused component tests passed, including field-content exclusion, delayed native geometry, bounded storage, clipboard fallback and real recovery emission; initial lint caught synchronous effect state initialization, which was replaced with hydration-safe initialization. Typecheck, focused lint, formatting, source/inventory, policy and diff checks passed. Exact-head CI/staging and physical phone/iPad comparison remain pending. Existing browser recovery, public navigation and booking gates are retained; no provider, payment, catalogue or booking-policy logic changes.
 
 ## Next actions
 
-- Complete affected checks, publish to #117 and verify exact-head CI plus actual staging deployment/health.
-- Owner checks public navigation, sticky banner/contact layout and privacy table on desktop/mobile. iPad keyboard dismissal remains a separate unresolved issue.
+- Complete affected checks, push the consolidated candidate to #117 and verify exact-head CI and staging health.
+- On phone and iPad, open staging `/enquiry/?keyboardTrace=1`, Start, edit the same field using dummy text, dismiss the keyboard normally, then Stop/Copy. Do not submit the form. Record the browser, dismissal method and observed overlap alongside each trace.
+- Compare native geometry and actual correction execution before selecting another iPad fix. Public banner/contact/privacy-table acceptance remains separate.
 
 ## Ordered work after this slice
 
