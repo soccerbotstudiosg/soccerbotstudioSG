@@ -2,6 +2,12 @@
 
 [Progress](../PROGRESS.md) records the current candidate and its next gate. This history records milestones, decisions, regressions and their outcomes. The [full record through PR 107](https://github.com/soccerbotstudiosg/soccerbotstudioSG/blob/70f300dd2763e417e46255eb4ebf060f61dc8036/docs/journey.md) preserves the original receipts, intermediate experiments, copy reviews and superseded plans.
 
+## 25 November 2026 — CodeQL test assertion and authorized merge preparation
+
+Owner authorized merging #117 while deferring the physical iPad issue. The final merge check found CodeQL alert #54, `js/bad-tag-filter`, on `scripts/workflow-summary.test.mjs:20`. Owner's screenshot identifies a test assertion against lowercase `<script>`, not runtime sanitization. The formatter already strips angle brackets regardless of tag case. Replaced the narrow assertion with absence of either angle bracket and added upper/mixed-case fixture tags, retaining failure/skip reporting checks. No application or recovery logic changed. Fresh CodeQL/CI/staging evidence remains required before merge.
+
+Prior candidate `cefcab0` passed full CI 45350865954 attempt 3 and automatic staging 45367436246; independent health confirmed Worker version 297cd65a-c60d-4e11-841c-3ce680e9b995. This contradicts the earlier predicted need for manual staging after renaming; Runbook is corrected. Deployment 45355742494 failed because the partial frontend rerun requested an attempt-2 release artifact that existed only for attempt 1; complete rerun resolved the mismatch. Owner Android trace shows native viewport restoration while recovery stays keyboardOpen due to its stored height differing from the restored viewport. It does not prove iPad recovery; that work is deferred.
+
 ## 24 November 2026 — workflow names and runtime summaries
 
 Owner requested category/purpose names and runtime summaries on #117. Candidate names are CI - Application Verification, CI - Dependency Review and Cloudflare - Deploy Verified Release. Required gate job names and file paths remain unchanged. Deployment listens for the new verification name. Read-only always-run summary jobs explain scope and list exact candidate/target context and actual upstream outcomes; they do not mark skipped deployment as released or infer physical acceptance. Dedicated tests cover escaping, failure/skip reporting, complete upstream dependency coverage and matching workflow subscription, alongside existing deployment-boundary tests.

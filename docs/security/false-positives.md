@@ -2,6 +2,10 @@
 
 This document owns source-specific assessments, confirmed repairs, regression evidence and remaining proof. [Security infrastructure](security-infrastructure.md) owns controls and trust boundaries. An assessment is not an alert dismissal, scanner suppression, penetration test or universal safety claim. Reassess when the source, dependency, caller or trust boundary changes.
 
+## CodeQL54: workflow-summary test assertion
+
+The 25 November 2026 owner-supplied alert identifies `js/bad-tag-filter` in `scripts/workflow-summary.test.mjs`: its negative check matched only lowercase `<script>`. This is a weak test assertion, not the summary formatter's escaping mechanism. `scripts/workflow-summary.mjs` removes angle brackets and Markdown table/control delimiters from context. The test now rejects either remaining angle bracket and supplies lower/upper/mixed-case tag inputs. Both focused workflow-summary tests passed locally; fresh CodeQL confirmation remains pending. No alert dismissal, scanner suppression or runtime change was applied.
+
 ## CodeQL53: enquiry HTML assertion
 
 The19 November2026 alert points to `worker/tests/enquiry.test.mjs`, where a lowercase-only negative assertion failed to detect uppercase script tags. This is a weak test assertion, not the production HTML escaping mechanism. `worker/notification-template.ts` escapes all five HTML-sensitive characters in interpolated customer fields. The assertion now detects script tags case-insensitively, including attribute-bearing tags, and the same intercepted-provider case supplies lowercase, uppercase and mixed-case inputs and checks escaped output. All12 enquiry Worker tests passed locally. Fresh CodeQL acceptance remains pending; no dismissal or suppression was applied.

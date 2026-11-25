@@ -7,7 +7,7 @@ import { workflowSummary } from "./workflow-summary.mjs";
 test("workflow summaries retain failed and skipped outcomes and escape context", () => {
   const output = workflowSummary({
     SUMMARY_KIND: "deployment",
-    GITHUB_WORKFLOW: "Cloudflare | <script>",
+    GITHUB_WORKFLOW: "Cloudflare | <script> <SCRIPT> <ScRiPt>",
     SUMMARY_JOBS: JSON.stringify({
       eligibility: { result: "success" },
       staging: { result: "failure" },
@@ -17,7 +17,7 @@ test("workflow summaries retain failed and skipped outcomes and escape context",
   assert.match(output, /\| staging \| failure \|/);
   assert.match(output, /\| production \| skipped \|/);
   assert.match(output, /Skipped jobs are not deployment evidence/);
-  assert.doesNotMatch(output, /<script>/);
+  assert.doesNotMatch(output, /[<>]/);
   assert.throws(() => workflowSummary({ SUMMARY_KIND: "other" }));
   assert.match(
     workflowSummary({ SUMMARY_KIND: "verification" }),
