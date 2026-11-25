@@ -2,6 +2,58 @@
 
 [Progress](../PROGRESS.md) records the current candidate and its next gate. This history records milestones, decisions, regressions and their outcomes. The [full record through PR 107](https://github.com/soccerbotstudiosg/soccerbotstudioSG/blob/70f300dd2763e417e46255eb4ebf060f61dc8036/docs/journey.md) preserves the original receipts, intermediate experiments, copy reviews and superseded plans.
 
+## 25 November 2026 — CodeQL test assertion and authorized merge preparation
+
+Owner authorized merging #117 while deferring the physical iPad issue. The final merge check found CodeQL alert #54, `js/bad-tag-filter`, on `scripts/workflow-summary.test.mjs:20`. Owner's screenshot identifies a test assertion against lowercase `<script>`, not runtime sanitization. The formatter already strips angle brackets regardless of tag case. Replaced the narrow assertion with absence of either angle bracket and added upper/mixed-case fixture tags, retaining failure/skip reporting checks. No application or recovery logic changed. Fresh CodeQL/CI/staging evidence remains required before merge.
+
+Prior candidate `cefcab0` passed full CI 45350865954 attempt 3 and automatic staging 45367436246; independent health confirmed Worker version 297cd65a-c60d-4e11-841c-3ce680e9b995. This contradicts the earlier predicted need for manual staging after renaming; Runbook is corrected. Deployment 45355742494 failed because the partial frontend rerun requested an attempt-2 release artifact that existed only for attempt 1; complete rerun resolved the mismatch. Owner Android trace shows native viewport restoration while recovery stays keyboardOpen due to its stored height differing from the restored viewport. It does not prove iPad recovery; that work is deferred.
+
+## 24 November 2026 — workflow names and runtime summaries
+
+Owner requested category/purpose names and runtime summaries on #117. Candidate names are CI - Application Verification, CI - Dependency Review and Cloudflare - Deploy Verified Release. Required gate job names and file paths remain unchanged. Deployment listens for the new verification name. Read-only always-run summary jobs explain scope and list exact candidate/target context and actual upstream outcomes; they do not mark skipped deployment as released or infer physical acceptance. Dedicated tests cover escaping, failure/skip reporting, complete upstream dependency coverage and matching workflow subscription, alongside existing deployment-boundary tests.
+
+Default-branch trigger semantics require manual exact-head staging during the rename transition because the old main controller still subscribes to the old workflow name. This limitation and the unchanged manual procedure are documented in Runbook. No merge or production activation is authorized by this work.
+
+## 24 November 2026 — remaining Enquire test expectation reconciled
+
+Run 45330246686 on `b4c89e4` passed frontend, both backend browser shards, master booking regression and Worker verification. Live-email jobs 138230028851 and 138230028904 failed the same `tests/live-email.spec.ts:5250` assertion on desktop, phone and tablet: expected sticky, received static. The earlier change missed this independent live-mode spacing test. Updated its positioning assertion and comment to the owner's approved normal-flow behaviour; retained the 32–33px resting gap, proof margins and readiness checks. No application changes or test-count reductions. Fresh browser evidence must come from CI; original failures remain retained.
+
+## 24 November 2026 — Enquire action changed to normal flow
+
+CI 45313757117 on `7956c58` failed `tests/customer.spec.ts:1786` in phone-WebKit in frontend job 138175498544 and backend shard job 138177809736: Send enquiry had viewport ratio zero on initial entry. All 431 unit/component tests, master booking regression and Worker groups passed. The retained screenshot shows the taller contact panel filling the initial viewport; the form-contained sticky action cannot rise above its form. Original failure artifacts remain attached to the run.
+
+Owner explicitly chose a non-sticky Enquire action to avoid obscuring contact details. The focused follow-up keeps the button inside its existing form, sets only its action anchor to static and removes Enquire from bottom scroll padding reserved for sticky actions. Shared booking behaviour, submission, validation and diagnostic logic are unchanged. The existing browser case now requires static form-contained positioning, scrolls to the action, and retains full visibility and submission assertions. This is an approved behaviour change, not a retry/timeout relaxation. CI/device acceptance remains pending.
+
+## 24 November 2026 — opt-in physical keyboard diagnostics
+
+Owner authorized a phone/iPad trace to distinguish native viewport restoration from the current SiteShell correction. Added a staging/development-only, explicit-query and Start-gated recorder with capped in-memory geometry/events, immediate/two-frame observations, actual recovery state/deltas and validation-focus markers. Stop removes listeners and enables Copy or selectable text; no field contents, identifiers, page URLs, network telemetry or persistent storage are collected. Recovery thresholds and scroll decisions are unchanged. This diagnostic is temporary until the physical comparison and repair are complete. The prior Enquire contact styling is consolidated into this candidate.
+
+Seven focused component tests passed initially. Lint caught synchronous effect state initialization; hydration-safe initialization replaces it. Final source/type/lint checks and exact-head CI/staging are recorded in the PR receipt. Physical iPad behaviour is still unresolved; synthetic recorder assertions do not establish device acceptance.
+
+## 23 November 2026 — Enquire contact presentation refinement
+
+Public navigation revision `78874d2` passed CI 45195810032 and staging 45199820016, including the browser-controlled Terms-tab Back test with original Review consent preserved. Staging health/settings confirmed Worker version 51ffa954-bc66-4f54-b85c-15ef1c8bba09, artifact 14832230969. No merge was authorized.
+
+Owner then requested consistent styling of the complete Enquire contact section, ultimately retaining all three Email/Call/WhatsApp actions and shared footer-style icons. The local refinement groups location and hours above a divided row of icon/label/value links, using existing brand colours, a multiline address from shared location constants and mobile stacking. The address assertion now checks its semantic lines. All three Enquire component cases, source/inventory integrity, focused lint and diff checks passed. Visual acceptance and publication of this refinement are pending; booking/navigation behaviour and canonical metadata are unchanged.
+
+## 23 November 2026 — PR #117 public navigation standardization
+
+The first #117 candidate `8fd840d` passed full CI 45185950219 and staging deployment 45189676019 (artifact 14825481644, Worker version d32d700e-5c88-4f60-a462-496a5b94ff33). Owner then reported the physical iPad field problem still present. It remains unresolved despite the narrower simulated threshold regression passing.
+
+Owner authorized extending #117 with one sticky slogan on five public pages, stateful Back (mobile chevron only), direct-entry Home fallback, closing a separately opened legal tab to reveal untouched Review, and direct contact links above Enquire's form. Existing public canonicals remain unchanged; booking/confirmation are excluded from banners. Return metadata is local history presentation state, not booking authority. The production Worker uses no-referrer; same-origin-only referrer overrides on the Review legal link and shared public links let a separately opened same-site tab identify its origin without exposing it to external sites or restoring opener access. Browser-controlled closing remains subject to browser permission, with Home fallback if refused. The existing legal-tab test now clicks its Back control and waits for closure while checking original consent; public navigation/component checks and dependent inventory are updated together. Early focused checks caught a removed-but-still-used Icon import, a missing router.back mock and an obsolete Enquire Home assertion; these were corrected in their owners before publication. Five focused component tests, 33 source-guard tests, source/inventory and policy checks, typecheck, focused lint, formatting and diff checks passed. No provider/payment contracts or dependency versions changed. Physical/device acceptance of this new candidate is pending.
+
+## 23 November 2026 — iPad keyboard visibility follow-up
+
+Owner confirmed the production smoke test of PR #116, put remaining SEO/keywords/copy work on hold and returned to the unresolved physical iPad keyboard-dismissal issue. Owner considers the earlier staging settings failure nonblocking; no underlying cause is asserted here.
+
+Inspection found `SiteShell`'s 25% viewport-reduction threshold could miss a smaller keyboard on a tall display. A synthetic 1200→960→1200 viewport regression failed before repair (zero correction calls; expected an obscured field to move below the header). The fix tracks contraction/restoration with a one-pixel subpixel tolerance, retaining the existing hidden-field geometry check, manual-scroll cancellation and zoom/orientation safeguards. Added visible-field toolbar restoration coverage; original cancellation/late-scroll cases remain. Both site-shell tests passed after repair, as did source integrity, focused ESLint and Prettier. Test titles/counts and inventories are unchanged. Actual Safari event timing and physical iPad acceptance remain pending; this identifies a reproducible code gap, not proof of the owner's device event sequence. No booking/payment/provider contracts changed. Local privacy-table edits remain preserved and unpushed.
+
+## 23 November 2026 — PR #116 staging/merge and privacy table formatting
+
+PR #116's combined head `e495a6ae6612db40c83a978bbe99af76fd8adebb` passed CI run 45169346521. Staging deployment 45172450953 initially uploaded successfully but failed on missing `SOURCE_REVISION` in the immediate settings read. Subsequent health/settings reads confirmed the exact candidate; attempt 2 passed with deployment artifact 14817762286. Owner then authorized merge; squash commit is `896abd1bf9468163ef573afe83b44350fc02a225`. This records staging and merge, not physical-device or production acceptance.
+
+The owner next supplied a privacy-policy screenshot showing centered labels and crowded table cells. Local styling in `src/app/globals.css` adds left/top alignment, a bounded label column, responsive padding, row separators and a shaded header, retaining semantic markup and every policy word. Source integrity, Prettier and diff checks passed. Existing legal-page browser tests remain unchanged; visual verification is owner/CI pending. No booking, provider, dependency, metadata or policy-content changes; corresponding contracts and operational owners remain unchanged.
+
 ## Initial milestone overview
 
 The original nine phases and 44 subiterations remain below. This is the retained delivery plan, not a blanket completion claim. [Progress](../PROGRESS.md) records current evidence, failures and remaining acceptance; later dated decisions can supersede original implementation choices without deleting milestone IDs.

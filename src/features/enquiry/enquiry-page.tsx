@@ -1,15 +1,19 @@
 "use client";
+import { Icon } from "@/components/icon";
 import { focusFormError } from "@/components/form-focus";
 import { BookingPrimaryAction } from "@/features/booking/booking-primary-action";
 import { PhoneInput } from "@/features/booking/phone-input";
 import { EnquiryBotProof } from "@/features/booking/email-bot-proof";
 import { enquiryErrors } from "@/domain/enquiry";
 import { EMAIL_MAX_LENGTH } from "@/domain/contact";
-import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Icon } from "@/components/icon";
 import { OPENING_MINUTE, CLOSING_MINUTE } from "@/domain/booking-policy";
-import { ADDRESS, ENQUIRY_TYPES } from "@/domain/catalog";
+import {
+  LOCATION,
+  CONTACT,
+  BOOKING_SUPPORT,
+  ENQUIRY_TYPES,
+} from "@/domain/catalog";
 import { openingTime, todaySG } from "@/domain/dates";
 import { services } from "@/services";
 import { customerMessage, type Enquiry } from "@/services/contracts";
@@ -143,10 +147,6 @@ export function EnquiryPage() {
   );
   return (
     <div className="enquiry-page mx-auto min-h-[65vh] max-w-4xl px-5 py-10 sm:px-10">
-      <Link className="back mb-8" href="/">
-        <Icon name="back" />
-        Home
-      </Link>
       <div className="booking-heading-row">
         <h1 className="page-title">Contact the studio</h1>
       </div>
@@ -162,13 +162,61 @@ export function EnquiryPage() {
             : "Preview · No enquiry sent."}
         </div>
       )}
-      <div className="mt-5 space-y-2">
-        <address className="not-italic font-semibold">{ADDRESS}</address>
-        <p>
-          Open daily · {openingTime(OPENING_MINUTE)}–
-          {openingTime(CLOSING_MINUTE)}
-        </p>
-      </div>
+      <section
+        className="enquiry-contact-details"
+        aria-label="Studio contact details"
+      >
+        <div className="enquiry-location-details">
+          <div>
+            <p className="enquiry-contact-label">Visit us</p>
+            <address>
+              <strong>{LOCATION.building}</strong>
+              <span>
+                {LOCATION.street}, {LOCATION.unit}
+              </span>
+              <span>{LOCATION.postal}</span>
+            </address>
+          </div>
+          <div className="enquiry-opening-hours">
+            <p className="enquiry-contact-label">Opening hours</p>
+            <p>
+              Open daily · {openingTime(OPENING_MINUTE)}–
+              {openingTime(CLOSING_MINUTE)}
+            </p>
+          </div>
+        </div>
+        <div className="enquiry-contact-links">
+          <a href={`mailto:${CONTACT.email}`}>
+            <Icon name="mail" />
+            <span>
+              <span className="enquiry-contact-label">Email</span>
+              <span className="enquiry-contact-value">{CONTACT.email}</span>
+            </span>
+          </a>
+          <a href={`tel:${CONTACT.phone}`}>
+            <Icon name="phone" />
+            <span>
+              <span className="enquiry-contact-label">Call</span>
+              <span className="enquiry-contact-value">
+                {CONTACT.phoneDisplay}
+              </span>
+            </span>
+          </a>
+          <a
+            href={BOOKING_SUPPORT.whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Icon name="whatsapp" />
+            <span>
+              <span className="enquiry-contact-label">WhatsApp</span>
+              <span className="enquiry-contact-value">
+                {CONTACT.phoneDisplay}
+              </span>
+            </span>
+          </a>
+        </div>
+      </section>
       <form
         className="surface mt-8 enquiry-form"
         aria-busy={!ready || busy}

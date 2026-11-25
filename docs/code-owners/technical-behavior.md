@@ -2,6 +2,8 @@
 
 Use this map to trace an operation from its first caller to the owner that authorizes its effect. The [feature map](index.md) locates the files. [Booking scenarios](../booking-flows.md) owns customer-visible behavior and copy. [API contracts](../api-contracts.md) owns protocol and evidence requirements.
 
+Temporary keyboard diagnostics belong to `src/components/keyboard-trace.tsx`, mounted by SiteShell only when RootLayout's staging/development build gate permits it. `?keyboardTrace=1` opts in; Start begins memory-only recording and Stop removes observers. Geometry snapshots include visual/layout viewports, scroll, active/edited/tracked field bounds and sticky navigation. SiteShell and form-focus emit their actual correction decisions without changing them. The 1,200-event cap reports dropped events; Copy has a selectable-text fallback. No field contents, DOM identifiers, page URLs, persistent storage or telemetry are included. Remove this diagnostic after the physical phone/iPad comparison and verified repair; the current iPad issue remains unresolved.
+
 ## 1. UI state, navigation and loading
 
 | Function / operation                        | Behavior and visible result                                                                                                                                                | Guards                                                                                                                                | Failure and recovery                                                                                                                                     |

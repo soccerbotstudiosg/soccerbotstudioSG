@@ -67,7 +67,14 @@ export default function RootLayout({
         <BookingProvider>
           <BookingNavigation>
             <PageRefreshBoundary>
-              <SiteShell>{children}</SiteShell>
+              <SiteShell
+                keyboardDiagnostics={
+                  process.env.RELEASE_TARGET === "staging" ||
+                  process.env.NODE_ENV === "development"
+                }
+              >
+                {children}
+              </SiteShell>
             </PageRefreshBoundary>
           </BookingNavigation>
         </BookingProvider>

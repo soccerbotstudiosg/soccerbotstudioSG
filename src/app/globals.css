@@ -1039,6 +1039,39 @@
     height: 22px;
     transform: rotate(-90deg);
   }
+  /* Temporary opt-in diagnostics: fixed controls do not resize the sticky header. */
+  .keyboard-trace {
+    position: fixed;
+    right: 8px;
+    bottom: 8px;
+    z-index: 100;
+    max-width: min(320px, calc(100vw - 16px));
+    padding: 8px;
+    border: 1px solid var(--color-identity);
+    border-radius: 8px;
+    background: #fff;
+    color: #050a2f;
+    font:
+      12px/1.4 Arial,
+      sans-serif;
+  }
+  .keyboard-trace > div {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .keyboard-trace button {
+    min-height: 44px;
+    padding: 6px 10px;
+  }
+  .keyboard-trace textarea {
+    display: block;
+    width: 100%;
+    height: 80px;
+    margin-top: 8px;
+    font-size: 12px;
+  }
+
   .site-header {
     position: sticky;
     top: 0;
@@ -1140,8 +1173,7 @@
     isolation: isolate;
     overflow: hidden;
   }
-  .arena-signature,
-  .studio-signature {
+  .site-signature {
     margin: 0;
     padding: 17px 24px;
     text-align: center;
@@ -1154,15 +1186,13 @@
     background: #050a2f;
     border-top: 1px solid #26374f;
     border-bottom: 1px solid #26374f;
-  }
-  .studio-signature {
     position: relative;
     padding-inline: 88px;
     min-height: 48px;
     display: grid;
     align-items: center;
   }
-  .studio-back {
+  .public-back {
     position: absolute;
     left: 16px;
     top: 50%;
@@ -1171,6 +1201,8 @@
     align-items: center;
     gap: 4px;
     min-height: 44px;
+    min-width: 44px;
+    justify-content: center;
     line-height: 1;
     white-space: nowrap;
     color: var(--color-on-brand);
@@ -1178,14 +1210,14 @@
     letter-spacing: normal;
     text-transform: none;
   }
-  .studio-back .icon {
+  .public-back .icon {
     width: 18px;
     height: 18px;
   }
-  .studio-back:hover {
+  .public-back:hover {
     color: var(--color-logo-blue);
   }
-  .studio-back:focus-visible {
+  .public-back:focus-visible {
     outline: 2px solid var(--color-focus);
     outline-offset: 3px;
   }
@@ -1987,6 +2019,87 @@
       opacity: 1;
     }
   }
+  .enquiry-contact-details {
+    display: grid;
+    gap: 24px;
+    margin-top: 24px;
+    padding: clamp(20px, 3vw, 28px);
+    border: 1px solid var(--color-line);
+    border-radius: 16px;
+    background: var(--color-surface);
+    color: var(--color-muted);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  .enquiry-location-details {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 20px 32px;
+  }
+  .enquiry-contact-label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--color-brand);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+  .enquiry-location-details address {
+    display: grid;
+    gap: 2px;
+    font-style: normal;
+  }
+  .enquiry-location-details address strong {
+    color: var(--color-ink);
+    font-size: 1.125rem;
+    font-weight: 700;
+  }
+  .enquiry-contact-links {
+    display: grid;
+    gap: 20px;
+    padding-top: 24px;
+    border-top: 1px solid var(--color-line);
+  }
+  .enquiry-contact-links a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    min-height: 44px;
+    color: var(--color-identity);
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  .enquiry-contact-links a > span {
+    min-width: 0;
+  }
+  .enquiry-contact-links .icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+  .enquiry-contact-value {
+    overflow-wrap: anywhere;
+    text-decoration: underline;
+    text-decoration-color: var(--color-line);
+    text-underline-offset: 3px;
+  }
+  .enquiry-contact-links a:hover {
+    color: var(--color-brand);
+  }
+  .enquiry-contact-links a:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 4px;
+    border-radius: 2px;
+  }
+  @media (min-width: 800px) {
+    .enquiry-contact-links {
+      grid-template-columns: 1.4fr 1fr 1fr;
+    }
+  }
   .legal-document {
     --color-brand: #242424;
     --color-ink: #2d2d2d;
@@ -2027,6 +2140,26 @@
   .legal-document dt {
     font-weight: 700;
     margin-top: 0.65em;
+  }
+  .legal-document table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    margin-block: 1em 1.5em;
+  }
+  .legal-document th,
+  .legal-document td {
+    padding: 12px clamp(8px, 2vw, 20px);
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .legal-document th:first-child {
+    width: 32%;
+  }
+  .legal-document thead {
+    background: #f3f3f3;
   }
   .studio-intro {
     display: block;
@@ -3016,18 +3149,13 @@
     }
   }
   @media (max-width: 700px) {
-    .arena-signature,
-    .studio-signature {
-      padding: 14px 16px;
+    .site-signature {
+      padding: 14px 72px;
       font-size: 0.5625rem;
-      letter-spacing: var(--tracking-ui-label);
-    }
-    .studio-back > span {
-      display: none;
-    }
-    .studio-signature {
-      padding-inline: 72px;
       letter-spacing: 0.1em;
+    }
+    .public-back > span {
+      display: none;
     }
     .official-logo {
       width: 145px;
@@ -3050,7 +3178,7 @@
     .booking-stage {
       min-height: calc(100svh - var(--site-header-height, 148px));
       display: grid;
-      grid-template-rows: auto 1fr;
+      grid-template-rows: 1fr;
     }
     .arena-body {
       display: grid;
@@ -3458,7 +3586,10 @@
     padding: var(--space-action-top) 0
       calc(var(--space-action-bottom) + env(safe-area-inset-bottom));
   }
-  html:has(:is(.booking-shell, .enquiry-page) .booking-primary-action) {
+  .enquiry-page .booking-action-anchor {
+    position: static;
+  }
+  html:has(.booking-shell .booking-primary-action) {
     scroll-padding-bottom: calc(
       80px + var(--space-action-bottom) + env(safe-area-inset-bottom)
     );

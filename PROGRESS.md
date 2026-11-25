@@ -2,17 +2,19 @@
 
 ## Active outcome
 
-Stage PR #116 with merged #115 dependencies. Owner authorized staging, not merging #116. Main dependency merge is 219379179ab66953fa67ca7a8079b1550d71f08a; #115 passed manual staging verification/deployment and received an explicit manual-smoke waiver limited to #115.
+Owner accepted proceeding with #117 and authorized merge, explicitly deferring the unresolved physical iPad issue. Merge inspection found CodeQL alert #54 (`js/bad-tag-filter`) on the test-only lowercase `<script>` assertion in `scripts/workflow-summary.test.mjs`. Owner supplied the alert and approved its repair. The candidate now asserts that no angle brackets remain and includes lower/upper/mixed-case tag fixtures; runtime formatting and application code are unchanged.
 
 ## Candidate and evidence
 
-PR #116 contains booking-code copy, public SEO/audit corrections, Contact address/hours and standard Send enquiry styling. Studio rewording remains deferred. Previous head 64f004f passed CI; incorporation of #115 requires new exact-head CI and actual staging deployment/health. The dependency merge changes no application payment/recovery logic. Documentation conflicts were reconciled while preserving both histories. Shared test repairs merged unchanged. Local baseline node_modules is preserved; upgraded dependency execution belongs to CI.
+Prior head `cefcab0704c002aa68d8c1ab51226d76be629ddb` passed full CI 45350865954 attempt 3 and automatically deployed through 45367436246 (staging job 138352970940, receipt artifact 14907601569). Independent health confirmed that revision and Worker version 297cd65a-c60d-4e11-841c-3ce680e9b995. The earlier claim that workflow renaming required manual staging was incorrect. The earlier failed deployment 45355742494 was caused by a partial rerun lacking an attempt-2 live-email artifact; a full rerun produced consistent artifacts.
+
+The staged feature scope includes public sticky banners/stateful Back, contact presentation, privacy table formatting, normal-flow Enquire action, staging-only opt-in keyboard tracing, and workflow naming/summaries. Android trace shows native visual-viewport panning/restoration without document scrolling or recovery correction; stored fullHeight 771px versus restored 715px leaves keyboardOpen true. This is diagnostic evidence, not an iPad fix. Owner deferred iPad investigation; no additional recovery change is included.
 
 ## Next actions
 
-- Publish the combined candidate, mark #116 ready, and inspect all required gates and automatic staging health for the exact head.
-- Obtain owner acceptance and explicit merge authorization after staging. The #115 smoke waiver does not apply to #116.
-- GSC/GA4, live redirects, Lighthouse and deferred marketing copy remain separate.
+- Validate and publish the test-only CodeQL repair and reconciled documentation on #117.
+- Require fresh CodeQL, complete exact-head CI and actual staging/health before executing the authorized merge. Recheck main verification and deployment separately; do not equate merge with production release.
+- Resume physical iPad diagnosis later using the recorder; temporary diagnostics remain disabled in production.
 
 ## Ordered work after this slice
 

@@ -1,8 +1,8 @@
-name: Deploy verified release
+name: Cloudflare - Deploy Verified Release
 on:
   workflow_run:
     workflows:
-      - Verify deployment target
+      - CI - Application Verification
     types:
       - completed
   workflow_dispatch:
@@ -30,7 +30,7 @@ on:
         required: true
         type: string
       verify_run_id:
-        description: Successful Verify deployment target run ID
+        description: Successful CI - Application Verification run ID
         required: true
         type: string
 permissions:
@@ -161,3 +161,27 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
     needs: eligibility
+  summary:
+    name: Workflow summary
+    if: always()
+    needs: [eligibility, staging, production]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+      - name: Explain workflow and report outcomes
+        env:
+          SUMMARY_KIND: deployment
+          SUMMARY_TARGET: ${{ inputs.target || (github.event.workflow_run.event == 'pull_request' && 'staging' || 'production') }}
+          SUMMARY_OPERATION: ${{ inputs.operation || 'deploy' }}
+          SUMMARY_REVISION: ${{ github.event.workflow_run.head_sha || inputs.revision }}
+          SUMMARY_JOBS: ${{ toJSON(needs) }}
+        run: node scripts/workflow-summary.mjs

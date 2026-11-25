@@ -7,6 +7,7 @@ import {
   useLayoutEffect,
   useEffect,
   useState,
+  useRef,
   type ReactNode,
 } from "react";
 import { ADDRESS, BOOKING_SUPPORT, CONTACT, LOCATION } from "@/domain/catalog";
@@ -20,6 +21,7 @@ import { PlayerAppLinks } from "./player-app-links";
 import { PlayerAppPrompt } from "./player-app-prompt";
 import { BackToTop, SectionReveals } from "./section-reveals";
 import { Icon } from "./icon";
+import { KeyboardTrace, traceKeyboard } from "./keyboard-trace";
 const ErrorPage = createContext<(active: boolean) => void>(() => {});
 /** Suspend optional prompts and booking departure guards while an error page is mounted. */
 export function useErrorPage() {
@@ -30,7 +32,13 @@ export function useErrorPage() {
   }, [setErrorPage]);
 }
 /** Render shared navigation, footer and customer support controls. */
-export function SiteShell({ children }: { children: ReactNode }) {
+export function SiteShell({
+  children,
+  keyboardDiagnostics = false,
+}: {
+  children: ReactNode;
+  keyboardDiagnostics?: boolean;
+}) {
   const pathname = usePathname(),
     router = useRouter(),
     booking = useBooking();
@@ -46,6 +54,54 @@ export function SiteShell({ children }: { children: ReactNode }) {
   if (leavingFrom && pathname !== leavingFrom) setLeavingFrom(null);
   if (dialog && (errorPage || dialog.from !== pathname)) setDialog(null);
   const confirmation = /^\/confirmation\/?$/.test(pathname);
+  const publicPage =
+    /^\/(?:studio|enquiry|terms-of-service|privacy-policy)?\/?$/.test(pathname);
+  const home = pathname === "/";
+  const previousPath = useRef(pathname);
+  useLayoutEffect(() => {
+    if (publicPage && !home) {
+      const saved = window.history.state?.soccerbotPublicBack;
+      if (saved?.path !== pathname) {
+        const referrer = document.referrer
+          ? new URL(document.referrer).origin === window.location.origin
+          : false;
+        window.history.replaceState(
+          {
+            ...window.history.state,
+            soccerbotPublicBack: {
+              path: pathname,
+              internal: previousPath.current !== pathname || referrer,
+            },
+          },
+          "",
+        );
+      }
+    }
+    previousPath.current = pathname;
+  }, [pathname, publicPage, home]);
+  /** Return within this tab, close a separately opened site tab, or fall back home. */
+  function publicBack(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
+    event.preventDefault();
+    const saved = window.history.state?.soccerbotPublicBack;
+    if (saved?.path === pathname && saved.internal) {
+      if (window.history.length > 1) {
+        router.back();
+        return;
+      }
+      window.close();
+      if (window.closed) return;
+    }
+    enter("/");
+  }
+
   useEffect(() => {
     const header = document.querySelector(".site-header");
     if (!header) return;
@@ -80,8 +136,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
     let width = window.innerWidth;
     let fullHeight = Math.max(viewport.height, window.innerHeight);
     let frame = 0;
+    const trace = (event: string, delta?: number) =>
+      traceKeyboard(event, { keyboardOpen, closing, fullHeight, delta }, field);
     /** Abandon correction when the visitor intentionally scrolls or changes orientation. */
-    const cancel = () => {
+    const cancel = (event?: Event) => {
+      trace(`recovery:cancel:${event?.type ?? "cleanup-or-reset"}`);
       closing = false;
       field = null;
       cancelAnimationFrame(frame);
@@ -94,9 +153,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
           ? target
           : null;
       closing = false;
+      trace("recovery:focus");
     };
     /** Reveal only a keyboard-edited field obscured by the restored sticky navigation. */
     const correct = () => {
+      trace("recovery:check");
       if (!closing || !field?.isConnected || viewport.scale !== 1) return;
       const header =
         document.querySelector(".site-header")?.getBoundingClientRect()
@@ -106,8 +167,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
           .bottom ?? 0;
       const top = Math.max(header, progress, viewport.offsetTop) + 16;
       const bounds = field.getBoundingClientRect();
-      if (bounds.top < top)
+      if (bounds.top < top) {
+        trace("recovery:scroll", bounds.top - top);
         window.scrollBy({ top: bounds.top - top, behavior: "instant" });
+      }
     };
     /** Follow late browser scrolling until the visitor resumes interacting. */
     const schedule = () => {
@@ -130,12 +193,16 @@ export function SiteShell({ children }: { children: ReactNode }) {
         return;
       }
       fullHeight = Math.max(fullHeight, viewport.height);
-      const reduced = viewport.height < fullHeight * 0.75;
+      // iPad keyboards need not cover 25% of a tall viewport. Track an edited
+      // viewport's contraction/restoration instead; ignore subpixel rounding.
+      // Toolbar restoration is safe too: correct() only reveals hidden fields.
+      const reduced = viewport.height < fullHeight - 1;
       if (reduced && field) keyboardOpen = true;
       if (!reduced && keyboardOpen) {
         keyboardOpen = false;
         closing = true;
       }
+      trace("recovery:viewport");
       schedule();
     };
     const observer =
@@ -263,6 +330,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <BookingLink
               href="/studio/"
               className="nav-studio"
+              referrerPolicy="same-origin"
               aria-current={pathname === "/studio/" ? "page" : undefined}
             >
               The studio
@@ -272,12 +340,19 @@ export function SiteShell({ children }: { children: ReactNode }) {
             </BookingLink>
           </div>
         </nav>
-        {(pathname === "/studio/" || pathname === "/studio") && (
-          <div className="studio-signature">
-            <BookingLink href="/" className="studio-back" aria-label="Back">
-              <Icon name="back" />
-              <span>Back</span>
-            </BookingLink>
+        {publicPage && !errorPage && (
+          <div className="site-signature">
+            {!home && (
+              <Link
+                href="/"
+                className="public-back"
+                aria-label="Back"
+                onClick={publicBack}
+              >
+                <Icon name="back" />
+                <span>Back</span>
+              </Link>
+            )}
             <span>Performance · Experience · Production</span>
           </div>
         )}
@@ -304,8 +379,12 @@ export function SiteShell({ children }: { children: ReactNode }) {
                   Services
                 </h2>
                 <div className="footer-contact-detail footer-direct-links">
-                  <Link href="/terms-of-service/">Terms and Condition</Link>
-                  <Link href="/privacy-policy/">Privacy Policy</Link>
+                  <Link href="/terms-of-service/" referrerPolicy="same-origin">
+                    Terms and Condition
+                  </Link>
+                  <Link href="/privacy-policy/" referrerPolicy="same-origin">
+                    Privacy Policy
+                  </Link>
                 </div>
               </div>
             </section>
@@ -404,6 +483,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <span>© 2026 SOCCERBOTSTUDIO Singapore. All rights reserved.</span>
         </div>
       </footer>
+      {keyboardDiagnostics && <KeyboardTrace />}
       <SectionReveals />
       <BackToTop />
       {!errorPage && <PlayerAppPrompt />}

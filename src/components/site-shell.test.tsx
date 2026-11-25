@@ -2,11 +2,13 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import * as keyboardTrace from "./keyboard-trace";
 import { sitePath } from "@/content/site-path";
 import { SiteShell, useErrorPage } from "./site-shell";
 const navigation = vi.hoisted(() => ({
   path: "/book/session/yes",
   push: vi.fn(),
+  back: vi.fn(),
 }));
 const booking = vi.hoisted(() => ({
   attempt: null,
@@ -15,7 +17,7 @@ const booking = vi.hoisted(() => ({
 }));
 vi.mock("next/navigation", () => ({
   usePathname: () => navigation.path,
-  useRouter: () => ({ push: navigation.push }),
+  useRouter: () => ({ push: navigation.push, back: navigation.back }),
 }));
 vi.mock("@/features/booking/provider", () => ({ useBooking: () => booking }));
 vi.mock("next/link", () => ({
@@ -40,7 +42,7 @@ function Standalone({ children }: { children: ReactNode }) {
   useErrorPage();
   return children;
 }
-test("nested booking 404 bypasses departure prompts and restores the guard only on valid booking pages", () => {
+test("site navigation preserves public return state, booking guards and keyboard visibility", () => {
   const follow = vi.fn();
   const home = (
     <Link
@@ -103,6 +105,7 @@ test("nested booking 404 bypasses departure prompts and restores the guard only 
   expect(booking.leave).toHaveBeenCalledExactlyOnceWith();
   expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/");
   view.unmount();
+  const trace = vi.spyOn(keyboardTrace, "traceKeyboard");
   const viewport = Object.assign(new EventTarget(), {
     height: window.innerHeight,
     scale: 1,
@@ -121,11 +124,16 @@ test("nested booking 404 bypasses departure prompts and restores the guard only 
   });
   vi.stubGlobal("scrollBy", scroll);
   navigation.path = "/enquiry/";
+  window.history.replaceState({}, "", "/enquiry/?keyboardTrace=1");
   const keyboardView = render(
     <SiteShell>
       <input aria-label="Editing field" />
     </SiteShell>,
   );
+  expect(
+    screen.queryByRole("complementary", { name: "Keyboard diagnostics" }),
+  ).not.toBeInTheDocument();
+  window.history.replaceState({}, "", "/enquiry/");
   const field = screen.getByRole("textbox", { name: "Editing field" });
   vi.spyOn(field, "getBoundingClientRect").mockImplementation(() => ({
     top,
@@ -162,6 +170,11 @@ test("nested booking 404 bypasses departure prompts and restores the guard only 
     top: -76,
     behavior: "instant",
   });
+  expect(trace).toHaveBeenCalledWith(
+    "recovery:scroll",
+    expect.objectContaining({ closing: true, delta: -76 }),
+    field,
+  );
   expect(top).toBe(116);
   // Safari may finish its document scroll after the viewport resize has settled.
   top = 20;
@@ -196,7 +209,95 @@ test("nested booking 404 bypasses departure prompts and restores the guard only 
   fireEvent.scroll(window);
   flush();
   expect(scroll).not.toHaveBeenCalled();
+  // A portrait iPad keyboard can occupy less than a quarter of the viewport.
+  // Toolbar-only resizing must also leave an already visible field alone.
+  top = 160;
+  fireEvent.focusIn(field);
+  resize(fullHeight - 40);
+  resize(fullHeight);
+  expect(scroll).not.toHaveBeenCalled();
+  vi.stubGlobal("innerHeight", 1200);
+  resize(1200);
+  top = 40;
+  fireEvent.focusIn(field);
+  resize(960);
+  expect(scroll).not.toHaveBeenCalled();
+  resize(1200);
+  expect(scroll).toHaveBeenCalledExactlyOnceWith({
+    top: -76,
+    behavior: "instant",
+  });
+  expect(top).toBe(116);
+  trace.mockRestore();
   keyboardView.unmount();
+  vi.unstubAllGlobals();
+  const originalState = window.history.state;
+  window.history.replaceState({}, "");
+  navigation.path = "/studio/";
+  const publicView = render(
+    <SiteShell>
+      <p>Public content</p>
+    </SiteShell>,
+  );
+  navigation.push.mockClear();
+  fireEvent.click(screen.getByRole("link", { name: "Back" }));
+  expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/");
+  for (const route of [
+    "/",
+    "/book/review/",
+    "/confirmation/",
+    "/enquiry/",
+    "/terms-of-service/",
+    "/privacy-policy/",
+  ]) {
+    navigation.path = route;
+    publicView.rerender(
+      <SiteShell>
+        <p>Public content</p>
+      </SiteShell>,
+    );
+    expect(document.querySelectorAll(".site-signature")).toHaveLength(
+      route.startsWith("/book/") || route === "/confirmation/" ? 0 : 1,
+    );
+  }
+  const historyLength = vi
+    .spyOn(window.history, "length", "get")
+    .mockReturnValue(2);
+  fireEvent.click(screen.getByRole("link", { name: "Back" }));
+  expect(navigation.back).toHaveBeenCalledOnce();
+  publicView.unmount();
+  // Reload retains the current entry's return state.
+  const reloadView = render(
+    <SiteShell>
+      <p>Public content</p>
+    </SiteShell>,
+  );
+  fireEvent.click(screen.getByRole("link", { name: "Back" }));
+  expect(navigation.back).toHaveBeenCalledTimes(2);
+  reloadView.unmount();
+  // A noopener legal tab still has a same-origin referrer and a single entry.
+  window.history.replaceState({}, "");
+  historyLength.mockReturnValue(1);
+  const referrer = vi
+    .spyOn(document, "referrer", "get")
+    .mockReturnValue(`${window.location.origin}/book/review/`);
+  const close = vi.spyOn(window, "close").mockImplementation(() => {});
+  vi.stubGlobal("closed", true);
+  const tabView = render(
+    <SiteShell>
+      <p>Public content</p>
+    </SiteShell>,
+  );
+  navigation.push.mockClear();
+  fireEvent.click(screen.getByRole("link", { name: "Back" }));
+  expect(close).toHaveBeenCalledOnce();
+  expect(navigation.push).not.toHaveBeenCalled();
+  expect(navigation.back).toHaveBeenCalledTimes(2);
+  tabView.unmount();
+  close.mockRestore();
+  referrer.mockRestore();
+  historyLength.mockRestore();
+  window.history.replaceState(originalState, "");
   vi.unstubAllGlobals();
 });
 

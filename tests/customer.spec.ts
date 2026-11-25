@@ -978,7 +978,7 @@ test("public routes remove staff access and fit the viewport", async ({
   expect(contentBox).not.toBeNull();
   expect(heroBox!.width).toBeCloseTo(page.viewportSize()!.width, 0);
   expect(contentBox!.y).toBeCloseTo(heroBox!.y + heroBox!.height + 12, 0);
-  const studioBackAlignment = page.locator(".studio-back");
+  const studioBackAlignment = page.locator(".public-back");
   const backIcon = await studioBackAlignment.locator("svg").boundingBox();
   const backLabel = await studioBackAlignment.locator("span").boundingBox();
   await expect(studioBackAlignment).toHaveAccessibleName("Back");
@@ -989,7 +989,7 @@ test("public routes remove staff access and fit the viewport", async ({
       backLabel!.y + backLabel!.height / 2,
       0,
     );
-  const signatureBox = await page.locator(".studio-signature").boundingBox();
+  const signatureBox = await page.locator(".site-signature").boundingBox();
   const studioHeaderBox = await page.locator(".site-header").boundingBox();
   expect(signatureBox).not.toBeNull();
   expect(studioHeaderBox).not.toBeNull();
@@ -1125,7 +1125,7 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(studioBack).toHaveCSS("border-width", "0px");
   const pinnedBackBox = await studioBack.boundingBox();
   const pinnedHeaderBox = await page
-    .locator(".site-header .studio-signature")
+    .locator(".site-header .site-signature")
     .boundingBox();
   expect(pinnedBackBox!.y + pinnedBackBox!.height / 2).toBeCloseTo(
     pinnedHeaderBox!.y + pinnedHeaderBox!.height / 2,
@@ -1194,6 +1194,7 @@ test("public routes remove staff access and fit the viewport", async ({
     ["Terms and Condition", "/terms-of-service/"],
     ["Privacy Policy", "/privacy-policy/"],
   ]) {
+    const originatingPage = page.url();
     await page
       .locator(".site-footer")
       .getByRole("link", { name: label, exact: true })
@@ -1208,9 +1209,20 @@ test("public routes remove staff access and fit the viewport", async ({
         exact: true,
       }),
     ).toBeVisible();
+    await expect(page.locator(".site-header .site-signature")).toBeVisible();
+    const publicBack = page.getByRole("link", { name: "Back", exact: true });
+    await expect(publicBack).toBeVisible();
+    if (page.viewportSize()!.width <= 700)
+      await expect(publicBack.locator("span")).toBeHidden();
+    await page.evaluate(() => window.scrollTo(0, 400));
+    const publicHeader = await page.locator(".site-header").boundingBox();
+    expect(publicHeader!.y).toBeCloseTo(0, 0);
+    await page.evaluate(() => window.scrollTo(0, 0));
     await expect(page.locator(".legal-document h2")).toHaveCount(
       label === "Privacy Policy" ? 11 : 13,
     );
+    await publicBack.click();
+    await expect(page).toHaveURL(originatingPage);
   }
   await page.goto(sitePath("/"));
   await page
@@ -1350,6 +1362,8 @@ test("guest multi-date booking survives reload without retired export actions", 
   await details(page);
   const policyLinks = page.locator(".review-terms").getByRole("link");
   await expect(policyLinks).toHaveText(["Terms and Conditions"]);
+  await expect(policyLinks).toHaveAttribute("referrerpolicy", "same-origin");
+  await expect(policyLinks).toHaveAttribute("rel", "noopener");
   const consent = page.getByRole("checkbox", { name: /I’ve reviewed/ });
   for (const checked of [false, true]) {
     await consent.setChecked(checked);
@@ -1362,7 +1376,11 @@ test("guest multi-date booking survives reload without retired export actions", 
         exact: true,
       }),
     ).toBeVisible();
-    await policyPage.close();
+    const closed = policyPage.waitForEvent("close");
+    await policyPage.getByRole("link", { name: "Back", exact: true }).click();
+    await closed;
+    await expect(page).toHaveURL(/\/book\/review\/$/);
+    await expect(page.locator(".site-signature")).toHaveCount(0);
     await expect(consent).toBeChecked({ checked });
   }
   await page.reload();
@@ -1740,17 +1758,14 @@ test("enquiry remains available without external submission or a mock assistant"
 }) => {
   await openSite(page, "/enquiry/");
   const enquiryHome = page
-    .locator(".enquiry-page")
-    .getByRole("link", { name: "Home", exact: true });
+    .locator(".site-header")
+    .getByRole("link", { name: "Back", exact: true });
   await expect(enquiryHome).toHaveAttribute("href", sitePath("/"));
   await expect(
     page.getByRole("heading", { name: "Contact the studio", exact: true }),
   ).toBeVisible();
   await expect(page.locator(".nav-flag")).toHaveCSS("border-radius", "1px 3px");
-  for (const control of [
-    enquiryHome,
-    page.getByRole("button", { name: "Send enquiry" }),
-  ]) {
+  for (const control of [page.getByRole("button", { name: "Send enquiry" })]) {
     await expect(control).toHaveCSS("border-top-left-radius", "3px");
     await expect(control).toHaveCSS("border-top-right-radius", "12px");
     await expect(control).toHaveCSS("border-bottom-right-radius", "3px");
@@ -1768,6 +1783,12 @@ test("enquiry remains available without external submission or a mock assistant"
     page.locator(".enquiry-form legend .required-fields"),
   ).toHaveText("* Required fields");
   const enquiryAction = page.getByRole("button", { name: "Send enquiry" });
+  // Enquire's action belongs below its form; it must not float over contact details.
+  await expect(page.locator(".enquiry-form .booking-action-anchor")).toHaveCSS(
+    "position",
+    "static",
+  );
+  await enquiryAction.scrollIntoViewIfNeeded();
   await expect(enquiryAction).toBeInViewport({ ratio: 1 });
   await expect(
     page.locator(".enquiry-page .booking-primary-action"),

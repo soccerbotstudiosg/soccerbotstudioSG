@@ -42,7 +42,6 @@ export function Arena() {
   }
   return (
     <section className="booking-stage" aria-labelledby="arena-heading">
-      <p className="arena-signature">Performance · Experience · Production</p>
       <div className="arena-body">
         <Link
           ref={area}

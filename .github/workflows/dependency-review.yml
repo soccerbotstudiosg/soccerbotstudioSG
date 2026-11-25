@@ -1,4 +1,4 @@
-name: Dependency review format
+name: CI - Dependency Review
 on:
   pull_request:
     # Opening, new commits and reopening are already checked by verify / frontend.
@@ -24,3 +24,27 @@ jobs:
       - run: node scripts/dependency-review.mjs
         env:
           GH_TOKEN: ${{ github.token }}
+  summary:
+    name: Workflow summary
+    if: always()
+    needs: review
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+      - name: Explain workflow and report outcomes
+        env:
+          SUMMARY_KIND: dependency
+          SUMMARY_TARGET: not-applicable
+          SUMMARY_OPERATION: verify
+          SUMMARY_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+          SUMMARY_JOBS: ${{ toJSON(needs) }}
+        run: node scripts/workflow-summary.mjs
