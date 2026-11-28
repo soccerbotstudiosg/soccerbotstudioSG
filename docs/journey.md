@@ -2,6 +2,12 @@
 
 [Progress](../PROGRESS.md) records the current candidate and its next gate. This history records milestones, decisions, regressions and their outcomes. The [full record through PR 107](https://github.com/soccerbotstudiosg/soccerbotstudioSG/blob/70f300dd2763e417e46255eb4ebf060f61dc8036/docs/journey.md) preserves the original receipts, intermediate experiments, copy reviews and superseded plans.
 
+## 28 November 2026 — transparent email wordmark
+
+Owner requested correcting the black rectangle in all branded emails, retaining mobile-friendly sizing, then publishing a small PR with CI. Starting from main `84aba92` (#117), changed only the shared wordmark asset and documentation. The initial generative image edit damaged lettering and was rejected. Owner approved deterministic pixel conversion: alpha is the original maximum RGB channel, with colours unpremultiplied. All RGB pixels reproduce the original exactly when composited over black; dimensions remain 1130×380. Offline previews at the existing 160px display width were inspected against both email background colours.
+
+Rendered all eleven shared application variants and checked both logo references, responsive sizing, mobile padding and wrapping for field-bearing messages. An initial scratch assertion incorrectly expected field wrapping in the field-free verification message; correcting that applicability check passed without a template change. Source/policy guards pass. No application markup, recipients, notification triggers, retry versions or provider settings change. Existing white-background draft provider templates use a different asset and are unaffected. Real inbox/mobile acceptance and exact-head CI remain pending; no browser or live email was executed. The deferred database-index experiment is excluded.
+
 ## 25 November 2026 — CodeQL test assertion and authorized merge preparation
 
 Owner authorized merging #117 while deferring the physical iPad issue. The final merge check found CodeQL alert #54, `js/bad-tag-filter`, on `scripts/workflow-summary.test.mjs:20`. Owner's screenshot identifies a test assertion against lowercase `<script>`, not runtime sanitization. The formatter already strips angle brackets regardless of tag case. Replaced the narrow assertion with absence of either angle bracket and added upper/mixed-case fixture tags, retaining failure/skip reporting checks. No application or recovery logic changed. Fresh CodeQL/CI/staging evidence remains required before merge.

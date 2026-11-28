@@ -2,19 +2,17 @@
 
 ## Active outcome
 
-Owner accepted proceeding with #117 and authorized merge, explicitly deferring the unresolved physical iPad issue. Merge inspection found CodeQL alert #54 (`js/bad-tag-filter`) on the test-only lowercase `<script>` assertion in `scripts/workflow-summary.test.mjs`. Owner supplied the alert and approved its repair. The candidate now asserts that no angle brackets remain and includes lower/upper/mixed-case tag fixtures; runtime formatting and application code are unchanged.
+Fix the opaque black background in the shared branded email wordmark on `fix/email-logo-transparency`, based on main `84aba92` (#117). Owner authorized precise pixel conversion and a small PR with CI. The image now has an alpha channel that removes its black matte while retaining original dimensions and reproducing every original RGB pixel when composited over black.
 
 ## Candidate and evidence
 
-Prior head `cefcab0704c002aa68d8c1ab51226d76be629ddb` passed full CI 45350865954 attempt 3 and automatically deployed through 45367436246 (staging job 138352970940, receipt artifact 14907601569). Independent health confirmed that revision and Worker version 297cd65a-c60d-4e11-841c-3ce680e9b995. The earlier claim that workflow renaming required manual staging was incorrect. The earlier failed deployment 45355742494 was caused by a partial rerun lacking an attempt-2 live-email artifact; a full rerun produced consistent artifacts.
-
-The staged feature scope includes public sticky banners/stateful Back, contact presentation, privacy table formatting, normal-flow Enquire action, staging-only opt-in keyboard tracing, and workflow naming/summaries. Android trace shows native visual-viewport panning/restoration without document scrolling or recovery correction; stored fullHeight 771px versus restored 715px leaves keyboardOpen true. This is diagnostic evidence, not an iPad fix. Owner deferred iPad investigation; no additional recovery change is included.
+Only the shared PNG and owning documentation change. The same URL serves header/footer logos across eleven application email variants. Existing responsive sizing, mobile padding, text wrapping, recipients, triggers and retry payloads are unchanged. Offline 160px previews were inspected on both email background colours; eleven HTML variants were rendered and checked. Source and policy guards pass. Real inbox/device appearance and final-head CI remain pending; no live notification was sent.
 
 ## Next actions
 
-- Validate and publish the test-only CodeQL repair and reconciled documentation on #117.
-- Require fresh CodeQL, complete exact-head CI and actual staging/health before executing the authorized merge. Recheck main verification and deployment separately; do not equate merge with production release.
-- Resume physical iPad diagnosis later using the recorder; temporary diagnostics remain disabled in production.
+- Publish the small draft PR and verify CI starts; staging, owner acceptance and merge remain separate gates.
+- Inspect the logo in actual mobile email clients after an authorized deployment; image caches may temporarily retain the old asset.
+- Physical iPad recovery remains deferred. The separate local database-index experiment is excluded from this PR.
 
 ## Ordered work after this slice
 
