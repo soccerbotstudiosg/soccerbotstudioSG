@@ -772,7 +772,7 @@ Background sign-out changes presentation immediately but retains server authorit
 
 ### App notification presentation
 
-- `worker/notification-template.ts` renders nine branded HTML variants alongside plain text: verification; enquiry customer/team; booking-help customer/team for booking-unconfirmed, checkout-unconfirmed and payment-confirmation-pending.
+- `worker/notification-template.ts` renders eleven branded HTML variants alongside plain text: verification; enquiry customer/team; booking-help customer/team for contact-email-rejected, booking-unconfirmed, checkout-unconfirmed and payment-confirmation-pending.
 - The existing send triggers, fixed recipients, reply-to, quotas and idempotency keys remain authoritative.
 - Enquiry includes all nine submitted website fields.
 - Customer enquiry/help greetings use the submitted or retained contact name; verification uses “Hello human,” without an unverified account lookup.
@@ -781,7 +781,7 @@ Background sign-out changes presentation immediately but retains server authorit
 - No attachments or script-based Copy controls are included.
 - These application templates do not change SimplyBook-owned confirmation, invoice, reminder or staff notification emails.
 
-Absolute asset/policy links use the configured application origin. Images use the actual venue/wordmark; email clients may suppress images or advanced backgrounds, while live text remains readable. Synthetic dispatch tests verify HTML, fallback text, dynamic names and escaping; CI does not establish real inbox rendering.
+Absolute asset/policy links use the configured application origin. The shared `/assets/email-wordmark.png` is transparent, retaining its original 1130×380 dimensions. Header/footer markup displays it at 160px with `max-width:100%` and automatic height; mobile padding remains in the existing 480px media query. The asset correction preserves the URL and notification payload markup, including retained retry payloads. Images use the actual venue/wordmark; email clients may suppress images or advanced backgrounds, while live text remains readable. Synthetic dispatch tests verify HTML, fallback text, dynamic names and escaping; CI does not establish real inbox rendering.
 
 Migration0051 must precede this Worker deployment. Existing enquiry/help rows retain version0/plain-text payloads, including their original greeting; newly inserted rows select version1. The immutable version prevents a retry from changing content under the original provider key. Completed historical rows remain no-send.
 
